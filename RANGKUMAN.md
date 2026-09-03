@@ -62,7 +62,7 @@ Terakhir diperbarui: 3 September 2026.
   memotong laci dua kali.
 - **Pengujian memakai SQLite di memori** supaya cepat dan tak menyentuh data
   asli. Konsekuensinya ada kelas galat yang hanya muncul di MySQL — lihat
-  bagian 7 [`PROGRESS.md`](PROGRESS.md) sebelum percaya pada test yang hijau.
+  bagian 8 [`PROGRESS.md`](PROGRESS.md) sebelum percaya pada test yang hijau.
 
 ## Struktur data
 
@@ -92,22 +92,23 @@ di bagian 5 [`PROGRESS.md`](PROGRESS.md).
 
 Seluruh alur harian sudah jalan: menjual, mencetak struk, mencatat kasbon,
 menerima pelunasan, menerima barang, menutup laci, dan melihat laporan.
-Aplikasi sudah dipakai di atas MySQL dan sudah diperiksa tampilannya di lebar
-1440 / 820 / 390 piksel lewat Microsoft Edge.
+Aplikasi sudah mengudara di `kios.madignet.site` (VPS aaPanel, `APP_DEBUG=false`)
+dan tampilannya sudah diperiksa di lebar 1440 / 820 / 390 piksel lewat Edge.
+Struk dicetak ke printer thermal RPP02N 58 mm lewat dialog cetak peramban.
 
 Yang masih terbuka, ringkasnya:
 
 - **Perlu diputuskan pemilik** — nasib fitur shift, model laci bila nanti ada
   pegawai.
 - **Sebelum dipakai sungguhan** — ganti password akun contoh, bersihkan data
-  seeder, setel `.env` produksi (`APP_DEBUG=false`).
+  seeder dan nota uji coba.
 - **Fitur** — diskon per item dan persen, QRIS/transfer, ekspor laporan,
   cetak langsung printer thermal, log aktivitas, backup dan restore.
 - **Tampilan** — unggah logo sendiri, grafik interaktif, foto produk, impor
   produk massal, dialog konfirmasi hapus yang rapi, aksesibilitas.
 - **Uji di perangkat asli** — tablet atau ponsel fisik, belum pernah disentuh.
 
-Daftar lengkap dan terkini ada di bagian 9 [`PROGRESS.md`](PROGRESS.md) — daftar
+Daftar lengkap dan terkini ada di bagian 10 [`PROGRESS.md`](PROGRESS.md) — daftar
 itu satu-satunya sumber; jangan menyalinnya ke berkas lain.
 
 ## Peta dokumen

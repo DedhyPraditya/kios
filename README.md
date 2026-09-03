@@ -67,10 +67,14 @@ Nyalakan MySQL dari panel Laragon, buat database `kios_nizam`, lalu
 php artisan test
 ```
 
-Rinciannya di [`PROGRESS.md`](PROGRESS.md) bagian 8.
+Rinciannya di [`PROGRESS.md`](PROGRESS.md) bagian 9.
 
 ## Cetak struk
 
-Halaman struk punya tombol **Cetak** yang memanggil dialog cetak browser. Untuk
-printer thermal 58 mm, atur ukuran kertas di dialog cetak itu. Cetak langsung
-ke printer thermal (ESC/POS) belum dibuat.
+Halaman struk punya tombol **Cetak** yang memanggil dialog cetak browser.
+Tata letaknya sudah disetel untuk printer thermal **RPP02N** (kertas 58 mm,
+kepala cetak 48 mm): lebar dan tinggi halaman diatur aplikasi, jadi di dialog
+cetak cukup pilih printernya dan setel margin ke **None**. Langkahnya untuk
+penjaga toko ada di [`PANDUAN.md`](PANDUAN.md).
+
+Cetak langsung ke printer thermal (ESC/POS, tanpa dialog) belum dibuat.

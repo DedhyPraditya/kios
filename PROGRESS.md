@@ -321,7 +321,29 @@ Tanpa itu aplikasi tetap benar — shift kemarin dikunci saat aplikasi pertama
 kali dibuka keesokan harinya — hanya jam penutupannya yang tercatat mundur ke
 `23:59:59` hari sebelumnya (memang begitu yang diinginkan).
 
-## 7. Cara memeriksa tampilan di browser
+## 7. Produksi
+
+Aplikasi sudah jalan di server sendiri, bukan lagi hanya di Laragon.
+
+| Hal | Isi |
+| --- | --- |
+| Alamat | `kios.madignet.site`, di belakang Cloudflare |
+| Server | VPS aaPanel, aplikasi di `/www/wwwroot/kios` |
+| PHP | 8.3, dijalankan sebagai user `www` |
+| Lingkungan | `APP_ENV=production`, `APP_DEBUG=false` |
+| Cara rilis | `bash deploy.sh` di folder aplikasi — pull, composer, build, migrasi, cache, izin akses |
+
+Dua hal yang pernah menghentikan deploy dan sudah dipagari di `deploy.sh`:
+
+1. **`chmod -R 755` seluruh folder** membuat 185 berkas tercatat "modified"
+   (mode 644 jadi 755), lalu `git pull` menolak jalan. Sekarang skrip menyetel
+   `core.fileMode false` dan menyetel izin per jenis: folder 755, berkas 644,
+   775 hanya untuk `storage` dan `bootstrap/cache`.
+2. **Menyeragamkan berkas ke 644 mencabut bit eksekusi `node_modules/.bin/vite`**
+   sehingga `npm run build` mati. `.git`, `node_modules`, dan `vendor` kini
+   dilewati — isinya urusan git, npm, dan composer.
+
+## 8. Cara memeriksa tampilan di browser
 
 Mesin ini **punya Microsoft Edge**, jadi tampilan bisa diperiksa sungguhan
 (catatan lama yang bilang "tidak ada browser" sudah tidak berlaku):
@@ -352,7 +374,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
    bayar). Perkaliannya ikut dicor, karena `SIGNED * UNSIGNED` balik jadi
    unsigned. Kalau nanti ada pengurangan kolom uang baru, ingat pola ini.
 
-## 8. Pengujian
+## 9. Pengujian
 
 `php artisan test` — **81 lulus** (488 assertion).
 
@@ -384,7 +406,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ---
 
-## 9. Belum dikerjakan
+## 10. Belum dikerjakan
 
 > Satu-satunya daftar pekerjaan proyek ini. `list.md` sudah dilebur ke sini
 > supaya tak ada dua daftar yang saling menyalip.
@@ -397,7 +419,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] **Model laci bila nanti ada pegawai.** Shift kini terikat per akun; untuk
       satu laci yang dipakai bergantian, perlu diubah jadi satu shift per toko.
 - [ ] **Pasang Task Scheduler** (`php artisan schedule:run` tiap menit) — hanya
-      perlu kalau fitur shift dipakai. Perintahnya ada di bagian 5.
+      perlu kalau fitur shift dipakai. Perintahnya ada di bagian 6.
 
 ### Fitur toko
 
@@ -432,7 +454,6 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 ### Rilis / operasional
 
 - [ ] Ganti password akun contoh; bersihkan data seeder demo & nota uji coba.
-- [ ] `.env` produksi (`APP_DEBUG=false`, `APP_ENV=production`).
 - [ ] Feature test untuk `ProductController` / `CategoryController` /
       `UserController` / `ReportController`.
 - [ ] Alur reset password (butuh SMTP) atau matikan; rapikan email verification.
