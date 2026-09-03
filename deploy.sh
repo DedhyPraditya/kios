@@ -10,6 +10,14 @@ set -e  # Stop jika ada error
 echo "🚀 Mulai proses deploy Kios Berkah..."
 echo "======================================"
 
+# Bit izin akses jangan dianggap perubahan berkas. Tanpa ini, chmod di bawah
+# membuat seluruh berkas tercatat "modified" dan git pull berikutnya menolak
+# jalan karena takut menimpa perubahan lokal.
+git config core.fileMode false
+
+# Lockfile kadang disentuh `npm install` di server; isi resminya ada di repo.
+git checkout -- package-lock.json 2>/dev/null || true
+
 # Pull perubahan dari GitHub
 echo "📥 Pulling dari GitHub..."
 git pull origin main
@@ -34,11 +42,15 @@ php artisan route:cache
 php artisan view:cache
 
 # Set permission
+# Folder perlu 755 supaya bisa ditelusuri; berkas cukup 644 — memberi bit
+# eksekusi ke berkas PHP tak ada gunanya dan hanya memperluas permukaan serang.
+# Yang benar-benar ditulis aplikasi hanya storage dan bootstrap/cache.
 echo "🔒 Set permission..."
-chown -R www:www /www/wwwroot/kios 2>/dev/null || true
-chmod -R 755 /www/wwwroot/kios 2>/dev/null || true
-chmod -R 777 /www/wwwroot/kios/storage 2>/dev/null || true
-chmod -R 777 /www/wwwroot/kios/bootstrap/cache 2>/dev/null || true
+APP_DIR=/www/wwwroot/kios
+chown -R www:www "$APP_DIR" 2>/dev/null || true
+find "$APP_DIR" -path "$APP_DIR/.git" -prune -o -type d -exec chmod 755 {} + 2>/dev/null || true
+find "$APP_DIR" -path "$APP_DIR/.git" -prune -o -type f -exec chmod 644 {} + 2>/dev/null || true
+chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" 2>/dev/null || true
 
 echo ""
 echo "======================================"
