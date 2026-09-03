@@ -149,6 +149,34 @@ Hanya perlu kalau Anda melayani hutang.
 **Yang otomatis terjadi:** stok berkurang, nomor nota dibuat
 (`INV20260903-0001`), dan omzet hari ini bertambah.
 
+### Mencetak struk
+
+Struk dicetak lewat printer thermal **RPP02N** (kertas gulung 58 mm). Tekan
+**Cetak** di halaman struk, lalu di kotak cetak yang muncul:
+
+| Isian | Pilih |
+| --- | --- |
+| Printer / Tujuan | RPP02N |
+| Ukuran kertas | biarkan apa adanya — aplikasi sudah mengaturnya sendiri |
+| Margin | **None** / Tidak ada |
+| Grafik latar | jangan dicentang |
+
+Setelan itu cukup disimpan sekali; peramban mengingatnya untuk cetakan
+berikutnya. Panjang kertas mengikuti panjang struk, jadi tak ada kertas kosong
+yang terbuang.
+
+Kalau hasilnya tidak sesuai:
+
+- **Tulisan terpotong di kiri atau kanan** — pastikan margin **None**, bukan
+  Default.
+- **Keluar kertas kosong panjang** — ukuran kertas di kotak cetak dipaksa ke
+  ukuran tertentu (mis. A4). Kembalikan ke pilihan bawaan.
+- **Cetakan pudar** — itu soal kertas atau baterai printer, bukan aplikasi.
+  Coba kertas thermal baru atau isi daya printer.
+
+Struk lama bisa dicetak ulang kapan saja: **Riwayat** → buka notanya → tombol
+struk.
+
 ### Membaca warna stok di kartu produk
 
 Angka **STOK** di kartu produk berubah warna mengikuti kondisi barang:

@@ -9,7 +9,41 @@ const props = defineProps({ sale: Object, store: Object });
 const isKasbon = props.sale.payment_type === "kasbon";
 const lunas = props.sale.status === "lunas";
 
+/* Kertas thermal RPP02N: lebar 58 mm, area cetak 48 mm, gulungan tanpa batas
+   halaman. `@page { size: 58mm auto }` bukan CSS yang sah, dan kalau ukuran
+   halaman dibiarkan ke driver, banyak driver 58 mm memakai panjang tetap lalu
+   memuntahkan kertas kosong tiap struk. Jadi tingginya diukur dulu di sini.
+
+   Diukur dari salinan tersembunyi yang memakai lebar & ukuran huruf cetak,
+   sebab tata letak layar (lebih lebar, huruf lebih besar) menghasilkan tinggi
+   yang berbeda. Ditambah 10 mm untuk ruang sobek. */
+function tinggiCetakMm(el) {
+    const salinan = el.cloneNode(true);
+    salinan.style.cssText =
+        "position:absolute;left:-9999px;top:0;width:58mm;padding:0 5mm;" +
+        "font-size:9pt;line-height:1.35;background:none;";
+    document.body.appendChild(salinan);
+    const mm = (salinan.getBoundingClientRect().height / 96) * 25.4;
+    salinan.remove();
+
+    return Math.ceil(mm) + 10;
+}
+
 function cetak() {
+    const struk = document.getElementById("struk");
+
+    if (struk) {
+        const gaya =
+            document.getElementById("ukuran-struk") ??
+            document.head.appendChild(
+                Object.assign(document.createElement("style"), {
+                    id: "ukuran-struk",
+                }),
+            );
+
+        gaya.textContent = `@page { size: 58mm ${tinggiCetakMm(struk)}mm; margin: 0 }`;
+    }
+
     window.print();
 }
 </script>

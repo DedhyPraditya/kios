@@ -148,7 +148,16 @@
     }
 }
 
+/* Cetak struk di printer thermal 58 mm (RPP02N: kertas 58 mm, area cetak
+   48 mm / 384 dot pada 203 dpi). Kertasnya gulungan, jadi tingginya dibiarkan
+   `auto` — panjang struk mengikuti jumlah barang, bukan sebaliknya. */
 @media print {
+    /* Lebar kertas & tinggi tepat disetel Receipt.vue tepat sebelum cetak
+       (`size: 58mm <tinggi>mm`); di sini cukup pastikan tanpa margin. */
+    @page {
+        margin: 0;
+    }
+
     body * {
         visibility: hidden;
     }
@@ -156,12 +165,49 @@
     #struk * {
         visibility: visible;
     }
+
     #struk {
         position: absolute;
         inset: 0 auto auto 0;
-        width: 100%;
+        /* Kertas 58 mm, tapi kepala cetaknya hanya 48 mm di tengah. Struk
+           dibuat selebar kertas dengan bantalan 5 mm kiri-kanan supaya isinya
+           jatuh persis di bidang yang bisa tercetak. */
+        width: 58mm;
+        padding: 0 5mm;        /* ruang sobek ikut tinggi @page, bukan padding */
         border: 0 !important;
         box-shadow: none !important;
+        font-size: 9pt;
+        line-height: 1.35;
+    }
+
+    /* Kepala thermal hanya hitam-putih: warna apa pun keluar jadi abu kotor,
+       dan latar bertona memanaskan seluruh bidang. Semua dipaksa hitam-putih. */
+    #struk,
+    #struk * {
+        color: #000 !important;
+        background: transparent !important;
+        border-color: #000 !important;
+        text-shadow: none !important;
+    }
+
+    /* Gerigi pita hanya hiasan layar. */
+    #struk.tape {
+        background: none !important;
+        padding-top: 0;
+    }
+
+    #struk .tape-rule {
+        border-top: 1px dashed #000;
+    }
+
+    /* Satu barang tak boleh terpotong ke lembar berikutnya. */
+    #struk tr {
+        break-inside: avoid;
+    }
+
+    /* Nama barang panjang jangan sampai menempel ke harganya. */
+    #struk td:first-child {
+        padding-right: 2mm;
     }
 }
 

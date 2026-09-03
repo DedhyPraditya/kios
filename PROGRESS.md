@@ -110,6 +110,18 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
 
 - Gaya pita kertas thermal; tombol Cetak (dialog browser) + Transaksi baru.
 - Blok kasbon: pelanggan, DP, sisa hutang, jatuh tempo, cap **LUNAS / BELUM LUNAS**.
+- **Cetak disetel untuk printer thermal RPP02N** (kertas 58 mm, kepala cetak
+  48 mm, 203 dpi). Struk dibuat selebar kertas dengan bantalan 5 mm kiri-kanan
+  supaya isinya jatuh di bidang yang benar-benar tercetak; warna dan gerigi pita
+  dipaksa hitam-putih karena kepala thermal tak mengenal warna.
+- **Tinggi halaman diukur, bukan ditebak.** `@page { size: 58mm auto }` bukan
+  CSS yang sah — `size` hanya menerima panjang, jadi seluruh deklarasinya
+  dibuang peramban dan kertas balik ke ukuran driver (sering panjang tetap,
+  memuntahkan kertas kosong tiap struk). `Receipt.vue` mengukur struk lewat
+  salinan tersembunyi berlebar cetak, lalu menyuntik `@page { size: 58mm
+  <tinggi>mm }` sesaat sebelum `window.print()`. Diukur dari salinan karena
+  tata letak layar lebih lebar dan berhuruf lebih besar, jadi tingginya beda.
+  Ditambah 10 mm untuk ruang sobek.
 
 ### Produk (`/products`) — admin
 
@@ -397,8 +409,9 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Satuan ganda (pcs / dus) & harga grosir.
 - [ ] Ekspor laporan Excel / PDF + tombolnya di halaman Laporan.
 - [ ] Filter tambahan di Laporan: per kasir, per kategori.
-- [ ] Cetak langsung printer thermal (ESC/POS); pratinjau struk 58 mm; opsi
-      QR / barcode nomor nota.
+- [ ] Cetak langsung ke printer thermal lewat ESC/POS (potong kertas otomatis,
+      tanpa dialog cetak). Tata letak 58 mm sendiri sudah jadi — lihat bagian 4.
+- [ ] Opsi QR / barcode nomor nota di struk.
 - [ ] Log aktivitas / audit (siapa mengubah harga, stok, menghapus).
 - [ ] Soft delete produk (sekarang hard delete).
 - [ ] Backup & restore database.
