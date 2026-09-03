@@ -46,10 +46,13 @@ php artisan view:cache
 # eksekusi ke berkas PHP tak ada gunanya dan hanya memperluas permukaan serang.
 # Yang benar-benar ditulis aplikasi hanya storage dan bootstrap/cache.
 echo "🔒 Set permission..."
+# `.git`, `node_modules`, dan `vendor` sengaja dilewati: isinya diurus git,
+# npm, dan composer sendiri, dan menyeragamkan berkas di sana ke 644 mencabut
+# bit eksekusi dari perkakasnya (vite, phpunit, pint) sehingga build gagal.
 APP_DIR=/www/wwwroot/kios
 chown -R www:www "$APP_DIR" 2>/dev/null || true
-find "$APP_DIR" -path "$APP_DIR/.git" -prune -o -type d -exec chmod 755 {} + 2>/dev/null || true
-find "$APP_DIR" -path "$APP_DIR/.git" -prune -o -type f -exec chmod 644 {} + 2>/dev/null || true
+find "$APP_DIR"     \( -path "$APP_DIR/.git" -o -path "$APP_DIR/node_modules" -o -path "$APP_DIR/vendor" \) -prune     -o -type d -exec chmod 755 {} + 2>/dev/null || true
+find "$APP_DIR"     \( -path "$APP_DIR/.git" -o -path "$APP_DIR/node_modules" -o -path "$APP_DIR/vendor" \) -prune     -o -type f -exec chmod 644 {} + 2>/dev/null || true
 chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" 2>/dev/null || true
 
 echo ""
