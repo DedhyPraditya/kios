@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        color-scheme: light;
+    }
+
+    body {
+        -webkit-tap-highlight-color: transparent;
+        color: theme('colors.ink.DEFAULT');
+        background: theme('colors.paper');
+    }
+
+    /* Numeric data: JetBrains Mono, tabular, for vertical digit alignment. */
+    .num {
+        font-family: theme('fontFamily.mono');
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+    }
+
+    h1, h2, h3 {
+        letter-spacing: -0.02em;
+    }
+}
+
+@layer components {
+    /* Level 1 surface: white + ghost border + soft diffused shadow. */
+    .card {
+        @apply rounded-card border border-line bg-surface shadow-card;
+    }
+
+    /* Kartu bertona: latar wash + border senada, teks tetap ink gelap.
+       Tona dipilih menurut makna: brand = uang masuk / utama, success =
+       positif / selesai, amber = perhatian, danger = hutang / kritis,
+       slate = netral (toolbar, daftar). */
+    .card-brand {
+        @apply card border-brand/30 bg-brand-wash;
+    }
+    .card-success {
+        @apply card border-success/30 bg-success-wash;
+    }
+    .card-amber {
+        @apply card border-amber/50 bg-amber-wash;
+    }
+    .card-danger {
+        @apply card border-danger/30 bg-danger-wash;
+    }
+    .card-slate {
+        @apply card border-line-strong bg-thead;
+    }
+
+    /* Tabel di atas kartu bertona: header digelapkan tipis (bukan abu solid)
+       dan baris menyorot ke putih supaya sorotan tetap terlihat. */
+    .card-brand .th,
+    .card-success .th,
+    .card-amber .th,
+    .card-danger .th,
+    .card-slate .th {
+        @apply bg-black/[0.04];
+    }
+    .card-brand .row-hover:hover,
+    .card-success .row-hover:hover,
+    .card-amber .row-hover:hover,
+    .card-danger .row-hover:hover,
+    .card-slate .row-hover:hover {
+        @apply bg-surface;
+    }
+
+    /* Label above field; light-gray border thickens + turns primary on focus. */
+    .field {
+        @apply w-full rounded-control border border-line bg-surface text-ink
+               placeholder:text-ink-faint
+               focus:border-2 focus:border-brand focus:ring-0 focus:outline-none;
+    }
+
+    .label {
+        @apply block text-label-caps uppercase text-ink-soft;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-control
+               px-4 py-2.5 text-sm font-semibold transition-colors
+               focus-visible:outline focus-visible:outline-2
+               focus-visible:outline-offset-2 focus-visible:outline-brand
+               disabled:cursor-not-allowed disabled:opacity-40;
+    }
+    /* Primary: solid emerald, white text. */
+    .btn-primary {
+        @apply btn bg-brand text-white hover:bg-brand-ink;
+    }
+    /* Secondary / outline: emerald border, transparent fill. */
+    .btn-outline {
+        @apply btn border border-brand bg-transparent text-brand hover:bg-brand/5;
+    }
+    /* Alert: solid amber, dark text — critical warnings only. */
+    .btn-alert {
+        @apply btn bg-amber text-ink hover:brightness-[0.97];
+    }
+    /* Neutral ghost button (cancel etc). */
+    .btn-ghost {
+        @apply btn border border-line bg-surface text-ink-soft hover:text-ink hover:border-line-strong;
+    }
+    .btn-danger {
+        @apply btn bg-danger text-white hover:brightness-95;
+    }
+
+    .link {
+        @apply font-medium text-brand hover:text-brand-ink hover:underline underline-offset-2;
+    }
+
+    .chip {
+        @apply rounded-control border border-line px-3 py-1 text-sm font-medium
+               text-ink-soft transition-colors hover:text-ink;
+    }
+    .chip-on {
+        @apply border-brand bg-brand text-white hover:text-white;
+    }
+
+    /* Data table: gray header fill + label-caps; green row-hover tracking tint. */
+    .th {
+        @apply bg-thead px-3 py-2.5 text-left text-label-caps uppercase text-ink-soft;
+    }
+    .td {
+        @apply px-3 py-2.5 align-middle;
+    }
+    .row-hover {
+        @apply transition-colors hover:bg-brand-wash;
+    }
+
+    /* Paper-tape look for the live cart + printed receipt. */
+    .tape {
+        background:
+            radial-gradient(circle at 6px -3px, transparent 6px, theme('colors.surface') 6px) top left / 14px 10px repeat-x,
+            theme('colors.surface');
+        padding-top: 12px;
+    }
+    /* Varian pita bertona untuk keranjang kasir; struk cetak tetap putih. */
+    .tape-brand {
+        background:
+            radial-gradient(circle at 6px -3px, transparent 6px, theme('colors.brand.wash') 6px) top left / 14px 10px repeat-x,
+            theme('colors.brand.wash');
+    }
+
+    .tape-rule {
+        border-top: 1px dashed theme('colors.line.strong');
+    }
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #struk,
+    #struk * {
+        visibility: visible;
+    }
+    #struk {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
