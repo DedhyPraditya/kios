@@ -153,7 +153,12 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
     diterima dicatat keluar laci, nota tetap tersimpan bercap "Dibatalkan".
     Ditolak bila nota sudah pernah menerima pelunasan hutang.
   - **Retur sebagian** — pilih qty per baris; stok balik, `returned_qty` naik,
-    diskon nota diprorata, nilai nota & hutang kasbon menyusut.
+    diskon nota diprorata, nilai nota & hutang kasbon menyusut. Bila pelanggan
+    jadi kelebihan bayar, uangnya dikembalikan **dan** kolom `paid` nota ikut
+    dikoreksi — kalau tidak, DP yang sudah keluar tetap terhitung sebagai uang
+    masuk di rekap laci dan sisa hutang pelanggan. Kelebihan yang berasal dari
+    pelunasan hutang tak bisa dikoreksi di barisnya (catatan riwayat), jadi
+    dicatat sebagai kas keluar.
 
 ### Barang masuk (`/stok`) — admin
 
@@ -169,7 +174,11 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
 - Buka shift dengan modal awal laci; nota dan pelunasan hutang otomatis
   menempel ke shift yang sedang terbuka.
 - Catat **kas masuk / keluar** di luar penjualan (beli plastik, ambil kembalian).
-  Batal & retur otomatis mencatat kas keluar.
+  Batal & retur mencatat kas keluar **hanya bila shift asal nota sudah
+  ditutup**; selama shift asal masih terbuka rekapnya mengoreksi diri sendiri
+  (nota batal keluar dari rekap, retur memotong nilai bersih & DP), jadi
+  mencatatnya lagi akan memotong laci dua kali — termasuk saat yang membatalkan
+  akun lain dengan shift sendiri.
 - Hitungan laci: modal awal + tunai + DP kasbon + pelunasan + kas masuk − kas
   keluar. Nota kasbon hanya menyumbang DP-nya; nota batal tak dihitung.
 - Tutup shift: isi uang fisik → **selisih** tersimpan, plus setoran & catatan.
@@ -324,10 +333,16 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
    nilainya hilang dari rekap penjualan *dan* dicatat sebagai kas keluar.
 3. Halaman error menawarkan "Ke halaman masuk" walau pengguna sudah login — pada
    404 halaman dirender di luar grup middleware `web`, jadi props `auth` kosong.
+4. `/reports` **error 22003 di MySQL** begitu ada barang terjual rugi: kolom uang
+   bertipe `unsigned`, jadi `price - cost` meluber alih-alih jadi minus (SQLite
+   membiarkannya). Pengurangan yang boleh negatif kini dicor `CAST(... AS SIGNED)`
+   — di `ReportController` (laba) dan `Customer::outstanding()` (nota lebih
+   bayar). Perkaliannya ikut dicor, karena `SIGNED * UNSIGNED` balik jadi
+   unsigned. Kalau nanti ada pengurangan kolom uang baru, ingat pola ini.
 
 ## 8. Pengujian
 
-`php artisan test` — **75 lulus** (455 assertion).
+`php artisan test` — **81 lulus** (488 assertion).
 
 - `PosTest`: pencatatan penjualan + pengurangan stok, tolak stok/bayar kurang,
   batas akses kasir.
@@ -340,7 +355,10 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
   & mengeluarkan nota dari laporan; tolak batal ganda; tolak batal nota yang
   sudah dicicil; retur sebagian & retur kasbon; tolak retur melebihi pembelian;
   ubah keterangan tak mengubah uang; kasir tak boleh membatalkan; pencarian
-  riwayat per no nota.
+  riwayat per no nota; retur kasbon lebih bayar mengoreksi DP nota; kelebihan
+  dari pelunasan dicatat kas keluar; batal nota shift lain yang masih terbuka
+  tak memotong laci dua kali; batal nota dari shift yang sudah ditutup dicatat
+  di shift berjalan; batal nota bekas retur hanya mengembalikan sisa uangnya.
 - `ShiftGantiHariTest`: nota menempel ke shift yang kebetulan terbuka; nota
   setelah tengah malam tak masuk rekap kemarin; shift menginap terkunci di
   `23:59:59` dengan `counted_cash`/`difference` kosong; hari baru mulai dari nol
@@ -369,15 +387,10 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] **Pasang Task Scheduler** (`php artisan schedule:run` tiap menit) — hanya
       perlu kalau fitur shift dipakai. Perintahnya ada di bagian 5.
 
-### Ketelitian uang yang masih longgar
-
-- [ ] **Retur nota kasbon yang sudah lebih bayar** — kelebihan uang dicatat
-      sebagai kas keluar, tapi kolom `paid` nota tidak ikut dikoreksi.
-- [ ] **Batal nota lintas shift** — kas keluar tercatat di shift orang yang
-      membatalkan, bukan shift asal nota.
-
 ### Fitur toko
 
+- [ ] Ubah kolom uang jadi bilangan bertanda (`bigInteger`, bukan
+      `unsignedBigInteger`) supaya pengurangan tak perlu dicor satu per satu.
 - [ ] Diskon per item + diskon persen (sekarang hanya nominal total).
 - [ ] Multi-metode bayar (QRIS / transfer).
 - [ ] Pajak / PPN opsional.

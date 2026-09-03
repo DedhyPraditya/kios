@@ -193,8 +193,10 @@ class SaleController extends Controller
                 }
             }
 
-            // Uang yang sudah diterima dikembalikan ke pembeli.
-            $cashBack = $sale->payment_type === 'tunai' ? $sale->total : $sale->paid;
+            // Uang yang sudah diterima dikembalikan ke pembeli. Nota yang pernah
+            // diretur sebagian: uang returnya sudah keluar lebih dulu, jadi yang
+            // dikembalikan tinggal nilai bersihnya.
+            $cashBack = $sale->payment_type === 'tunai' ? $sale->netTotal() : $sale->paid;
 
             $sale->forceFill([
                 'voided_at' => now(),
@@ -276,11 +278,28 @@ class SaleController extends Controller
 
             if ($sale->payment_type === 'kasbon') {
                 // Hutang berkurang lebih dulu; hanya kelebihan bayar yang dikembalikan tunai.
-                $alreadyPaid = $sale->paid + (int) $sale->creditPayments()->sum('amount');
-                $cashBack = max($alreadyPaid - $sale->netTotal(), 0);
+                $paidBack = (int) $sale->creditPayments()->sum('amount');
+                $overpaid = max($sale->paid + $paidBack - $sale->netTotal(), 0);
+
+                // DP nota ikut dikoreksi sebesar uang yang keluar. Tanpa ini `paid`
+                // tetap menyebut uang yang sudah dikembalikan sebagai uang masuk,
+                // sehingga rekap laci dan sisa hutang pelanggan salah diam-diam.
+                $fromDp = min($overpaid, $sale->paid);
+
+                if ($fromDp > 0) {
+                    $sale->forceFill(['paid' => $sale->paid - $fromDp])->save();
+                }
+
                 $sale->syncStatus();
+
+                $cashBack = $fromDp;
+
+                // Baris pelunasan hutang adalah catatan riwayat, tak boleh diubah —
+                // kelebihan yang berasal dari sana hanya bisa dicatat sebagai kas keluar.
+                $cashFromCredit = $overpaid - $fromDp;
             } else {
                 $cashBack = $refundValue;
+                $cashFromCredit = 0;
             }
 
             $sale->forceFill([
@@ -288,6 +307,11 @@ class SaleController extends Controller
             ])->save();
 
             $this->recordCashOut($request->user(), $cashBack, 'Retur nota '.$sale->invoice_no, $sale);
+            $this->recordCashOut(
+                $request->user(),
+                $cashFromCredit,
+                'Retur nota '.$sale->invoice_no.' (kelebihan pelunasan)'
+            );
         });
 
         return back()->with('success', 'Retur dicatat, stok dan nilai nota disesuaikan.');
@@ -296,11 +320,16 @@ class SaleController extends Controller
     /**
      * Uang keluar laci dicatat di shift kasir yang sedang terbuka, bila ada.
      *
-     * Nota yang dibatalkan/diretur di shift yang sama tidak dicatat: nilainya
-     * sudah hilang sendiri dari rekap penjualan shift itu, jadi mencatat kas
-     * keluar akan memotong laci dua kali.
+     * `$origin` = nota asal uang itu masuk. Selama shift asal masih terbuka,
+     * rekapnya menghitung ulang sendiri (nota batal keluar dari rekap, retur
+     * memotong nilai bersih & DP), jadi mencatat kas keluar akan memotong laci
+     * dua kali — termasuk saat yang membatalkan orang lain dengan shift lain.
+     *
+     * Kalau shift asal sudah ditutup, angkanya sudah dibekukan; uang yang keluar
+     * hari ini memang milik shift yang sedang berjalan. Panggilan tanpa `$origin`
+     * = uang yang tak bisa dikoreksi di sumbernya, jadi selalu dicatat.
      */
-    private function recordCashOut(User $user, int $amount, string $note, Sale $sale): void
+    private function recordCashOut(User $user, int $amount, string $note, ?Sale $origin = null): void
     {
         if ($amount < 1) {
             return;
@@ -308,7 +337,15 @@ class SaleController extends Controller
 
         $session = CashSession::openFor($user);
 
-        if (! $session || $sale->cash_session_id === $session->id) {
+        if ($origin?->cash_session_id) {
+            $source = CashSession::find($origin->cash_session_id);
+
+            if ($source?->isOpen()) {
+                return;
+            }
+        }
+
+        if (! $session) {
             return;
         }
 

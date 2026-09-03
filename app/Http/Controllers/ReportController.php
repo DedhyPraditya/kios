@@ -33,8 +33,11 @@ class ReportController extends Controller
             fn ($q) => $q->valid()->whereBetween('created_at', [$from, $to]),
         );
 
+        // `price` & `cost` bertipe unsigned: barang yang dijual rugi (modal > harga
+        // jual) membuat MySQL meluber, bukan menghasilkan angka minus. Dicor ke
+        // SIGNED dulu supaya laba boleh negatif.
         $summary['profit'] = (int) (clone $itemsInRange)
-            ->selectRaw('COALESCE(SUM((price - cost) * (qty - returned_qty)), 0) as p')
+            ->selectRaw('COALESCE(SUM((CAST(price AS SIGNED) - CAST(cost AS SIGNED)) * CAST(qty - returned_qty AS SIGNED)), 0) as p')
             ->value('p');
 
         $daily = (clone $salesInRange)

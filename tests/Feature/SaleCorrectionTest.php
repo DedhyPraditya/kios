@@ -231,4 +231,138 @@ class SaleCorrectionTest extends TestCase
         $this->assertSame(0, $session->movements()->count());
         $this->assertSame(1, StockMovement::where('type', 'batal')->count());
     }
+
+    public function test_laporan_menghitung_laba_minus_untuk_barang_yang_dijual_rugi(): void
+    {
+        // Modal di atas harga jual bikin `price - cost` meluber di MySQL (kolom
+        // unsigned), jadi laporan wajib tetap sanggup melaporkan laba negatif.
+        $this->product->update(['cost' => 25000]);
+        $this->sell(1);
+
+        $this->actingAs($this->admin)
+            ->get(route('reports.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('summary.profit', -7000));
+    }
+
+    public function test_batal_nota_shift_lain_yang_masih_terbuka_tidak_memotong_laci_dua_kali(): void
+    {
+        $this->actingAs($this->kasir)->post(route('shift.store'), ['opening_cash' => 100000]);
+        $sale = $this->sell(1);
+
+        // Admin punya shift sendiri; kalau kas keluar dicatat di sana, laci toko
+        // terpotong dua kali — nota batal sudah hilang dari rekap shift kasir.
+        $this->actingAs($this->admin)->post(route('shift.store'), ['opening_cash' => 0]);
+        $this->actingAs($this->admin)
+            ->post(route('sales.void', $sale), ['reason' => 'salah'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, CashSession::openFor($this->admin)->movements()->count());
+        $this->assertSame(100000, CashSession::openFor($this->kasir)->summary()['expected_cash']);
+    }
+
+    public function test_batal_nota_dari_shift_yang_sudah_ditutup_dicatat_di_shift_berjalan(): void
+    {
+        $this->actingAs($this->kasir)->post(route('shift.store'), ['opening_cash' => 100000]);
+        $sale = $this->sell(1);
+        $shift = CashSession::openFor($this->kasir);
+
+        $this->actingAs($this->kasir)
+            ->post(route('shift.close', $shift), ['counted_cash' => 118000])
+            ->assertSessionHasNoErrors();
+
+        // Rekap shift kasir sudah dibekukan, jadi uangnya keluar dari laci hari ini.
+        $this->actingAs($this->admin)->post(route('shift.store'), ['opening_cash' => 0]);
+        $this->actingAs($this->admin)
+            ->post(route('sales.void', $sale), ['reason' => 'barang rusak'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('cash_movements', [
+            'cash_session_id' => CashSession::openFor($this->admin)->id,
+            'direction' => 'keluar',
+            'amount' => 18000,
+        ]);
+        $this->assertSame(0, $shift->fresh()->difference);
+    }
+
+    public function test_batal_nota_yang_sudah_diretur_hanya_mengembalikan_sisa_uangnya(): void
+    {
+        $sale = $this->sell(2);
+
+        $this->actingAs($this->admin)->post(route('sales.refund', $sale), [
+            'items' => [['sale_item_id' => $sale->items()->first()->id, 'qty' => 1]],
+            'reason' => 'rusak',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($this->admin)->post(route('shift.store'), ['opening_cash' => 0]);
+        $this->actingAs($this->admin)
+            ->post(route('sales.void', $sale), ['reason' => 'sisanya ikut dikembalikan'])
+            ->assertSessionHasNoErrors();
+
+        // Uang retur 18.000 sudah keluar duluan; yang tersisa tinggal 18.000.
+        $this->assertDatabaseHas('cash_movements', [
+            'note' => 'Batal nota '.$sale->invoice_no,
+            'amount' => 18000,
+        ]);
+    }
+
+    public function test_retur_kasbon_lebih_bayar_mengoreksi_dp_nota(): void
+    {
+        $customer = Customer::create(['name' => 'Pak Budi']);
+        $sale = $this->sell(2, [
+            'paid' => 20000,
+            'payment_type' => 'kasbon',
+            'customer_id' => $customer->id,
+        ]);
+
+        $this->actingAs($this->admin)->post(route('credit-payments.store'), [
+            'customer_id' => $customer->id,
+            'amount' => 16000,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(0, $sale->fresh()->outstanding());
+
+        // Retur 1 pcs: nota tinggal 18.000, sedangkan pelanggan sudah setor 36.000.
+        $this->actingAs($this->admin)->post(route('sales.refund', $sale), [
+            'items' => [['sale_item_id' => $sale->items()->first()->id, 'qty' => 1]],
+            'reason' => 'kelebihan beli',
+        ])->assertSessionHasNoErrors();
+
+        $sale->refresh();
+
+        $this->assertSame(18000, $sale->netTotal());
+        $this->assertSame(2000, $sale->paid);
+        $this->assertSame(0, $sale->outstanding());
+        $this->assertSame('lunas', $sale->status);
+        $this->assertSame(0, $customer->outstanding());
+    }
+
+    public function test_retur_kasbon_kelebihan_dari_pelunasan_dicatat_sebagai_kas_keluar(): void
+    {
+        $customer = Customer::create(['name' => 'Bu Sri']);
+        $sale = $this->sell(2, [
+            'paid' => 0,
+            'payment_type' => 'kasbon',
+            'customer_id' => $customer->id,
+        ]);
+
+        $this->actingAs($this->admin)->post(route('shift.store'), ['opening_cash' => 0]);
+        $this->actingAs($this->admin)->post(route('credit-payments.store'), [
+            'customer_id' => $customer->id,
+            'amount' => 36000,
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($this->admin)->post(route('sales.refund', $sale), [
+            'items' => [['sale_item_id' => $sale->items()->first()->id, 'qty' => 1]],
+            'reason' => 'dikembalikan',
+        ])->assertSessionHasNoErrors();
+
+        // DP nol, jadi kelebihan 18.000 hanya bisa dikoreksi lewat kas keluar.
+        $this->assertSame(0, $sale->fresh()->paid);
+        $this->assertDatabaseHas('cash_movements', [
+            'cash_session_id' => CashSession::openFor($this->admin)->id,
+            'direction' => 'keluar',
+            'amount' => 18000,
+        ]);
+    }
 }

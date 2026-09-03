@@ -34,10 +34,12 @@ class Customer extends Model
     /** Total sisa hutang: nota kasbon belum lunas dikurangi pelunasan. */
     public function outstanding(): int
     {
+        // Dicor ke SIGNED: nota yang lebih bayar (DP melebihi nilai bersih setelah
+        // retur) bernilai minus, dan pengurangan kolom unsigned meluber di MySQL.
         $owed = (int) $this->sales()
             ->where('payment_type', 'kasbon')
             ->whereNull('voided_at')
-            ->sum(DB::raw('total - refunded - paid'));
+            ->sum(DB::raw('CAST(total AS SIGNED) - CAST(refunded AS SIGNED) - CAST(paid AS SIGNED)'));
 
         $settled = (int) $this->creditPayments()->sum('amount');
 
