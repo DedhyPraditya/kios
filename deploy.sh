@@ -54,6 +54,23 @@ chmod 640 .env
 echo "📦 Install Composer dependencies..."
 composer install --optimize-autoloader --no-dev --quiet
 
+# aaPanel memasang Node di /www/server/nodejs/<versi>/bin, di luar PATH milik
+# root, jadi `npm` tak ketemu kalau skrip dijalankan lewat SSH biasa. Dicari
+# sendiri di sini supaya `bash deploy.sh` cukup diketik apa adanya.
+if ! command -v npm >/dev/null 2>&1; then
+    # `sort -V` supaya v9 tidak dianggap lebih baru daripada v20.
+    NODE_BIN=$(ls -d /www/server/nodejs/*/bin "$HOME"/.nvm/versions/node/*/bin 2>/dev/null \
+        | sort -V | tail -1)
+    if [ -x "$NODE_BIN/npm" ]; then
+        export PATH="$NODE_BIN:$PATH"
+    fi
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+    echo "❌ npm tak ditemukan. Pasang Node.js lewat aaPanel: App Store → Node.js."
+    exit 1
+fi
+
 # Install/update Node dependencies & build
 echo "🔨 Build frontend assets..."
 npm install --quiet
