@@ -2,7 +2,10 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
 import { Head, Link } from "@inertiajs/vue3";
+import { ref } from "vue";
 import { rupiah, tanggal } from "@/lib/format";
+import { strukEscPos } from "@/lib/struk-escpos";
+import { cetakKeBluetooth, didukung } from "@/lib/printer-bluetooth";
 
 const props = defineProps({ sale: Object, store: Object });
 
@@ -45,6 +48,30 @@ function cetak() {
     }
 
     window.print();
+}
+
+/* Jalur ponsel: kirim ESC/POS langsung ke printer Bluetooth. Tombolnya hanya
+   muncul kalau peramban mendukung — di PC dialog cetak sudah cukup, dan di
+   Safari iOS Web Bluetooth memang tak ada. */
+const adaBluetooth = didukung();
+const sibuk = ref(false);
+const kabar = ref("");
+
+async function cetakBluetooth() {
+    sibuk.value = true;
+    kabar.value = "Menyambung ke printer…";
+
+    try {
+        await cetakKeBluetooth(strukEscPos(props.sale, props.store));
+        kabar.value = "Struk terkirim ke printer.";
+    } catch (e) {
+        kabar.value =
+            e?.name === "NotFoundError"
+                ? "Tidak ada printer yang dipilih."
+                : `Gagal mencetak: ${e?.message ?? e}`;
+    } finally {
+        sibuk.value = false;
+    }
 }
 </script>
 
@@ -207,6 +234,24 @@ function cetak() {
                     · · · simpan struk ini · · ·
                 </p>
             </div>
+
+            <button
+                v-if="adaBluetooth"
+                @click="cetakBluetooth"
+                :disabled="sibuk"
+                type="button"
+                class="btn-primary mt-4 w-full print:hidden"
+            >
+                <Icon name="print" :size="18" />
+                {{ sibuk ? "Mencetak…" : "Cetak ke printer Bluetooth" }}
+            </button>
+
+            <p
+                v-if="kabar"
+                class="mt-2 text-center text-xs text-ink-soft print:hidden"
+            >
+                {{ kabar }}
+            </p>
 
             <div class="mt-4 flex gap-2 print:hidden">
                 <button

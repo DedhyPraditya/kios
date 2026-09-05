@@ -182,6 +182,39 @@ Kalau hasilnya tidak sesuai:
 Struk lama bisa dicetak ulang kapan saja: **Riwayat** → buka notanya → tombol
 struk.
 
+### Mencetak dari HP atau tablet
+
+Di ponsel, kotak cetak peramban tidak bisa diandalkan untuk kertas 58 mm.
+Karena itu halaman struk menampilkan tombol **Cetak ke printer Bluetooth** yang
+mengirim struk langsung ke printer — tanpa kotak cetak, tanpa memilih ukuran
+kertas.
+
+Sebelum menekan: printer menyala dan Bluetooth ponsel aktif. Printer **tidak
+perlu** dipasangkan lewat Setelan ponsel; pemilihannya dilakukan di halaman.
+
+| Perangkat | Yang dipakai |
+| --- | --- |
+| Android | Chrome, seperti biasa |
+| iPhone / iPad | peramban **Bluefy** (gratis di App Store) |
+
+Safari tidak bisa dipakai untuk mencetak. Bukan soal setelan — Safari memang
+tak punya kemampuan bicara ke printer Bluetooth, dan kotak cetaknya hanya
+mengenal printer AirPrint, sedangkan RPP02N bukan salah satunya.
+
+Tekan tombolnya, lalu pilih printer dari daftar yang muncul (namanya biasanya
+`RPP02N` atau `Printer001`). Pilihan itu diingat selama aplikasi belum ditutup,
+jadi transaksi berikutnya langsung tercetak begitu tombol ditekan.
+
+Kalau gagal, pesannya muncul tepat di bawah tombol:
+
+- **"Tidak ada printer yang dipilih"** — daftar ditutup tanpa memilih. Tekan
+  lagi.
+- **"Printer tersambung, tapi tak punya jalur tulis yang dikenali"** — printer
+  terhubung namun modelnya berbeda dari yang dikenali aplikasi. Pakai jalur PC
+  untuk sementara dan laporkan mereknya.
+- Pesan lain — biasanya printer mati, kehabisan daya, atau terlalu jauh.
+  Dekatkan dan coba lagi.
+
 ### Membaca warna stok di kartu produk
 
 Angka **STOK** di kartu produk berubah warna mengikuti kondisi barang:

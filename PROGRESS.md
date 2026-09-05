@@ -122,6 +122,26 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
   <tinggi>mm }` sesaat sebelum `window.print()`. Diukur dari salinan karena
   tata letak layar lebih lebar dan berhuruf lebih besar, jadi tingginya beda.
   Ditambah 10 mm untuk ruang sobek.
+- **Ponsel memakai jalur sendiri: ESC/POS lewat Web Bluetooth.** Kotak cetak
+  Android tak bisa diandalkan untuk kertas 58 mm, dan Safari iOS hanya mengenal
+  printer AirPrint — RPP02N bukan salah satunya, jadi dari Safari printer ini
+  tak akan pernah terlihat. Tombol **Cetak ke printer Bluetooth** hanya muncul
+  bila `navigator.bluetooth` ada; di PC tombol dialog cetak yang lama tetap
+  dipakai dan tak diubah. Kasir iPhone perlu membuka aplikasi lewat peramban
+  **Bluefy**, satu-satunya jalan Web Bluetooth di iOS.
+- `lib/struk-escpos.js` menyusun struk sebagai teks 32 kolom (48 mm pada huruf
+  A). Dua hal yang menentukan bentuknya: perataan diserahkan ke printer lewat
+  `ESC a`, bukan disulap dengan spasi — begitu huruf diperbesar (`GS !`), satu
+  karakter makan dua kolom dan hitungan spasi langsung meleset; dan teks
+  disaring ke ASCII, sebab tabel karakter bawaan printer tak punya `×`, `−`,
+  atau `·` dan akan memuntahkannya sebagai simbol acak.
+- `lib/printer-bluetooth.js` mengurus sambungannya. UUID layanan printer murah
+  berbeda-beda, jadi yang umum didaftarkan semua di `optionalServices` — Web
+  Bluetooth menolak akses ke layanan yang tak disebut sejak awal. Data dikirim
+  berpotongan dengan jeda 20 ms karena penyangga printer kecil; tanpa jeda,
+  baris belakang hilang. Sambungan disimpan di tingkat modul, jadi kasir memilih
+  printer sekali per sesi, bukan tiap transaksi (pindah halaman di Inertia tak
+  memuat ulang JS).
 
 ### Produk (`/products`) — admin
 
@@ -457,8 +477,9 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Satuan ganda (pcs / dus) & harga grosir.
 - [ ] Ekspor laporan Excel / PDF + tombolnya di halaman Laporan.
 - [ ] Filter tambahan di Laporan: per kasir, per kategori.
-- [ ] Cetak langsung ke printer thermal lewat ESC/POS (potong kertas otomatis,
-      tanpa dialog cetak). Tata letak 58 mm sendiri sudah jadi — lihat bagian 4.
+- [ ] Cetak langsung ESC/POS **di PC** (kini baru di ponsel lewat Web Bluetooth
+      — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi
+      tombol yang sama bisa dipakai di sana setelah diuji dengan printer.
 - [ ] Opsi QR / barcode nomor nota di struk.
 - [ ] Log aktivitas / audit (siapa mengubah harga, stok, menghapus).
 - [ ] Soft delete produk (sekarang hard delete).
