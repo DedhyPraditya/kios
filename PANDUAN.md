@@ -161,6 +161,11 @@ Struk dicetak lewat printer thermal **RPP02N** (kertas gulung 58 mm). Tekan
 | Margin | **None** / Tidak ada |
 | Grafik latar | jangan dicentang |
 
+**Kalau RPP02N tidak muncul di daftar printer**, Chrome belum mengenalinya —
+lazim terjadi pada sambungan Bluetooth. Pasang ekstensi Rongta di Chrome, atau
+driver RPP02N di Windows; salah satu saja cukup. Jalur ekstensi sudah diuji dan
+hasilnya benar: lebar pas dan panjang kertas tetap mengikuti panjang struk.
+
 Setelan itu cukup disimpan sekali; peramban mengingatnya untuk cetakan
 berikutnya. Panjang kertas mengikuti panjang struk, jadi tak ada kertas kosong
 yang terbuang.
