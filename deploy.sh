@@ -20,7 +20,20 @@ git checkout -- package-lock.json 2>/dev/null || true
 
 # Pull perubahan dari GitHub
 echo "📥 Pulling dari GitHub..."
+SKRIP_SEBELUM=$(git rev-parse HEAD:deploy.sh 2>/dev/null || true)
 git pull origin main
+SKRIP_SESUDAH=$(git rev-parse HEAD:deploy.sh 2>/dev/null || true)
+
+# Bash membaca skrip sambil menjalankannya, berpatokan pada posisi byte. Kalau
+# `git pull` barusan menimpa deploy.sh, sisa perintah dibaca dari berkas baru
+# di posisi lama — barisnya meleset dan galatnya menunjuk baris yang salah.
+# Karena itu skrip dimuat ulang dari awal begitu dirinya sendiri ikut berubah.
+if [ -n "$SKRIP_SEBELUM" ] && [ "$SKRIP_SEBELUM" != "$SKRIP_SESUDAH" ] \
+   && [ -z "${DEPLOY_DIMUAT_ULANG:-}" ]; then
+    echo "♻️  deploy.sh ikut terbarui — memuat ulang skrip dari awal."
+    export DEPLOY_DIMUAT_ULANG=1
+    exec bash "$0" "$@"
+fi
 
 # Susun .env dari Redis
 # Konfigurasi produksi hanya tinggal di hash Redis `kios_config` supaya ada satu
