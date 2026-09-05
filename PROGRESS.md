@@ -327,11 +327,37 @@ Aplikasi sudah jalan di server sendiri, bukan lagi hanya di Laragon.
 
 | Hal | Isi |
 | --- | --- |
-| Alamat | `kios.madignet.site`, di belakang Cloudflare |
-| Server | VPS aaPanel, aplikasi di `/www/wwwroot/kios` |
+| Alamat | `kios.ndrsolution.my.id`, di belakang Cloudflare |
+| Server | VPS aaPanel, aplikasi di `/www/wwwroot/kios`, docroot `/www/wwwroot/kios/public` |
 | PHP | 8.3, dijalankan sebagai user `www` |
 | Lingkungan | `APP_ENV=production`, `APP_DEBUG=false` |
-| Cara rilis | `bash deploy.sh` di folder aplikasi — pull, composer, build, migrasi, cache, izin akses |
+| Konfigurasi | hash Redis `kios_config`; `.env` disusun ulang tiap rilis |
+| Cara rilis | `bash deploy.sh` di folder aplikasi — pull, .env, composer, build, migrasi, cache, izin akses |
+
+Alamat lama `kios.madignet.site` sudah ditinggalkan; server sekarang berbeda.
+
+### Konfigurasi ada di Redis, bukan di berkas
+
+`.env` produksi **tidak disunting langsung**. Isinya lahir dari hash Redis
+`kios_config`, ditarik `deploy.sh` tiap rilis. Mengubah setelan berarti `HSET`
+lalu deploy ulang:
+
+```sh
+redis-cli HSET kios_config APP_URL "https://kios.ndrsolution.my.id"
+```
+
+Tiga hal yang mudah terlupa:
+
+1. Laravel **tidak** membaca Redis sendiri — `.env` dimuat Dotenv jauh sebelum
+   koneksi Redis siap. Karena itu jalurnya lewat `deploy.sh`, bukan lewat kode.
+2. Vite juga membaca `.env` langsung saat `npm run build`, jadi `VITE_APP_NAME`
+   wajib ikut ada di hash — kalau tidak, nama toko di sisi JS jatuh ke cadangan.
+3. Kalau Redis mati atau sandinya salah, deploy berhenti sebelum menyentuh
+   `.env` yang lama. Situs yang sedang jalan tidak ikut mati.
+
+Kunci yang harus ada di hash: `APP_NAME`, `APP_ENV`, `APP_KEY`, `APP_DEBUG`,
+`APP_URL`, `APP_LOCALE`, `APP_FALLBACK_LOCALE`, `DB_*`, `SESSION_SECURE_COOKIE`,
+`VITE_APP_NAME`. Sisanya memakai bawaan berkas di `config/`.
 
 Dua hal yang pernah menghentikan deploy dan sudah dipagari di `deploy.sh`:
 
