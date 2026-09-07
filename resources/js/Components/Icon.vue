@@ -110,6 +110,14 @@ const icons = {
         ['circle', { cx: 16, cy: 13, r: 1.4 }],
     ],
     check: [['path', { d: 'M5 12.5 10 17 19 7' }]],
+    shield: [
+        ['path', { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' }],
+    ],
+    database: [
+        ['ellipse', { cx: 12, cy: 5, rx: 9, ry: 3 }],
+        ['path', { d: 'M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5' }],
+        ['path', { d: 'M3 12c0 1.66 4 3 9 3s9-1.34 9-3' }],
+    ],
 };
 
 const parts = computed(() => icons[props.name] || []);

@@ -151,6 +151,8 @@ class SaleController extends Controller
 
         $sale->update($data);
 
+        \App\Models\ActivityLog::record('sale.update', "Mengubah keterangan nota {$sale->invoice_no}", $sale, $data);
+
         return back()->with('success', 'Nota diperbarui.');
     }
 
@@ -205,6 +207,12 @@ class SaleController extends Controller
             ])->save();
 
             $this->recordCashOut($request->user(), $cashBack, 'Batal nota '.$sale->invoice_no, $sale);
+
+            \App\Models\ActivityLog::record('sale.void', "Membatalkan nota {$sale->invoice_no} (Alasan: {$data['reason']})", $sale, [
+                'invoice_no' => $sale->invoice_no,
+                'reason' => $data['reason'],
+                'cash_back' => $cashBack,
+            ]);
         });
 
         return back()->with('success', 'Nota dibatalkan dan stok dikembalikan.');
@@ -312,6 +320,13 @@ class SaleController extends Controller
                 $cashFromCredit,
                 'Retur nota '.$sale->invoice_no.' (kelebihan pelunasan)'
             );
+
+            \App\Models\ActivityLog::record('sale.refund', "Retur barang nota {$sale->invoice_no} senilai Rp" . number_format($refundValue, 0, ',', '.') . " (Alasan: {$data['reason']})", $sale, [
+                'invoice_no' => $sale->invoice_no,
+                'reason' => $data['reason'],
+                'refund_value' => $refundValue,
+                'cash_back' => $cashBack + $cashFromCredit,
+            ]);
         });
 
         return back()->with('success', 'Retur dicatat, stok dan nilai nota disesuaikan.');

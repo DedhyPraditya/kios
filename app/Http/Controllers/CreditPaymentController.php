@@ -74,6 +74,14 @@ class CreditPaymentController extends Controller
             }
         });
 
+        $customerName = Customer::find($data['customer_id'])?->name ?? 'Pelanggan';
+        \App\Models\ActivityLog::record('credit.payment', "Menerima pembayaran piutang {$customerName} sebesar Rp" . number_format($data['amount'], 0, ',', '.'), null, [
+            'customer_id' => $data['customer_id'],
+            'customer_name' => $customerName,
+            'amount' => $data['amount'],
+            'note' => $data['note'] ?? null,
+        ]);
+
         return back()->with('success', 'Pembayaran hutang dicatat.');
     }
 }

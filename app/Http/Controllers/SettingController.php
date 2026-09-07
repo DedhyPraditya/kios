@@ -26,6 +26,8 @@ class SettingController extends Controller
 
         Setting::put($data);
 
+        \App\Models\ActivityLog::record('setting.update', "Memperbarui pengaturan dan identitas toko", null, $data);
+
         return back()->with('success', 'Pengaturan toko disimpan.');
     }
 }

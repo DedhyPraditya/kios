@@ -242,6 +242,20 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
 
 - CRUD akun, atur peran, ganti password opsional; tak bisa hapus akun sendiri.
 
+### Log Aktivitas / Audit Trail (`/audit-logs`) — admin
+
+- Pencatatan otomatis operasi sensitif: tambah/ubah/hapus produk (lengkap diff harga modal & jual), barang masuk & penyesuaian stok manual, batal nota & retur barang, penerimaan pembayaran piutang, pengguna, identitas toko, serta pembuatan/pemulihan database.
+- Tabel jejak audit dengan filter kategori, pengguna, tanggal, pencarian, dan modal rincian perubahan data JSON.
+
+### Cadangan Data & Pemulihan (`/backups`) — admin
+
+- Satu-klik pembuatan cadangan database terkompresi `.sql.gz` berbasis PHP murni (PDO) — bekerja mulus di Windows (Laragon) maupun Linux (VPS aaPanel) tanpa butuh binary `mysqldump` eksternal.
+- Unduh berkas cadangan, ringkasan kapasitas & statistik database, serta pemulihan (restore) database terproteksi kata sandi akun admin.
+
+### Panel Notifikasi Lonceng Interaktif
+
+- Dropdown di header desktop dan ponsel (`NotificationDropdown.vue`), merangkum produk stok menipis dan kasbon mendekati/lewat jatuh tempo dalam 3 hari ke depan, lengkap dengan tautan aksi cepat.
+
 ### Dashboard (`/dashboard`)
 
 - 4 kartu metrik: omzet hari ini, transaksi hari ini, jumlah produk, stok menipis.
@@ -422,7 +436,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ## 9. Pengujian
 
-`php artisan test` — **81 lulus** (488 assertion).
+`php artisan test` — **92 lulus** (581 assertion).
 
 - `PosTest`: pencatatan penjualan + pengurangan stok, tolak stok/bayar kurang,
   batas akses kasir.
@@ -430,7 +444,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
   lewat batas kredit / pelanggan diblokir, pelunasan FIFO + auto-lunas, tolak
   bayar melebihi sisa hutang.
 - `PagesSmokeTest`: semua halaman utama (termasuk Riwayat, Barang masuk, Tutup
-  kasir, Pengaturan) + detail pelanggan + detail nota + struk ter-render.
+  kasir, Pengaturan, Log Aktivitas, Cadangan Data) + detail pelanggan + detail nota + struk ter-render.
 - `SaleCorrectionTest`: penjualan menulis jejak stok; batal mengembalikan stok
   & mengeluarkan nota dari laporan; tolak batal ganda; tolak batal nota yang
   sudah dicicil; retur sebagian & retur kasbon; tolak retur melebihi pembelian;
@@ -449,6 +463,9 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
   pelunasan − kas keluar); tutup shift menyimpan selisih; tolak dua shift
   sekaligus; kasir lain tak boleh menutup shift orang; pengaturan toko tersimpan
   & muncul di struk; kasir tak boleh mengubah pengaturan.
+- `NotificationAlertsTest`: alert stok menipis dan kasbon jatuh tempo terhitung akurat untuk admin; kasir tidak menerima alert admin.
+- `ActivityLogTest`: siklus hidup produk, pembatalan nota, dan pelunasan kasbon otomatis mencatat audit trail; otorisasi halaman `/audit-logs`.
+- `DatabaseBackupTest`: pembuatan arsip database .sql.gz, pengunduhan, penghapusan, dan proteksi password pada pemulihan (restore).
 
 ---
 
@@ -481,9 +498,9 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
       — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi
       tombol yang sama bisa dipakai di sana setelah diuji dengan printer.
 - [ ] Opsi QR / barcode nomor nota di struk.
-- [ ] Log aktivitas / audit (siapa mengubah harga, stok, menghapus).
+- [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar).
 - [ ] Soft delete produk (sekarang hard delete).
-- [ ] Backup & restore database.
+- [x] Backup & restore database (satu-klik .sql.gz via PDO + verifikasi password).
 
 ### Tampilan
 
@@ -492,7 +509,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Upload foto produk; impor produk massal (CSV); cetak label barcode.
 - [ ] Dialog konfirmasi hapus yang rapi (kini `confirm()` bawaan browser).
 - [ ] Pencarian global (ikon cari sudah dihapus dari top bar).
-- [ ] Panel notifikasi pada lonceng (kini hanya titik merah + tautan).
+- [x] Panel notifikasi pada lonceng (dropdown interaktif stok menipis & kasbon tempo).
 - [ ] Ringkas angka besar di kartu metrik (mis. `Rp1,2 jt`).
 - [ ] Aksesibilitas: `aria-label` tombol ikon, perangkap fokus modal, urutan tab.
 - [ ] Loading state / skeleton antar halaman.

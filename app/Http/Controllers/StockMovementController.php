@@ -119,6 +119,19 @@ class StockMovementController extends Controller
             }
         });
 
+        $itemCount = count($data['items']);
+        $action = $data['type'] === 'masuk' ? 'stock.in' : 'stock.adjustment';
+        $desc = $data['type'] === 'masuk'
+            ? "Mencatat barang masuk ({$itemCount} item)" . (!empty($data['supplier']) ? " dari {$data['supplier']}" : '')
+            : "Melakukan penyesuaian stok manual ({$itemCount} item)";
+
+        \App\Models\ActivityLog::record($action, $desc, null, [
+            'type' => $data['type'],
+            'items_count' => $itemCount,
+            'supplier' => $data['supplier'] ?? null,
+            'note' => $data['note'] ?? null,
+        ]);
+
         return back()->with('success', 'Pergerakan stok dicatat.');
     }
 }

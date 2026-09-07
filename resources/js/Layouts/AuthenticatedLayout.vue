@@ -4,6 +4,7 @@ import Icon from "@/Components/Icon.vue";
 import AppLogo from "@/Components/AppLogo.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import DropdownLink from "@/Components/DropdownLink.vue";
+import NotificationDropdown from "@/Components/NotificationDropdown.vue";
 import { Link, usePage } from "@inertiajs/vue3";
 
 const page = usePage();
@@ -64,6 +65,8 @@ const navGroups = computed(() => {
                 label: "Kelola",
                 items: [
                     { name: "reports.index", label: "Laporan", icon: "laporan" },
+                    { name: "audit-logs.index", label: "Log Aktivitas", icon: "shield" },
+                    { name: "backups.index", label: "Cadangan Data", icon: "database" },
                     { name: "users.index", label: "Pengguna", icon: "pengguna" },
                     { name: "settings.edit", label: "Pengaturan", icon: "gear" },
                 ],
@@ -225,27 +228,30 @@ const activeLabel = computed(() => {
                         {{ storeName }}
                     </span>
                 </Link>
-                <Dropdown align="right" width="48">
-                    <template #trigger>
-                        <span
-                            class="grid h-8 w-8 place-items-center rounded-full bg-brand text-2xs font-bold text-white"
-                        >
-                            {{ initials }}
-                        </span>
-                    </template>
-                    <template #content>
-                        <DropdownLink :href="route('profile.edit')"
-                            >Profil</DropdownLink
-                        >
-                        <DropdownLink
-                            :href="route('logout')"
-                            method="post"
-                            as="button"
-                        >
-                            Keluar
-                        </DropdownLink>
-                    </template>
-                </Dropdown>
+                <div class="flex items-center gap-2">
+                    <NotificationDropdown v-if="isAdmin" />
+                    <Dropdown align="right" width="48">
+                        <template #trigger>
+                            <span
+                                class="grid h-8 w-8 place-items-center rounded-full bg-brand text-2xs font-bold text-white"
+                            >
+                                {{ initials }}
+                            </span>
+                        </template>
+                        <template #content>
+                            <DropdownLink :href="route('profile.edit')"
+                                >Profil</DropdownLink
+                            >
+                            <DropdownLink
+                                :href="route('logout')"
+                                method="post"
+                                as="button"
+                            >
+                                Keluar
+                            </DropdownLink>
+                        </template>
+                    </Dropdown>
+                </div>
             </header>
 
             <!-- Desktop top bar ( md+ ): menu aktif + lonceng -->
@@ -257,26 +263,7 @@ const activeLabel = computed(() => {
                         activeLabel
                     }}</span>
                 </div>
-                <Link
-                    :href="
-                        isAdmin
-                            ? route('products.index', { low: 1 })
-                            : route('dashboard')
-                    "
-                    class="relative grid h-9 w-9 place-items-center rounded-control text-ink-soft transition-colors hover:bg-paper hover:text-ink"
-                    title="Stok menipis"
-                    :aria-label="
-                        lowStock
-                            ? `Stok menipis: ${lowStock} produk`
-                            : 'Stok menipis'
-                    "
-                >
-                    <Icon name="bell" :size="19" />
-                    <span
-                        v-if="lowStock"
-                        class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger ring-2 ring-surface"
-                    />
-                </Link>
+                <NotificationDropdown v-if="isAdmin" />
             </header>
 
             <div class="mx-auto w-full max-w-canvas flex-1">

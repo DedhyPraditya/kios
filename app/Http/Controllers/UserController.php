@@ -28,7 +28,9 @@ class UserController extends Controller
         ]);
 
         $data['password'] = Hash::make($data['password']);
-        User::create($data);
+        $newUser = User::create($data);
+
+        \App\Models\ActivityLog::record('user.create', "Menambahkan pengguna '{$newUser->name}' (Peran: {$newUser->role})", $newUser);
 
         return back()->with('success', 'Pengguna ditambahkan.');
     }
@@ -50,6 +52,8 @@ class UserController extends Controller
 
         $user->update($data);
 
+        \App\Models\ActivityLog::record('user.update', "Memperbarui akun pengguna '{$user->name}'", $user);
+
         return back()->with('success', 'Pengguna diperbarui.');
     }
 
@@ -59,7 +63,11 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Tidak bisa menghapus akun sendiri.']);
         }
 
+        $userName = $user->name;
+        $userId = $user->id;
         $user->delete();
+
+        \App\Models\ActivityLog::record('user.delete', "Menghapus akun pengguna '{$userName}'", null, ['id' => $userId, 'name' => $userName]);
 
         return back()->with('success', 'Pengguna dihapus.');
     }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CashSessionController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CreditPaymentController;
@@ -60,6 +62,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pengaturan', [SettingController::class, 'edit'])->name('settings.edit');
         Route::patch('/pengaturan', [SettingController::class, 'update'])->name('settings.update');
         Route::get('/piutang', [ReceivableController::class, 'index'])->name('piutang.index');
+
+        // Log aktivitas audit
+        Route::get('/audit-logs', [ActivityLogController::class, 'index'])->name('audit-logs.index');
+
+        // Cadangan dan pemulihan data
+        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
+        Route::get('/backups/{filename}/download', [BackupController::class, 'download'])->name('backups.download');
+        Route::delete('/backups/{filename}', [BackupController::class, 'destroy'])->name('backups.destroy');
+        Route::post('/backups/restore', [BackupController::class, 'restore'])->name('backups.restore');
     });
 });
 

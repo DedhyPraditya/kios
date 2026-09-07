@@ -49,22 +49,43 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
-        Product::create($data);
+        $product = Product::create($data);
+
+        \App\Models\ActivityLog::record('product.create', "Menambahkan produk '{$product->name}'", $product, $data);
 
         return back()->with('success', 'Produk ditambahkan.');
     }
 
     public function update(Request $request, Product $product)
     {
+        $oldData = $product->only(['name', 'price', 'cost', 'stock', 'low_stock', 'is_active']);
         $data = $this->validated($request, $product);
         $product->update($data);
+
+        $changes = [];
+        foreach (['name', 'price', 'cost', 'stock', 'low_stock', 'is_active'] as $k) {
+            if (($oldData[$k] ?? null) != ($data[$k] ?? null)) {
+                $changes[$k] = ['before' => $oldData[$k] ?? null, 'after' => $data[$k] ?? null];
+            }
+        }
+
+        $desc = "Memperbarui produk '{$product->name}'";
+        if (isset($changes['price'])) {
+            $desc .= " (Harga: Rp" . number_format($oldData['price'], 0, ',', '.') . " → Rp" . number_format($data['price'], 0, ',', '.') . ")";
+        }
+
+        \App\Models\ActivityLog::record('product.update', $desc, $product, $changes);
 
         return back()->with('success', 'Produk diperbarui.');
     }
 
     public function destroy(Product $product)
     {
+        $name = $product->name;
+        $id = $product->id;
         $product->delete();
+
+        \App\Models\ActivityLog::record('product.delete', "Menghapus produk '{$name}'", null, ['id' => $id, 'name' => $name]);
 
         return back()->with('success', 'Produk dihapus.');
     }

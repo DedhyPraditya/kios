@@ -34,6 +34,8 @@ class PagesSmokeTest extends TestCase
             'stock.index' => 'Stock/Index',
             'shift.index' => 'Shift/Index',
             'settings.edit' => 'Settings/Index',
+            'audit-logs.index' => 'ActivityLog/Index',
+            'backups.index' => 'Backup/Index',
         ];
 
         foreach ($map as $name => $component) {
