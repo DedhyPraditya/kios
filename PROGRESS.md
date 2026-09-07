@@ -252,9 +252,13 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
 - Satu-klik pembuatan cadangan database terkompresi `.sql.gz` berbasis PHP murni (PDO) — bekerja mulus di Windows (Laragon) maupun Linux (VPS aaPanel) tanpa butuh binary `mysqldump` eksternal.
 - Unduh berkas cadangan, ringkasan kapasitas & statistik database, serta pemulihan (restore) database terproteksi kata sandi akun admin.
 
-### Panel Notifikasi Lonceng Interaktif
+### Panel Notifikasi Lonceng Interaktif & Tandai Dibaca
 
 - Dropdown di header desktop dan ponsel (`NotificationDropdown.vue`), merangkum produk stok menipis dan kasbon mendekati/lewat jatuh tempo dalam 3 hari ke depan, lengkap dengan tautan aksi cepat.
+- **Tandai dibaca / Dismiss (Opsi 2)**:
+  - Tombol centang per baris untuk menyembunyikan notifikasi produk tertentu atau nota kasbon tertentu.
+  - Tombol "Tandai Semua Dibaca" di header dropdown untuk membersihkan semua notifikasi seketika.
+  - **Smart re-alerting**: Tersimpan di tabel `dismissed_alerts`. Jika admin membaca/menandai notifikasi saat stok 3, notifikasi hilang. Namun bila terjadi penjualan baru yang membuat stok berkurang lagi (misal menjadi 2 atau 1), notifikasi otomatis muncul kembali tanpa mengganggu ketenangan admin saat stok tidak berubah.
 
 ### Dashboard (`/dashboard`)
 
@@ -436,7 +440,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ## 9. Pengujian
 
-`php artisan test` — **92 lulus** (581 assertion).
+`php artisan test` — **95 lulus** (658 assertion).
 
 - `PosTest`: pencatatan penjualan + pengurangan stok, tolak stok/bayar kurang,
   batas akses kasir.
@@ -463,7 +467,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
   pelunasan − kas keluar); tutup shift menyimpan selisih; tolak dua shift
   sekaligus; kasir lain tak boleh menutup shift orang; pengaturan toko tersimpan
   & muncul di struk; kasir tak boleh mengubah pengaturan.
-- `NotificationAlertsTest`: alert stok menipis dan kasbon jatuh tempo terhitung akurat untuk admin; kasir tidak menerima alert admin.
+- `NotificationAlertsTest`: alert stok menipis dan kasbon jatuh tempo terhitung akurat untuk admin; kasir tidak menerima alert admin; tandai notifikasi dibaca per produk/piutang; fitur tandai semua dibaca; smart re-alerting otomatis saat stok turun lebih parah.
 - `ActivityLogTest`: siklus hidup produk, pembatalan nota, dan pelunasan kasbon otomatis mencatat audit trail; otorisasi halaman `/audit-logs`.
 - `DatabaseBackupTest`: pembuatan arsip database .sql.gz, pengunduhan, penghapusan, dan proteksi password pada pemulihan (restore).
 
