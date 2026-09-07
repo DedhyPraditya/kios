@@ -24,7 +24,7 @@ function applyFilter() {
             {
                 search: q.search || undefined,
             },
-            { preserveState: true, replace: true }
+            { preserveState: true, replace: true },
         );
     }, 250);
 }
@@ -65,50 +65,6 @@ function getBadgeColor(type) {
                 subtitle="Catatan riwayat rilis, fitur baru, dan penyempurnaan sistem Kios BERKAH."
             />
 
-            <!-- System Info Cards -->
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                <div class="card p-3.5 sm:p-4">
-                    <p class="text-2xs font-bold uppercase tracking-wider text-ink-faint">Versi Rilis Saat Ini</p>
-                    <div class="mt-1 flex items-baseline gap-2">
-                        <span class="text-headline-sm font-bold text-ink num">
-                            v{{ system.latest_version }}
-                        </span>
-                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-wash text-brand-ink border border-brand/30">
-                            Aktif
-                        </span>
-                    </div>
-                    <p class="text-2xs text-ink-soft mt-0.5">Kios BERKAH POS</p>
-                </div>
-
-                <div class="card p-3.5 sm:p-4">
-                    <p class="text-2xs font-bold uppercase tracking-wider text-ink-faint">Lingkungan / Basis Data</p>
-                    <p class="mt-1 text-headline-sm font-bold text-ink capitalize">
-                        {{ system.app_env }}
-                    </p>
-                    <p class="text-2xs text-ink-soft mt-0.5 uppercase">
-                        Driver: {{ system.db_driver }}
-                    </p>
-                </div>
-
-                <div class="card p-3.5 sm:p-4">
-                    <p class="text-2xs font-bold uppercase tracking-wider text-ink-faint">Kerangka Kerja</p>
-                    <p class="mt-1 text-headline-sm font-bold text-ink num">
-                        Laravel {{ system.laravel_version }}
-                    </p>
-                    <p class="text-2xs text-ink-soft mt-0.5">
-                        PHP {{ system.php_version }}
-                    </p>
-                </div>
-
-                <div class="card p-3.5 sm:p-4">
-                    <p class="text-2xs font-bold uppercase tracking-wider text-ink-faint">Riwayat Rilis</p>
-                    <p class="mt-1 text-headline-sm font-bold text-ink num">
-                        {{ system.total_releases }} Rilis
-                    </p>
-                    <p class="text-2xs text-ink-soft mt-0.5">Mulai 07 Sep 2026</p>
-                </div>
-            </div>
-
             <!-- Search & Filter Bar -->
             <div class="card p-3 sm:p-4">
                 <div class="flex flex-wrap items-center gap-3">
@@ -146,13 +102,24 @@ function getBadgeColor(type) {
                     class="card overflow-hidden transition-shadow hover:shadow-md"
                 >
                     <!-- Release Header -->
-                    <div class="border-b border-line bg-paper/60 px-4 py-3.5 sm:px-6 flex flex-wrap items-center justify-between gap-2">
+                    <div
+                        class="border-b border-line bg-paper/60 px-4 py-3.5 sm:px-6 flex flex-wrap items-center justify-between gap-2"
+                    >
                         <div class="flex items-center gap-2.5">
-                            <span class="inline-flex items-center rounded-control px-2.5 py-1 text-xs font-bold num tracking-wide"
-                                  :class="index === 0 ? 'bg-brand text-white' : 'bg-line text-ink'">
+                            <span
+                                class="inline-flex items-center rounded-control px-2.5 py-1 text-xs font-bold num tracking-wide"
+                                :class="
+                                    index === 0
+                                        ? 'bg-brand text-white'
+                                        : 'bg-line text-ink'
+                                "
+                            >
                                 v{{ release.version }}
                             </span>
-                            <span v-if="index === 0" class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-wash text-brand-ink border border-brand/30">
+                            <span
+                                v-if="index === 0"
+                                class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-wash text-brand-ink border border-brand/30"
+                            >
                                 Versi Terbaru
                             </span>
                             <h3 class="text-body-lg font-bold text-ink">
@@ -160,8 +127,14 @@ function getBadgeColor(type) {
                             </h3>
                         </div>
 
-                        <div class="flex items-center gap-2 text-xs text-ink-soft">
-                            <Icon name="clock" :size="14" class="text-ink-faint" />
+                        <div
+                            class="flex items-center gap-2 text-xs text-ink-soft"
+                        >
+                            <Icon
+                                name="clock"
+                                :size="14"
+                                class="text-ink-faint"
+                            />
                             <span class="num">{{ release.date_human }}</span>
                             <span class="text-ink-faint">•</span>
                             <span>{{ release.author }}</span>
@@ -175,7 +148,9 @@ function getBadgeColor(type) {
                         </p>
 
                         <!-- Items List -->
-                        <div class="divide-y divide-line rounded-control border border-line bg-surface overflow-hidden">
+                        <div
+                            class="divide-y divide-line rounded-control border border-line bg-surface overflow-hidden"
+                        >
                             <div
                                 v-for="(change, ci) in release.changes"
                                 :key="ci"
@@ -193,7 +168,9 @@ function getBadgeColor(type) {
                                     <h4 class="text-sm font-bold text-ink">
                                         {{ change.title }}
                                     </h4>
-                                    <p class="text-xs text-ink-soft mt-0.5 leading-relaxed">
+                                    <p
+                                        class="text-xs text-ink-soft mt-0.5 leading-relaxed"
+                                    >
                                         {{ change.description }}
                                     </p>
                                 </div>
@@ -203,12 +180,23 @@ function getBadgeColor(type) {
                 </div>
 
                 <!-- Empty State -->
-                <div v-if="logs.length === 0" class="card py-12 px-4 text-center text-ink-soft">
-                    <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-paper text-ink-faint">
+                <div
+                    v-if="logs.length === 0"
+                    class="card py-12 px-4 text-center text-ink-soft"
+                >
+                    <div
+                        class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-paper text-ink-faint"
+                    >
                         <Icon name="history" :size="24" />
                     </div>
-                    <p class="text-body-md font-semibold text-ink">Tidak Ada Catatan yang Cocok</p>
-                    <p class="text-xs text-ink-soft mt-1">Tidak ditemukan pembaruan dengan kata kunci "{{ q.search }}".</p>
+                    <p class="text-body-md font-semibold text-ink">
+                        Tidak Ada Catatan yang Cocok
+                    </p>
+                    <p class="text-xs text-ink-soft mt-1">
+                        Tidak ditemukan pembaruan dengan kata kunci "{{
+                            q.search
+                        }}".
+                    </p>
                     <button
                         type="button"
                         class="btn-outline mt-4 px-3 py-1.5 text-xs"
