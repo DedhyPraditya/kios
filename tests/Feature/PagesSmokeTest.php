@@ -36,6 +36,7 @@ class PagesSmokeTest extends TestCase
             'settings.edit' => 'Settings/Index',
             'audit-logs.index' => 'ActivityLog/Index',
             'backups.index' => 'Backup/Index',
+            'app-logs.index' => 'AppLog/Index',
         ];
 
         foreach ($map as $name => $component) {

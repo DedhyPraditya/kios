@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AppLogController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CashSessionController;
 use App\Http\Controllers\CategoryController;
@@ -68,6 +69,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Log aktivitas audit
         Route::get('/audit-logs', [ActivityLogController::class, 'index'])->name('audit-logs.index');
+
+        // Log pembaruan aplikasi
+        Route::get('/app-logs', [AppLogController::class, 'index'])->name('app-logs.index');
 
         // Cadangan dan pemulihan data
         Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');

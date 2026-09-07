@@ -260,6 +260,13 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
   - Tombol "Tandai Semua Dibaca" di header dropdown untuk membersihkan semua notifikasi seketika.
   - **Smart re-alerting**: Tersimpan di tabel `dismissed_alerts`. Jika admin membaca/menandai notifikasi saat stok 3, notifikasi hilang. Namun bila terjadi penjualan baru yang membuat stok berkurang lagi (misal menjadi 2 atau 1), notifikasi otomatis muncul kembali tanpa mengganggu ketenangan admin saat stok tidak berubah.
 
+### Log Aplikasi & Riwayat Pembaruan Sistem (`/app-logs`) — admin
+
+- Halaman timeline pembaruan sistem dan rilis versi aplikasi yang selalu diperbarui mulai 7 September 2026 dan seterusnya.
+- Kartu metrik sistem: versi rilis aktif, lingkungan (`local`/`production`), driver basis data, versi Laravel & PHP, serta total riwayat rilis.
+- Catatan rilis terstruktur per versi dengan kategori warna (*Fitur Baru*, *Penyempurnaan UI/UX*, *Keamanan & Sistem*, *Perbaikan Bug*, *Dokumentasi*), lengkap dengan ringkasan perubahan dan pencarian filter kata kunci.
+- **Kebijakan Sinkronisasi**: Setiap pembaruan atau perbaikan kode pada Kios BERKAH mulai hari ini dan seterusnya wajib dicatat pada `app/Support/Changelog.php` dan diperbarui di `PROGRESS.md`.
+
 ### Dashboard (`/dashboard`)
 
 - 4 kartu metrik: omzet hari ini, transaksi hari ini, jumlah produk, stok menipis.
@@ -440,7 +447,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ## 9. Pengujian
 
-`php artisan test` — **95 lulus** (658 assertion).
+`php artisan test` — **98 lulus** (689 assertion).
 
 - `PosTest`: pencatatan penjualan + pengurangan stok, tolak stok/bayar kurang,
   batas akses kasir.
@@ -448,7 +455,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
   lewat batas kredit / pelanggan diblokir, pelunasan FIFO + auto-lunas, tolak
   bayar melebihi sisa hutang.
 - `PagesSmokeTest`: semua halaman utama (termasuk Riwayat, Barang masuk, Tutup
-  kasir, Pengaturan, Log Aktivitas, Cadangan Data) + detail pelanggan + detail nota + struk ter-render.
+  kasir, Pengaturan, Log Aktivitas, Cadangan Data, Log Aplikasi) + detail pelanggan + detail nota + struk ter-render.
 - `SaleCorrectionTest`: penjualan menulis jejak stok; batal mengembalikan stok
   & mengeluarkan nota dari laporan; tolak batal ganda; tolak batal nota yang
   sudah dicicil; retur sebagian & retur kasbon; tolak retur melebihi pembelian;
@@ -470,6 +477,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - `NotificationAlertsTest`: alert stok menipis dan kasbon jatuh tempo terhitung akurat untuk admin; kasir tidak menerima alert admin; tandai notifikasi dibaca per produk/piutang; fitur tandai semua dibaca; smart re-alerting otomatis saat stok turun lebih parah.
 - `ActivityLogTest`: siklus hidup produk, pembatalan nota, dan pelunasan kasbon otomatis mencatat audit trail; otorisasi halaman `/audit-logs`.
 - `DatabaseBackupTest`: pembuatan arsip database .sql.gz, pengunduhan, penghapusan, dan proteksi password pada pemulihan (restore).
+- `AppLogTest`: hak akses admin ke menu Log Aplikasi, proteksi kasir, dan fitur pencarian rilis pembaruan.
 
 ---
 
