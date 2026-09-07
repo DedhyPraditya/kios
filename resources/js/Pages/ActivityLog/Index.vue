@@ -111,81 +111,96 @@ function getActionLabel(action) {
             />
 
             <!-- Filter Toolbar -->
-            <div class="card p-4 space-y-3">
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div class="card p-3 sm:p-4">
+                <div class="flex flex-wrap items-center gap-3">
                     <!-- Search Input -->
-                    <div class="lg:col-span-2">
-                        <label class="label text-2xs uppercase text-ink-faint">Cari Deskripsi / Pengguna</label>
-                        <div class="relative mt-1">
-                            <input
-                                v-model="q.search"
-                                type="text"
-                                class="field w-full pl-9 text-body-md"
-                                placeholder="Cari aktivitas..."
-                            />
-                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-ink-faint">
-                                <Icon name="search" :size="16" />
-                            </div>
-                        </div>
-                    </div>
+                    <label class="relative min-w-56 flex-1">
+                        <span class="sr-only">Cari deskripsi atau pengguna</span>
+                        <Icon
+                            name="search"
+                            :size="16"
+                            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
+                        />
+                        <input
+                            v-model="q.search"
+                            type="search"
+                            placeholder="Cari deskripsi, pengguna..."
+                            class="field w-full py-2.5 pl-9 pr-3 text-sm"
+                        />
+                    </label>
 
                     <!-- Category Filter -->
-                    <div>
-                        <label class="label text-2xs uppercase text-ink-faint">Kategori Aksi</label>
-                        <select v-model="q.category" class="field mt-1 w-full text-body-md">
-                            <option v-for="(label, key) in categories" :key="key" :value="key">
-                                {{ label }}
-                            </option>
-                        </select>
-                    </div>
+                    <select
+                        v-model="q.category"
+                        aria-label="Kategori aksi"
+                        class="field w-full sm:w-44 py-2.5 text-sm"
+                    >
+                        <option v-for="(label, key) in categories" :key="key" :value="key">
+                            {{ label }}
+                        </option>
+                    </select>
 
                     <!-- User Filter -->
-                    <div>
-                        <label class="label text-2xs uppercase text-ink-faint">Pengguna</label>
-                        <select v-model="q.user_id" class="field mt-1 w-full text-body-md">
-                            <option value="">Semua Pengguna</option>
-                            <option v-for="user in users" :key="user.id" :value="user.id">
-                                {{ user.name }}
-                            </option>
-                        </select>
+                    <select
+                        v-model="q.user_id"
+                        aria-label="Pengguna"
+                        class="field w-full sm:w-44 py-2.5 text-sm"
+                    >
+                        <option value="">Semua Pengguna</option>
+                        <option v-for="user in users" :key="user.id" :value="user.id">
+                            {{ user.name }}
+                        </option>
+                    </select>
+
+                    <!-- Unified Date Range -->
+                    <div
+                        class="flex w-full items-stretch overflow-hidden rounded-control border border-line bg-surface focus-within:border-brand sm:w-auto"
+                    >
+                        <span class="flex shrink-0 items-center pl-3 pr-2 text-label-caps uppercase text-ink-soft">
+                            Dari
+                        </span>
+                        <input
+                            v-model="q.start_date"
+                            type="date"
+                            aria-label="Mulai tanggal"
+                            class="num w-full min-w-0 border-0 bg-transparent py-2.5 pl-0 pr-2 text-sm text-ink focus:outline-none focus:ring-0 sm:w-auto"
+                        />
+                        <span class="w-px self-stretch bg-line" aria-hidden="true"></span>
+                        <span class="flex shrink-0 items-center pl-3 pr-2 text-label-caps uppercase text-ink-soft">
+                            Sampai
+                        </span>
+                        <input
+                            v-model="q.end_date"
+                            type="date"
+                            aria-label="Sampai tanggal"
+                            class="num w-full min-w-0 border-0 bg-transparent py-2.5 pl-0 pr-2 text-sm text-ink focus:outline-none focus:ring-0 sm:w-auto"
+                        />
                     </div>
 
-                    <!-- Date Range -->
-                    <div class="flex items-end gap-2">
-                        <div class="flex-1">
-                            <label class="label text-2xs uppercase text-ink-faint">Mulai Tgl</label>
-                            <input v-model="q.start_date" type="date" class="field mt-1 w-full text-xs" />
-                        </div>
-                        <div class="flex-1">
-                            <label class="label text-2xs uppercase text-ink-faint">S/D Tgl</label>
-                            <input v-model="q.end_date" type="date" class="field mt-1 w-full text-xs" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Reset -->
-                <div v-if="q.search || q.category !== 'semua' || q.user_id || q.start_date || q.end_date" class="flex justify-end pt-1">
+                    <!-- Quick Reset -->
                     <button
+                        v-if="q.search || q.category !== 'semua' || q.user_id || q.start_date || q.end_date"
                         type="button"
-                        class="text-xs font-semibold text-danger hover:underline inline-flex items-center gap-1"
+                        class="btn-ghost py-2.5 px-3 text-xs text-danger hover:text-danger"
                         @click="resetFilters"
                     >
-                        <span>&times;</span> Reset Semua Filter
+                        Bersihkan
                     </button>
                 </div>
             </div>
+
 
             <!-- Table Card -->
             <div class="card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-body-md">
-                        <thead class="th bg-paper border-b border-line text-2xs uppercase text-ink-faint tracking-wider">
-                            <tr>
-                                <th class="py-3 px-4">Waktu</th>
-                                <th class="py-3 px-4">Pengguna</th>
-                                <th class="py-3 px-4">Aksi</th>
-                                <th class="py-3 px-4">Keterangan</th>
-                                <th class="py-3 px-4 text-right">Rincian</th>
+                        <thead>
+                            <tr class="border-b border-line">
+                                <th class="th">Waktu</th>
+                                <th class="th">Pengguna</th>
+                                <th class="th">Aksi</th>
+                                <th class="th">Keterangan</th>
+                                <th class="th text-right">Rincian</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
@@ -194,7 +209,7 @@ function getActionLabel(action) {
                                 :key="log.id"
                                 class="row-hover transition-colors"
                             >
-                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                <td class="td whitespace-nowrap">
                                     <span class="block text-xs font-medium text-ink num">
                                         {{ log.created_at }}
                                     </span>
@@ -202,7 +217,7 @@ function getActionLabel(action) {
                                         {{ log.created_at_human }}
                                     </span>
                                 </td>
-                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                <td class="td whitespace-nowrap">
                                     <span class="block font-semibold text-ink">
                                         {{ log.user.name }}
                                     </span>
@@ -210,7 +225,7 @@ function getActionLabel(action) {
                                         {{ log.user.role }}
                                     </span>
                                 </td>
-                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                <td class="td whitespace-nowrap">
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded text-2xs font-semibold border"
                                         :class="getActionBadge(log.action)"
@@ -218,7 +233,7 @@ function getActionLabel(action) {
                                         {{ getActionLabel(log.action) }}
                                     </span>
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="td">
                                     <p class="text-ink font-medium max-w-xl line-clamp-2">
                                         {{ log.description }}
                                     </p>
@@ -226,7 +241,7 @@ function getActionLabel(action) {
                                         IP: {{ log.ip_address }}
                                     </p>
                                 </td>
-                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                <td class="td text-right whitespace-nowrap">
                                     <button
                                         v-if="log.properties"
                                         type="button"
@@ -238,6 +253,7 @@ function getActionLabel(action) {
                                     <span v-else class="text-2xs text-ink-faint">—</span>
                                 </td>
                             </tr>
+
 
                             <tr v-if="logs.data.length === 0">
                                 <td colspan="5" class="py-12 px-4 text-center text-ink-soft">
