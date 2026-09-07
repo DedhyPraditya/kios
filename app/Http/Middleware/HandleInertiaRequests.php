@@ -42,39 +42,68 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'store' => fn () => Setting::values(),
-            'alerts' => fn () => $request->user()?->isAdmin() ? [
-                'lowStockCount' => Product::whereColumn('stock', '<=', 'low_stock')->count(),
-                'lowStockItems' => Product::whereColumn('stock', '<=', 'low_stock')
-                    ->select(['id', 'name', 'stock', 'low_stock'])
-                    ->orderBy('stock', 'asc')
-                    ->limit(5)
-                    ->get(),
-                'dueDebtsCount' => \App\Models\Sale::unpaid()
+            'alerts' => function () use ($request) {
+                $user = $request->user();
+                if (! $user?->isAdmin()) {
+                    return null;
+                }
+
+                $userId = $user->id;
+
+                // Query produk stok menipis (abaikan yang sudah ditandai dibaca kecuali stok turun lebih parah)
+                $lowStockQuery = Product::whereColumn('stock', '<=', 'low_stock')
+                    ->whereNotExists(function ($query) use ($userId) {
+                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('dismissed_alerts')
+                            ->where('dismissed_alerts.user_id', $userId)
+                            ->where('dismissed_alerts.type', 'product_stock')
+                            ->whereColumn('dismissed_alerts.alertable_id', 'products.id')
+                            ->whereColumn('dismissed_alerts.last_value', '<=', 'products.stock');
+                    });
+
+                // Query kasbon jatuh tempo (abaikan yang sudah ditandai dibaca)
+                $dueDebtsQuery = \App\Models\Sale::unpaid()
                     ->whereNotNull('due_date')
                     ->where('due_date', '<=', now()->addDays(3)->toDateString())
-                    ->count(),
-                'dueDebtsItems' => \App\Models\Sale::unpaid()
-                    ->with('customer:id,name')
-                    ->whereNotNull('due_date')
-                    ->where('due_date', '<=', now()->addDays(3)->toDateString())
-                    ->orderBy('due_date', 'asc')
-                    ->limit(5)
-                    ->get()
-                    ->map(function ($sale) {
-                        return [
-                            'id' => $sale->id,
-                            'invoice_no' => $sale->invoice_no,
-                            'customer_name' => $sale->customer?->name ?? 'Tanpa nama',
-                            'customer_id' => $sale->customer_id,
-                            'due_date' => $sale->due_date?->format('d/m/Y'),
-                            'outstanding' => $sale->outstanding(),
-                            'is_overdue' => $sale->due_date?->isPast() && !$sale->due_date?->isToday(),
-                        ];
-                    }),
-                'total' => Product::whereColumn('stock', '<=', 'low_stock')->count()
-                    + \App\Models\Sale::unpaid()->whereNotNull('due_date')->where('due_date', '<=', now()->addDays(3)->toDateString())->count(),
-                'lowStock' => Product::whereColumn('stock', '<=', 'low_stock')->count(),
-            ] : null,
+                    ->whereNotExists(function ($query) use ($userId) {
+                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('dismissed_alerts')
+                            ->where('dismissed_alerts.user_id', $userId)
+                            ->where('dismissed_alerts.type', 'sale_due')
+                            ->whereColumn('dismissed_alerts.alertable_id', 'sales.id');
+                    });
+
+                $lowStockCount = (clone $lowStockQuery)->count();
+                $dueDebtsCount = (clone $dueDebtsQuery)->count();
+
+                return [
+                    'lowStockCount' => $lowStockCount,
+                    'lowStockItems' => $lowStockQuery
+                        ->select(['id', 'name', 'stock', 'low_stock'])
+                        ->orderBy('stock', 'asc')
+                        ->limit(5)
+                        ->get(),
+                    'dueDebtsCount' => $dueDebtsCount,
+                    'dueDebtsItems' => $dueDebtsQuery
+                        ->with('customer:id,name')
+                        ->orderBy('due_date', 'asc')
+                        ->limit(5)
+                        ->get()
+                        ->map(function ($sale) {
+                            return [
+                                'id' => $sale->id,
+                                'invoice_no' => $sale->invoice_no,
+                                'customer_name' => $sale->customer?->name ?? 'Tanpa nama',
+                                'customer_id' => $sale->customer_id,
+                                'due_date' => $sale->due_date?->format('d/m/Y'),
+                                'outstanding' => $sale->outstanding(),
+                                'is_overdue' => $sale->due_date?->isPast() && ! $sale->due_date?->isToday(),
+                            ];
+                        }),
+                    'total' => $lowStockCount + $dueDebtsCount,
+                    'lowStock' => $lowStockCount,
+                ];
+            },
         ];
     }
 }

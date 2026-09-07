@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from "vue";
-import { Link, usePage } from "@inertiajs/vue3";
+import { Link, router, usePage } from "@inertiajs/vue3";
 import Icon from "@/Components/Icon.vue";
 import { rupiah } from "@/lib/format";
 
@@ -31,6 +31,22 @@ function closeOnEscape(e) {
     if (open.value && e.key === "Escape") {
         close();
     }
+}
+
+function dismissAlert(type, id, value = null) {
+    router.post(
+        route("alerts.dismiss"),
+        { type, id, value },
+        { preserveScroll: true }
+    );
+}
+
+function dismissAll() {
+    router.post(
+        route("alerts.dismiss"),
+        { dismiss_all: true },
+        { preserveScroll: true }
+    );
 }
 
 onMounted(() => document.addEventListener("keydown", closeOnEscape));
@@ -88,13 +104,24 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                             {{ totalCount }} baru
                         </span>
                     </div>
-                    <button
-                        type="button"
-                        class="text-ink-faint hover:text-ink text-xs transition-colors"
-                        @click="close"
-                    >
-                        Tutup
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button
+                            v-if="totalCount > 0"
+                            type="button"
+                            class="text-brand hover:underline text-2xs font-semibold"
+                            title="Tandai semua notifikasi saat ini sudah dibaca"
+                            @click="dismissAll"
+                        >
+                            Tandai Semua Dibaca
+                        </button>
+                        <button
+                            type="button"
+                            class="text-ink-faint hover:text-ink text-xs transition-colors"
+                            @click="close"
+                        >
+                            Tutup
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Tabs -->
@@ -164,7 +191,7 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                                 Batas minimum: <span class="num font-semibold">{{ item.low_stock }}</span>
                             </p>
                         </div>
-                        <div class="text-right shrink-0">
+                        <div class="flex items-center gap-2 text-right shrink-0">
                             <span
                                 class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold num"
                                 :class="
@@ -175,6 +202,14 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                             >
                                 Sisa {{ item.stock }}
                             </span>
+                            <button
+                                type="button"
+                                class="grid h-7 w-7 place-items-center rounded-full text-ink-faint hover:bg-brand-wash hover:text-brand transition-colors"
+                                title="Tandai sudah dibaca"
+                                @click.stop="dismissAlert('product_stock', item.id, item.stock)"
+                            >
+                                <Icon name="check" :size="15" />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -212,10 +247,18 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                                 Nota: <span class="num">{{ debt.invoice_no }}</span> • Tempo: {{ debt.due_date }}
                             </p>
                         </div>
-                        <div class="text-right shrink-0">
+                        <div class="flex items-center gap-2 text-right shrink-0">
                             <span class="block text-body-md font-bold text-danger num">
                                 {{ rupiah(debt.outstanding) }}
                             </span>
+                            <button
+                                type="button"
+                                class="grid h-7 w-7 place-items-center rounded-full text-ink-faint hover:bg-brand-wash hover:text-brand transition-colors"
+                                title="Tandai sudah dibaca"
+                                @click.stop="dismissAlert('sale_due', debt.id)"
+                            >
+                                <Icon name="check" :size="15" />
+                            </button>
                         </div>
                     </div>
                 </div>
