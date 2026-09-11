@@ -199,7 +199,7 @@ function resetFilter() {
                                     v-if="item.type === 'beli'"
                                     class="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-800"
                                 >
-                                    Kulak / Beli
+                                    Beli (Masuk)
                                 </span>
                                 <span
                                     v-else

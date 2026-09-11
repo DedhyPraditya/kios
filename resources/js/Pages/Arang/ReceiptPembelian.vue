@@ -97,7 +97,7 @@ function cetak() {
                         {{ store.store_phone }}
                     </div>
                     <div class="mt-2 text-2xs uppercase tracking-widest font-bold border-y border-line py-1 text-ink">
-                        TANDA TERIMA KULAK ARANG
+                        NOTA PEMBELIAN ARANG
                     </div>
                 </div>
 
@@ -201,7 +201,7 @@ function cetak() {
                         :href="route('arang.beli.create')"
                         class="btn-secondary flex-1 text-center py-2 text-xs font-medium"
                     >
-                        + Kulak Lagi
+                        + Beli Lagi
                     </Link>
                     <Link
                         :href="route('arang.index')"

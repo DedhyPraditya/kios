@@ -196,7 +196,7 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
                             :href="route('arang.beli.create', { jenis_id: item.id })"
                             class="btn-secondary flex-1 text-center py-1.5 text-xs"
                         >
-                            Kulak / Beli
+                            Beli Arang
                         </Link>
                     </div>
                 </div>

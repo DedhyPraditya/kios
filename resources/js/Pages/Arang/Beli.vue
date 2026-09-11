@@ -52,7 +52,7 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Kulak / Beli Arang" />
+    <Head title="Beli Arang" />
 
     <AuthenticatedLayout>
         <PageHeader

@@ -288,7 +288,7 @@ export function notaPembelianArangEscPos(pembelian, store) {
     if (store.store_phone) p.baris(store.store_phone);
 
     p.baris();
-    p.tebal(true).baris("TANDA TERIMA KULAK ARANG").tebal(false);
+    p.tebal(true).baris("NOTA PEMBELIAN ARANG").tebal(false);
 
     p.kiri();
     p.garis();
