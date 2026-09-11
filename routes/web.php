@@ -64,7 +64,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Identitas toko untuk struk & tampilan.
         Route::get('/pengaturan', [SettingController::class, 'edit'])->name('settings.edit');
-        Route::patch('/pengaturan', [SettingController::class, 'update'])->name('settings.update');
+        Route::match(['patch', 'post'], '/pengaturan', [SettingController::class, 'update'])->name('settings.update');
         Route::get('/piutang', [ReceivableController::class, 'index'])->name('piutang.index');
 
         // Log aktivitas audit

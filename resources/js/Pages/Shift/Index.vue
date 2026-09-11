@@ -188,6 +188,10 @@ function submitClose() {
                             <dt class="text-ink-soft">Penjualan tunai</dt>
                             <dd class="num">{{ rupiah(current.sales_tunai) }}</dd>
                         </div>
+                        <div v-if="current.sales_qris" class="flex justify-between">
+                            <dt class="text-ink-soft">Penjualan QRIS (non-tunai)</dt>
+                            <dd class="num text-brand-ink">{{ rupiah(current.sales_qris) }}</dd>
+                        </div>
                         <div class="flex justify-between">
                             <dt class="text-ink-soft">DP kasbon</dt>
                             <dd class="num">{{ rupiah(current.dp_kasbon) }}</dd>
@@ -216,8 +220,8 @@ function submitClose() {
                         </div>
                     </dl>
                     <p class="mt-3 text-2xs text-ink-soft">
-                        Penjualan kasbon {{ rupiah(current.sales_kasbon) }} tidak
-                        dihitung sebagai uang laci — hanya DP-nya.
+                        Penjualan kasbon ({{ rupiah(current.sales_kasbon) }}) dan QRIS tidak
+                        dihitung sebagai uang laci fisik.
                     </p>
                 </div>
 

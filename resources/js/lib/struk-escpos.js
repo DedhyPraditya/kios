@@ -149,7 +149,7 @@ export function strukEscPos(sale, store) {
     p.baris(duaKolom("Waktu", tanggal(sale.created_at)));
     p.baris(duaKolom("Kasir", sale.user?.name ?? "-"));
     if (kasbon) p.baris(duaKolom("Pelanggan", sale.customer?.name ?? "-"));
-    p.baris(duaKolom("Metode", kasbon ? "KASBON" : "TUNAI"));
+    p.baris(duaKolom("Metode", kasbon ? "KASBON" : sale.payment_type === "qris" ? "QRIS" : "TUNAI"));
 
     p.garis();
     for (const it of sale.items ?? []) {

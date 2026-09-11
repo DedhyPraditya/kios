@@ -2,14 +2,16 @@
 import { computed, nextTick, ref } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
+import Modal from "@/Components/Modal.vue";
 import StockBadge from "@/Components/StockBadge.vue";
-import { Head, router } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
 const props = defineProps({
     products: Array,
     categories: Array,
     customers: { type: Array, default: () => [] },
+    store: { type: Object, default: () => ({}) },
 });
 
 const search = ref("");
@@ -22,10 +24,15 @@ const note = ref("");
 const processing = ref(false);
 const errorMsg = ref("");
 
-const paymentType = ref("tunai"); // tunai | kasbon
+const paymentType = ref("tunai"); // tunai | qris | kasbon
 const customerId = ref(null);
 const dueDate = ref("");
+const showQrisModal = ref(false);
+
 const isKasbon = computed(() => paymentType.value === "kasbon");
+const isQris = computed(() => paymentType.value === "qris");
+const hasQrisImage = computed(() => !!props.store?.qris_url);
+
 const selectedCustomer = computed(
     () => props.customers.find((c) => c.id === customerId.value) ?? null,
 );
@@ -50,7 +57,10 @@ const discountValue = computed(() =>
 );
 const total = computed(() => subtotal.value - discountValue.value);
 const paidNum = computed(() => Number(paid.value) || 0);
-const change = computed(() => Math.max(paidNum.value - total.value, 0));
+const change = computed(() => {
+    if (isQris.value || isKasbon.value) return 0;
+    return Math.max(paidNum.value - total.value, 0);
+});
 const itemCount = computed(() => cart.value.reduce((s, i) => s + i.qty, 0));
 
 // Kasbon: uang di kolom "Bayar" jadi DP, tidak boleh melebihi total.
@@ -67,6 +77,7 @@ const overLimit = computed(() => {
 const canPay = computed(() => {
     if (!cart.value.length) return false;
     if (isKasbon.value) return !!customerId.value && !overLimit.value;
+    if (isQris.value) return hasQrisImage.value && total.value > 0;
     return paidNum.value >= total.value;
 });
 
@@ -124,17 +135,25 @@ function resetSale() {
     paymentType.value = "tunai";
     customerId.value = null;
     dueDate.value = "";
+    showQrisModal.value = false;
 }
 function pay() {
     if (!canPay.value || processing.value) return;
     processing.value = true;
     errorMsg.value = "";
+
+    const payloadPaid = isKasbon.value
+        ? dp.value
+        : isQris.value
+          ? total.value
+          : paidNum.value;
+
     router.post(
         route("pos.store"),
         {
             items: cart.value.map((i) => ({ id: i.id, qty: i.qty })),
             discount: discountValue.value,
-            paid: isKasbon.value ? dp.value : paidNum.value,
+            paid: payloadPaid,
             note: note.value || null,
             payment_type: paymentType.value,
             customer_id: isKasbon.value ? customerId.value : null,
@@ -168,7 +187,7 @@ const quickAmounts = computed(() => {
     <Head title="Kasir" />
 
     <AuthenticatedLayout>
-        <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div class="grid gap-6 lg:grid-cols-[1fr_380px]">
             <!-- Katalog -->
             <section class="min-w-0">
                 <div class="relative">
@@ -270,7 +289,7 @@ const quickAmounts = computed(() => {
                         Ketuk produk untuk menambah.
                     </div>
 
-                    <ul v-else class="tape-rule divide-y divide-line px-4">
+                    <ul v-else class="tape-rule divide-y divide-line px-4 max-h-72 overflow-y-auto">
                         <li v-for="row in cart" :key="row.id" class="py-3">
                             <div class="flex items-start justify-between gap-2">
                                 <span class="text-sm font-medium text-ink">
@@ -341,15 +360,15 @@ const quickAmounts = computed(() => {
                             <span class="num">{{ rupiah(total) }}</span>
                         </div>
 
-                        <!-- Metode bayar -->
-                        <div class="grid grid-cols-2 gap-1 rounded-control bg-black/[0.06] p-1">
+                        <!-- Metode bayar (Tunai, QRIS, Kasbon) -->
+                        <div class="grid grid-cols-3 gap-1 rounded-control bg-black/[0.06] p-1">
                             <button
                                 type="button"
                                 class="rounded-control py-1.5 text-xs font-semibold transition-colors"
                                 :class="
-                                    !isKasbon
+                                    paymentType === 'tunai'
                                         ? 'bg-surface text-ink shadow-sm'
-                                        : 'text-ink-soft'
+                                        : 'text-ink-soft hover:text-ink'
                                 "
                                 @click="paymentType = 'tunai'"
                             >
@@ -357,11 +376,24 @@ const quickAmounts = computed(() => {
                             </button>
                             <button
                                 type="button"
+                                class="rounded-control py-1.5 text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1"
+                                :class="
+                                    paymentType === 'qris'
+                                        ? 'bg-surface text-ink shadow-sm'
+                                        : 'text-ink-soft hover:text-ink'
+                                "
+                                @click="paymentType = 'qris'"
+                            >
+                                <Icon name="qr" :size="13" />
+                                QRIS
+                            </button>
+                            <button
+                                type="button"
                                 class="rounded-control py-1.5 text-xs font-semibold transition-colors"
                                 :class="
-                                    isKasbon
+                                    paymentType === 'kasbon'
                                         ? 'bg-surface text-ink shadow-sm'
-                                        : 'text-ink-soft'
+                                        : 'text-ink-soft hover:text-ink'
                                 "
                                 @click="paymentType = 'kasbon'"
                             >
@@ -369,7 +401,84 @@ const quickAmounts = computed(() => {
                             </button>
                         </div>
 
-                        <template v-if="isKasbon">
+                        <!-- KONDISI QRIS -->
+                        <template v-if="isQris">
+                            <!-- Kasus A: QRIS belum diunggah di Pengaturan -->
+                            <div
+                                v-if="!hasQrisImage"
+                                class="rounded-xl border border-amber-line bg-amber-wash p-3 text-left space-y-1.5"
+                            >
+                                <div class="flex items-start gap-2">
+                                    <span class="grid h-4 w-4 flex-shrink-0 place-items-center rounded-full bg-amber text-[10px] font-bold text-white">
+                                        !
+                                    </span>
+                                    <p class="text-xs font-semibold text-amber-ink">
+                                        QRIS Belum Diunggah
+                                    </p>
+                                </div>
+                                <p class="text-2xs text-ink-soft leading-relaxed">
+                                    Sebelum dapat menampilkan dan menerima pembayaran QRIS, Anda harus mengunggah gambar kode QRIS toko terlebih dahulu di halaman Pengaturan.
+                                </p>
+                                <div class="pt-1">
+                                    <Link
+                                        :href="route('settings.edit')"
+                                        class="inline-flex items-center gap-1 text-2xs font-semibold text-brand-ink underline hover:text-brand"
+                                    >
+                                        Unggah QRIS di Pengaturan &rarr;
+                                    </Link>
+                                </div>
+                            </div>
+
+                            <!-- Kasus B: QRIS sudah diunggah -->
+                            <div
+                                v-else
+                                class="rounded-xl border border-line bg-surface p-3 text-center space-y-2.5 shadow-sm"
+                            >
+                                <div class="flex items-center justify-between text-2xs font-semibold text-ink-soft">
+                                    <span class="inline-flex items-center gap-1">
+                                        <Icon name="qr" :size="13" />
+                                        Kode QRIS Toko
+                                    </span>
+                                    <button
+                                        type="button"
+                                        class="text-brand-ink hover:underline font-semibold"
+                                        @click="showQrisModal = true"
+                                    >
+                                        Perbesar ⤢
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="relative mx-auto h-40 w-40 overflow-hidden rounded-xl border border-line bg-white p-2 shadow-inner cursor-pointer hover:ring-2 hover:ring-brand/40 transition-all group"
+                                    title="Klik untuk memperbesar QRIS ke layar penuh"
+                                    @click="showQrisModal = true"
+                                >
+                                    <img
+                                        :src="store.qris_url"
+                                        alt="QRIS Toko"
+                                        class="h-full w-full object-contain"
+                                    />
+                                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
+                                        <span class="text-2xs text-white bg-black/60 px-2 py-1 rounded-full font-medium">
+                                            Perbesar
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-lg bg-surface-muted/60 p-2">
+                                    <p class="text-2xs text-ink-soft">Total Pembayaran QRIS</p>
+                                    <p class="num text-base font-bold text-ink mt-0.5">
+                                        {{ rupiah(total) }}
+                                    </p>
+                                </div>
+                                <p class="text-2xs text-ink-faint leading-relaxed">
+                                    Tunjukkan QRIS ke pembeli dan pastikan pembayaran berhasil sebelum menekan tombol konfirmasi.
+                                </p>
+                            </div>
+                        </template>
+
+                        <!-- KONDISI KASBON -->
+                        <template v-else-if="isKasbon">
                             <label class="block text-ink-soft">
                                 <span class="text-2xs uppercase">Pelanggan</span>
                                 <select
@@ -420,54 +529,57 @@ const quickAmounts = computed(() => {
                             </label>
                         </template>
 
-                        <label
-                            class="flex items-center justify-between text-ink-soft"
-                        >
-                            <span>{{ isKasbon ? "DP (opsional)" : "Bayar" }}</span>
-                            <input
-                                v-model="paid"
-                                type="number"
-                                min="0"
-                                inputmode="numeric"
-                                class="field num w-28 py-1 text-right text-sm"
-                            />
-                        </label>
-                        <div
-                            v-if="!isKasbon"
-                            class="flex flex-wrap justify-end gap-1.5"
-                        >
-                            <button
-                                v-for="amt in quickAmounts"
-                                :key="amt"
-                                @click="paid = amt"
-                                class="num rounded-full border border-line px-2.5 py-0.5 text-2xs text-ink-soft hover:border-brand hover:text-brand-ink"
+                        <!-- Kolom bayar tunai / DP kasbon -->
+                        <template v-if="!isQris">
+                            <label
+                                class="flex items-center justify-between text-ink-soft"
                             >
-                                {{ amt === total ? "Pas" : rupiah(amt) }}
-                            </button>
-                        </div>
+                                <span>{{ isKasbon ? "DP (opsional)" : "Bayar" }}</span>
+                                <input
+                                    v-model="paid"
+                                    type="number"
+                                    min="0"
+                                    inputmode="numeric"
+                                    class="field num w-28 py-1 text-right text-sm"
+                                />
+                            </label>
+                            <div
+                                v-if="!isKasbon"
+                                class="flex flex-wrap justify-end gap-1.5"
+                            >
+                                <button
+                                    v-for="amt in quickAmounts"
+                                    :key="amt"
+                                    @click="paid = amt"
+                                    class="num rounded-full border border-line px-2.5 py-0.5 text-2xs text-ink-soft hover:border-brand hover:text-brand-ink"
+                                >
+                                    {{ amt === total ? "Pas" : rupiah(amt) }}
+                                </button>
+                            </div>
 
-                        <div
-                            v-if="isKasbon"
-                            class="flex justify-between text-sm font-semibold"
-                            :class="overLimit ? 'text-danger' : 'text-amber-ink'"
-                        >
-                            <span>Sisa hutang</span>
-                            <span class="num">{{ rupiah(kasbonRemaining) }}</span>
-                        </div>
-                        <div
-                            v-else
-                            class="flex justify-between text-sm font-semibold"
-                            :class="change > 0 ? 'text-brand-ink' : 'text-ink'"
-                        >
-                            <span>Kembali</span>
-                            <span class="num">{{ rupiah(change) }}</span>
-                        </div>
-                        <p
-                            v-if="isKasbon && overLimit"
-                            class="text-2xs text-danger"
-                        >
-                            Melebihi batas kredit pelanggan.
-                        </p>
+                            <div
+                                v-if="isKasbon"
+                                class="flex justify-between text-sm font-semibold"
+                                :class="overLimit ? 'text-danger' : 'text-amber-ink'"
+                            >
+                                <span>Sisa hutang</span>
+                                <span class="num">{{ rupiah(kasbonRemaining) }}</span>
+                            </div>
+                            <div
+                                v-else
+                                class="flex justify-between text-sm font-semibold"
+                                :class="change > 0 ? 'text-brand-ink' : 'text-ink'"
+                            >
+                                <span>Kembali</span>
+                                <span class="num">{{ rupiah(change) }}</span>
+                            </div>
+                            <p
+                                v-if="isKasbon && overLimit"
+                                class="text-2xs text-danger"
+                            >
+                                Melebihi batas kredit pelanggan.
+                            </p>
+                        </template>
                     </div>
 
                     <p v-if="errorMsg" class="px-4 pb-2 text-sm text-danger">
@@ -491,14 +603,81 @@ const quickAmounts = computed(() => {
                             {{
                                 processing
                                     ? "Memproses…"
-                                    : isKasbon
-                                      ? "Simpan kasbon"
-                                      : "Bayar"
+                                    : isQris
+                                      ? hasQrisImage
+                                          ? "Konfirmasi QRIS"
+                                          : "QRIS Belum Diunggah"
+                                      : isKasbon
+                                        ? "Simpan kasbon"
+                                        : "Bayar"
                             }}
                         </button>
                     </div>
                 </div>
             </aside>
         </div>
+
+        <!-- Modal Tampilkan QRIS ke Pembeli -->
+        <Modal :show="showQrisModal" max-width="md" @close="showQrisModal = false">
+            <div class="p-6 text-center">
+                <div class="flex items-center justify-between pb-3 border-b border-line">
+                    <div class="text-left">
+                        <h3 class="text-headline-sm font-bold text-ink">
+                            Scan QRIS Pembayaran
+                        </h3>
+                        <p class="text-2xs text-ink-soft">
+                            {{ store.store_name || "Kios BERKAH" }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="rounded-control p-1 text-ink-faint hover:text-ink hover:bg-surface-muted"
+                        @click="showQrisModal = false"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="my-5 flex flex-col items-center justify-center">
+                    <div class="rounded-2xl border-2 border-line bg-white p-4 shadow-md max-w-[280px] sm:max-w-[320px] aspect-square flex items-center justify-center">
+                        <img
+                            v-if="store.qris_url"
+                            :src="store.qris_url"
+                            alt="QRIS Pembayaran"
+                            class="max-h-full max-w-full object-contain"
+                        />
+                    </div>
+
+                    <div class="mt-4 rounded-xl bg-surface-muted px-6 py-3 border border-line w-full max-w-[320px]">
+                        <p class="text-2xs text-ink-soft uppercase font-medium">Total Tagihan</p>
+                        <p class="num text-2xl font-black text-ink mt-0.5">
+                            {{ rupiah(total) }}
+                        </p>
+                    </div>
+
+                    <p class="mt-3 text-2xs text-ink-soft max-w-xs">
+                        Mendukung pembayaran via BCA Mobile, Livin, GoPay, OVO, ShopeePay, Dana, LinkAja, dan perbankan lainnya.
+                    </p>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-line">
+                    <button
+                        type="button"
+                        class="btn-ghost text-sm"
+                        @click="showQrisModal = false"
+                    >
+                        Tutup
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-primary text-sm"
+                        :disabled="!canPay || processing"
+                        @click="showQrisModal = false; pay()"
+                    >
+                        {{ processing ? "Memproses…" : "Konfirmasi Sudah Bayar" }}
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>

@@ -120,6 +120,7 @@ class CashSession extends Model
         // Nilai dihitung bersih: barang yang diretur di shift ini langsung
         // mengurangi uang laci, jadi tak perlu dicatat lagi sebagai kas keluar.
         $tunai = (int) $sales->where('payment_type', 'tunai')->sum(fn (Sale $s) => $s->netTotal());
+        $salesQris = (int) $sales->where('payment_type', 'qris')->sum(fn (Sale $s) => $s->netTotal());
         $dpKasbon = (int) $sales->where('payment_type', 'kasbon')->sum('paid');
         $omzetKasbon = (int) $sales->where('payment_type', 'kasbon')->sum(fn (Sale $s) => $s->netTotal());
         $pelunasan = (int) $this->creditPayments()->sum('amount');
@@ -134,6 +135,7 @@ class CashSession extends Model
             'opening_cash' => $this->opening_cash,
             'trx_count' => $sales->count(),
             'sales_tunai' => $tunai,
+            'sales_qris' => $salesQris,
             'sales_kasbon' => $omzetKasbon,
             'dp_kasbon' => $dpKasbon,
             'credit_payments' => $pelunasan,

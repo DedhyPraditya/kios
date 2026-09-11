@@ -49,6 +49,7 @@ class SaleController extends Controller
                 'belum_lunas' => $query->valid()->where('status', 'belum_lunas'),
                 'kasbon' => $query->valid()->where('payment_type', 'kasbon'),
                 'tunai' => $query->valid()->where('payment_type', 'tunai'),
+                'qris' => $query->valid()->where('payment_type', 'qris'),
                 default => $query,
             };
         };
@@ -198,7 +199,9 @@ class SaleController extends Controller
             // Uang yang sudah diterima dikembalikan ke pembeli. Nota yang pernah
             // diretur sebagian: uang returnya sudah keluar lebih dulu, jadi yang
             // dikembalikan tinggal nilai bersihnya.
-            $cashBack = $sale->payment_type === 'tunai' ? $sale->netTotal() : $sale->paid;
+            $cashBack = ($sale->payment_type === 'tunai' || $sale->payment_type === 'qris')
+                ? $sale->netTotal()
+                : $sale->paid;
 
             $sale->forceFill([
                 'voided_at' => now(),

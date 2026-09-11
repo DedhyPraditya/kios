@@ -17,6 +17,7 @@ class Setting extends Model
         'store_address' => '',
         'store_phone' => '',
         'receipt_footer' => 'Terima kasih telah berbelanja.',
+        'qris_image' => null,
     ];
 
     protected static function booted(): void
@@ -33,7 +34,10 @@ class Setting extends Model
             fn () => static::query()->pluck('value', 'key')->all(),
         );
 
-        return [...self::DEFAULTS, ...array_filter($stored, fn ($v) => $v !== null)];
+        $merged = [...self::DEFAULTS, ...array_filter($stored, fn ($v) => $v !== null)];
+        $merged['qris_url'] = !empty($merged['qris_image']) ? asset('storage/'.$merged['qris_image']) : null;
+
+        return $merged;
     }
 
     public static function get(string $key, ?string $fallback = null): ?string

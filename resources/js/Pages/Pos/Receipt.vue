@@ -131,7 +131,7 @@ async function cetakBluetooth() {
                     <div class="flex justify-between">
                         <span>Metode</span
                         ><span class="font-semibold uppercase">{{
-                            isKasbon ? "Kasbon" : "Tunai"
+                            isKasbon ? "Kasbon" : sale.payment_type === 'qris' ? 'QRIS' : "Tunai"
                         }}</span>
                     </div>
                 </div>

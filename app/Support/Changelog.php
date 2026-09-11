@@ -14,6 +14,35 @@ class Changelog
     {
         return [
             [
+                'version' => '1.4.0',
+                'date' => '2026-09-11',
+                'date_human' => '11 September 2026',
+                'title' => 'Metode Pembayaran QRIS & Pengaturan Unggah QRIS',
+                'type' => 'feature',
+                'author' => 'Tim Pengembang',
+                'description' => 'Penambahan metode pembayaran QRIS di kasir (POS), fitur upload dan pratinjau QRIS di Pengaturan Toko, modal perbesar QRIS untuk pelanggan, penyesuaian struk, dan rekap shift non-tunai.',
+                'changes' => [
+                    [
+                        'category' => 'Fitur Baru',
+                        'type' => 'feat',
+                        'title' => 'Pembayaran QRIS di Kasir & Modal Scan Pelanggan',
+                        'description' => 'Kasir dapat memilih metode QRIS dengan nominal pas dan status lunas langsung. Dilengkapi modal perbesar QRIS di layar agar mudah discan pembeli.',
+                    ],
+                    [
+                        'category' => 'Pengaturan Toko',
+                        'type' => 'feat',
+                        'title' => 'Unggah & Pratinjau QRIS Statis Toko (/pengaturan)',
+                        'description' => 'Panel khusus untuk mengunggah, melihat pratinjau, mengganti, dan menghapus gambar QRIS toko dengan validasi berkas.',
+                    ],
+                    [
+                        'category' => 'Struk & Pembukuan',
+                        'type' => 'feat',
+                        'title' => 'Struk QRIS & Rekap Shift Terpisah',
+                        'description' => 'Metode QRIS tercetak di struk thermal/web. Omzet QRIS dicatat sebagai non-tunai pada shift agar uang laci fisik tetap akurat.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.3.0',
                 'date' => '2026-09-07',
                 'date_human' => '07 September 2026',

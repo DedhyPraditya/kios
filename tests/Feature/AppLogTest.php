@@ -23,7 +23,7 @@ class AppLogTest extends TestCase
                 ->has('logs')
                 ->has('system')
                 ->where('system.app_name', config('app.name'))
-                ->where('logs.0.version', '1.3.0')
+                ->where('logs.0.version', '1.4.0')
             );
     }
 

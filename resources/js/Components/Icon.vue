@@ -123,6 +123,15 @@ const icons = {
         ['path', { d: 'M3 3v5h5' }],
         ['path', { d: 'M12 7v5l4 2' }],
     ],
+    qr: [
+        ['rect', { x: 3, y: 3, width: 7, height: 7, rx: 1 }],
+        ['rect', { x: 14, y: 3, width: 7, height: 7, rx: 1 }],
+        ['rect', { x: 3, y: 14, width: 7, height: 7, rx: 1 }],
+        ['rect', { x: 5.5, y: 5.5, width: 2, height: 2 }],
+        ['rect', { x: 16.5, y: 5.5, width: 2, height: 2 }],
+        ['rect', { x: 5.5, y: 16.5, width: 2, height: 2 }],
+        ['path', { d: 'M14 14h3v3h-3zM17 17h4v4h-4zM14 20h3v1h-3zM20 14h1v3h-1z' }],
+    ],
 };
 
 const parts = computed(() => icons[props.name] || []);

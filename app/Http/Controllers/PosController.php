@@ -20,6 +20,7 @@ class PosController extends Controller
     public function index()
     {
         return Inertia::render('Pos/Index', [
+            'store' => Setting::values(),
             'products' => Product::active()
                 ->with('category:id,name')
                 ->orderBy('name')
@@ -47,7 +48,7 @@ class PosController extends Controller
             'discount' => ['nullable', 'integer', 'min:0'],
             'paid' => ['required', 'integer', 'min:0'],
             'note' => ['nullable', 'string', 'max:255'],
-            'payment_type' => ['nullable', Rule::in(['tunai', 'kasbon'])],
+            'payment_type' => ['nullable', Rule::in(['tunai', 'kasbon', 'qris'])],
             'customer_id' => [
                 'nullable', 'exists:customers,id',
                 Rule::requiredIf($request->input('payment_type') === 'kasbon'),
@@ -97,9 +98,20 @@ class PosController extends Controller
             $discount = min((int) ($data['discount'] ?? 0), $subtotal);
             $total = $subtotal - $discount;
             $isKasbon = $data['payment_type'] === 'kasbon';
+            $isQris = $data['payment_type'] === 'qris';
             $paid = (int) $data['paid'];
 
-            if (! $isKasbon && $paid < $total) {
+            if ($isQris) {
+                $qrisImage = Setting::get('qris_image');
+                if (empty($qrisImage)) {
+                    throw ValidationException::withMessages([
+                        'payment_type' => 'Gambar QRIS belum diunggah di Pengaturan toko. Silakan unggah QRIS terlebih dahulu.',
+                    ]);
+                }
+                $paid = $total;
+            }
+
+            if (! $isKasbon && ! $isQris && $paid < $total) {
                 throw ValidationException::withMessages([
                     'paid' => 'Uang bayar kurang dari total.',
                 ]);
@@ -137,7 +149,7 @@ class PosController extends Controller
                 'discount' => $discount,
                 'total' => $total,
                 'paid' => $paid,
-                'change' => $isKasbon ? 0 : $paid - $total,
+                'change' => ($isKasbon || $isQris) ? 0 : $paid - $total,
                 'due_date' => $isKasbon ? ($data['due_date'] ?? null) : null,
                 'note' => $data['note'] ?? null,
             ]);

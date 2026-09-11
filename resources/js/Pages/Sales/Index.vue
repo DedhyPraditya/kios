@@ -152,6 +152,7 @@ const badgeLabel = {
             >
                 <option value="semua">Semua status</option>
                 <option value="tunai">Tunai</option>
+                <option value="qris">QRIS</option>
                 <option value="kasbon">Kasbon</option>
                 <option value="lunas">Lunas</option>
                 <option value="belum_lunas">Belum lunas</option>
@@ -223,6 +224,12 @@ const badgeLabel = {
                                     class="ms-1 text-2xs uppercase text-ink-faint"
                                 >
                                     kasbon
+                                </span>
+                                <span
+                                    v-else-if="s.payment_type === 'qris'"
+                                    class="ms-1 text-2xs uppercase font-semibold text-brand-ink"
+                                >
+                                    qris
                                 </span>
                             </td>
                             <td class="td text-right">

@@ -501,7 +501,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Ubah kolom uang jadi bilangan bertanda (`bigInteger`, bukan
       `unsignedBigInteger`) supaya pengurangan tak perlu dicor satu per satu.
 - [ ] Diskon per item + diskon persen (sekarang hanya nominal total).
-- [ ] Multi-metode bayar (QRIS / transfer).
+- [x] Multi-metode bayar QRIS (unggah QRIS di Pengaturan, scan kasir dengan modal perbesar, cetak struk web/Bluetooth, rekap shift non-tunai).
 - [ ] Pajak / PPN opsional.
 - [ ] Satuan ganda (pcs / dus) & harga grosir.
 - [ ] Ekspor laporan Excel / PDF + tombolnya di halaman Laporan.
