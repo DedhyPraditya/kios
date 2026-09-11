@@ -44,6 +44,12 @@ const navGroups = computed(() => {
         icon: "shift",
     });
 
+    groups[0].items.push({
+        name: "arang.index",
+        label: "Modul Arang",
+        icon: "fire",
+    });
+
     if (isAdmin.value) {
         groups.push(
             {

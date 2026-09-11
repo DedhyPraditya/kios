@@ -53,6 +53,16 @@ class CashSession extends Model
         return $this->hasMany(CashMovement::class);
     }
 
+    public function arangSales(): HasMany
+    {
+        return $this->hasMany(ArangPenjualan::class, 'cash_session_id');
+    }
+
+    public function arangPurchases(): HasMany
+    {
+        return $this->hasMany(ArangPembelian::class, 'cash_session_id');
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNull('closed_at');
@@ -129,15 +139,26 @@ class CashSession extends Model
         $masuk = (int) $movements->where('direction', 'masuk')->sum('amount');
         $keluar = (int) $movements->where('direction', 'keluar')->sum('amount');
 
-        $expected = $this->opening_cash + $tunai + $dpKasbon + $pelunasan + $masuk - $keluar;
+        $arangSales = $this->arangSales()->get();
+        $arangTunai = (int) $arangSales->where('payment_type', 'tunai')->sum('grand_total');
+        $arangQris = (int) $arangSales->where('payment_type', 'qris')->sum('grand_total');
+        $arangDpKasbon = (int) $arangSales->where('payment_type', 'kasbon')->sum('paid');
+
+        $arangPurchases = $this->arangPurchases()->get();
+        $arangBeliTunai = (int) $arangPurchases->sum('total_harga');
+
+        $expected = $this->opening_cash + $tunai + $dpKasbon + $pelunasan + $masuk - $keluar + $arangTunai + $arangDpKasbon - $arangBeliTunai;
 
         return [
             'opening_cash' => $this->opening_cash,
-            'trx_count' => $sales->count(),
+            'trx_count' => $sales->count() + $arangSales->count(),
             'sales_tunai' => $tunai,
             'sales_qris' => $salesQris,
             'sales_kasbon' => $omzetKasbon,
             'dp_kasbon' => $dpKasbon,
+            'sales_arang_tunai' => $arangTunai,
+            'sales_arang_qris' => $arangQris,
+            'beli_arang_tunai' => $arangBeliTunai,
             'credit_payments' => $pelunasan,
             'cash_in' => $masuk,
             'cash_out' => $keluar,

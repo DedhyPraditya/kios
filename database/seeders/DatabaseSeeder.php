@@ -74,5 +74,20 @@ class DatabaseSeeder extends Seeder
                 );
             }
         }
+
+        foreach ([
+            ['Arang Batok Kelapa', 3000, 5000, 'Arang batok kelapa pilihan, panas awet dan minim abu'],
+            ['Arang Kayu Keras', 2000, 3500, 'Arang kayu keras alami, mudah menyala'],
+        ] as [$nama, $beli, $jual, $catatan]) {
+            \App\Models\ArangJenis::updateOrCreate(
+                ['nama' => $nama],
+                [
+                    'harga_beli_default' => $beli,
+                    'harga_jual_default' => $jual,
+                    'aktif' => true,
+                    'catatan' => $catatan,
+                ]
+            );
+        }
     }
 }

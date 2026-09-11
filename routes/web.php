@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AppLogController;
+use App\Http\Controllers\ArangController;
+use App\Http\Controllers\ArangJenisController;
+use App\Http\Controllers\ArangPembelianController;
+use App\Http\Controllers\ArangPenjualanController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CashSessionController;
 use App\Http\Controllers\CategoryController;
@@ -34,6 +38,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/shift', [CashSessionController::class, 'store'])->name('shift.store');
     Route::post('/shift/kas', [CashSessionController::class, 'movement'])->name('shift.movement');
     Route::post('/shift/{session}/tutup', [CashSessionController::class, 'close'])->name('shift.close');
+
+    // Modul Arang (Beli & Jual Arang Kiloan)
+    Route::prefix('arang')->name('arang.')->group(function () {
+        Route::get('/', [ArangController::class, 'index'])->name('index');
+        Route::get('/riwayat', [ArangController::class, 'riwayat'])->name('riwayat');
+        Route::get('/beli', [ArangPembelianController::class, 'create'])->name('beli.create');
+        Route::post('/beli', [ArangPembelianController::class, 'store'])->name('beli.store');
+        Route::get('/jual', [ArangPenjualanController::class, 'create'])->name('jual.create');
+        Route::post('/jual', [ArangPenjualanController::class, 'store'])->name('jual.store');
+
+        Route::middleware('admin')->group(function () {
+            Route::resource('jenis', ArangJenisController::class)->only(['index', 'store', 'update', 'destroy']);
+        });
+    });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

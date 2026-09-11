@@ -41,7 +41,7 @@ class AppLogTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->get(route('app-logs.index', ['search' => 'Smart Re-Alerting']))
+            ->get(route('app-logs.index', ['search' => 'Notifikasi Lebih Cerdas']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('AppLog/Index')

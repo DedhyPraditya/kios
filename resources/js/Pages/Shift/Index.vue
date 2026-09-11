@@ -202,6 +202,18 @@ function submitClose() {
                                 {{ rupiah(current.credit_payments) }}
                             </dd>
                         </div>
+                        <div v-if="current.sales_arang_tunai" class="flex justify-between">
+                            <dt class="text-ink-soft">Penjualan arang (tunai)</dt>
+                            <dd class="num">{{ rupiah(current.sales_arang_tunai) }}</dd>
+                        </div>
+                        <div v-if="current.sales_arang_qris" class="flex justify-between">
+                            <dt class="text-ink-soft">Penjualan arang (QRIS)</dt>
+                            <dd class="num text-brand-ink">{{ rupiah(current.sales_arang_qris) }}</dd>
+                        </div>
+                        <div v-if="current.beli_arang_tunai" class="flex justify-between">
+                            <dt class="text-ink-soft">Beli arang (tunai)</dt>
+                            <dd class="num text-danger">−{{ rupiah(current.beli_arang_tunai) }}</dd>
+                        </div>
                         <div class="flex justify-between">
                             <dt class="text-ink-soft">Kas masuk lain</dt>
                             <dd class="num">{{ rupiah(current.cash_in) }}</dd>
