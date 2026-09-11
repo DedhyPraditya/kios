@@ -179,6 +179,7 @@ function resetFilter() {
                             <th class="th">Pembayaran</th>
                             <th class="th">Kasir</th>
                             <th class="th">Keterangan</th>
+                            <th class="th text-center">Cetak</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
@@ -241,6 +242,16 @@ function resetFilter() {
                             </td>
                             <td class="td text-2xs text-ink-soft max-w-xs truncate">
                                 {{ item.catatan || '-' }}
+                            </td>
+                            <td class="td text-center">
+                                <Link
+                                    :href="item.type === 'jual' ? route('arang.penjualan.receipt', item.raw_id) : route('arang.pembelian.receipt', item.raw_id)"
+                                    class="btn-secondary py-1 px-2 text-2xs inline-flex items-center gap-1"
+                                    title="Cetak Struk / Nota"
+                                >
+                                    <Icon name="print" :size="13" />
+                                    <span>Struk</span>
+                                </Link>
                             </td>
                         </tr>
                     </tbody>

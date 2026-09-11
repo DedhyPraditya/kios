@@ -100,6 +100,17 @@ class ArangPenjualanController extends Controller
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
-        return redirect()->route('arang.index')->with('success', "Penjualan arang ({$penjualan->no_nota}) sebanyak {$berat} kg berhasil dicatat.");
+        return redirect()->route('arang.penjualan.receipt', $penjualan->id)
+            ->with('success', "Penjualan arang ({$penjualan->no_nota}) sebanyak {$berat} kg berhasil dicatat.");
+    }
+
+    public function receipt(ArangPenjualan $penjualan)
+    {
+        $penjualan->load(['arangJenis', 'customer:id,name,phone', 'user:id,name']);
+
+        return Inertia::render('Arang/ReceiptPenjualan', [
+            'store' => Setting::values(),
+            'penjualan' => $penjualan,
+        ]);
     }
 }

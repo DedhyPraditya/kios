@@ -232,6 +232,7 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
                                 <th class="th text-right">Total</th>
                                 <th class="th">Metode / Status</th>
                                 <th class="th">Kasir</th>
+                                <th class="th text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
@@ -291,6 +292,16 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
                                 </td>
                                 <td class="td text-xs text-ink-soft">
                                     {{ trx.user }}
+                                </td>
+                                <td class="td text-center">
+                                    <Link
+                                        :href="trx.type === 'jual' ? route('arang.penjualan.receipt', trx.raw_id) : route('arang.pembelian.receipt', trx.raw_id)"
+                                        class="btn-secondary py-1 px-2 text-2xs inline-flex items-center gap-1"
+                                        title="Cetak Struk / Nota"
+                                    >
+                                        <Icon name="print" :size="13" />
+                                        <span>Struk</span>
+                                    </Link>
                                 </td>
                             </tr>
                         </tbody>

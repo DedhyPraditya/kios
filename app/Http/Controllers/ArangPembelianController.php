@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ArangJenis;
 use App\Models\ArangPembelian;
 use App\Models\CashSession;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -36,7 +37,7 @@ class ArangPembelianController extends Controller
 
         $activeSession = CashSession::openFor($request->user());
 
-        ArangPembelian::create([
+        $pembelian = ArangPembelian::create([
             'tanggal' => $validated['tanggal'],
             'arang_jenis_id' => $validated['arang_jenis_id'],
             'nama_pemasok' => $validated['nama_pemasok'],
@@ -48,6 +49,17 @@ class ArangPembelianController extends Controller
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
-        return redirect()->route('arang.index')->with('success', 'Pembelian arang sebanyak ' . $berat . ' kg berhasil dicatat.');
+        return redirect()->route('arang.pembelian.receipt', $pembelian->id)
+            ->with('success', 'Pembelian arang sebanyak ' . $berat . ' kg berhasil dicatat.');
+    }
+
+    public function receipt(ArangPembelian $pembelian)
+    {
+        $pembelian->load(['arangJenis', 'user:id,name']);
+
+        return Inertia::render('Arang/ReceiptPembelian', [
+            'store' => Setting::values(),
+            'pembelian' => $pembelian,
+        ]);
     }
 }

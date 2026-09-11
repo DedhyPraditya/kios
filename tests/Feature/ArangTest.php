@@ -98,7 +98,8 @@ class ArangTest extends TestCase
             'catatan' => 'Barang bagus kering',
         ]);
 
-        $response->assertRedirect(route('arang.index'));
+        $pembelian = ArangPembelian::first();
+        $response->assertRedirect(route('arang.pembelian.receipt', $pembelian->id));
         $this->assertDatabaseHas('arang_pembelian', [
             'arang_jenis_id' => $this->jenisBatok->id,
             'nama_pemasok' => 'Pak Joko Pengrajin',
@@ -136,7 +137,8 @@ class ArangTest extends TestCase
             'paid' => 40000,
         ]);
 
-        $response->assertRedirect(route('arang.index'));
+        $penjualan = ArangPenjualan::first();
+        $response->assertRedirect(route('arang.penjualan.receipt', $penjualan->id));
         $this->assertDatabaseHas('arang_penjualan', [
             'arang_jenis_id' => $this->jenisBatok->id,
             'nama_pembeli' => 'Warung Sate Barokah',
@@ -240,7 +242,8 @@ class ArangTest extends TestCase
             'payment_type' => 'kasbon',
             'paid' => 0,
         ]);
-        $responseSuccess->assertRedirect(route('arang.index'));
+        $penjualanKasbon = ArangPenjualan::where('customer_id', $customer->id)->first();
+        $responseSuccess->assertRedirect(route('arang.penjualan.receipt', $penjualanKasbon->id));
         $this->assertDatabaseHas('arang_penjualan', [
             'customer_id' => $customer->id,
             'status' => 'belum_lunas',
@@ -254,5 +257,38 @@ class ArangTest extends TestCase
 
         $responseJual = $this->actingAs($this->admin)->get(route('arang.riwayat', ['tab' => 'jual']));
         $responseJual->assertOk();
+    }
+
+    public function test_halaman_struk_pembelian_dan_penjualan_bisa_diakses(): void
+    {
+        $pembelian = ArangPembelian::create([
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'nama_pemasok' => 'Pak Joko',
+            'berat_kg' => 15.0,
+            'harga_beli_per_kg' => 3000,
+            'total_harga' => 45000,
+            'user_id' => $this->kasir->id,
+        ]);
+
+        $penjualan = ArangPenjualan::create([
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'nama_pembeli' => 'Bu Ani',
+            'berat_kg' => 5.0,
+            'harga_jual_per_kg' => 5000,
+            'total_harga' => 25000,
+            'grand_total' => 25000,
+            'paid' => 25000,
+            'payment_type' => 'tunai',
+            'status' => 'lunas',
+            'user_id' => $this->kasir->id,
+        ]);
+
+        $resBeli = $this->actingAs($this->kasir)->get(route('arang.pembelian.receipt', $pembelian->id));
+        $resBeli->assertOk();
+
+        $resJual = $this->actingAs($this->kasir)->get(route('arang.penjualan.receipt', $penjualan->id));
+        $resJual->assertOk();
     }
 }

@@ -47,6 +47,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/beli', [ArangPembelianController::class, 'store'])->name('beli.store');
         Route::get('/jual', [ArangPenjualanController::class, 'create'])->name('jual.create');
         Route::post('/jual', [ArangPenjualanController::class, 'store'])->name('jual.store');
+        Route::get('/penjualan/{penjualan}/struk', [ArangPenjualanController::class, 'receipt'])->name('penjualan.receipt');
+        Route::get('/pembelian/{pembelian}/struk', [ArangPembelianController::class, 'receipt'])->name('pembelian.receipt');
 
         Route::middleware('admin')->group(function () {
             Route::resource('jenis', ArangJenisController::class)->only(['index', 'store', 'update', 'destroy']);
