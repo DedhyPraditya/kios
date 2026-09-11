@@ -2,12 +2,36 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
 import { Head, Link } from "@inertiajs/vue3";
+import { ref } from "vue";
 import { rupiah, tanggal } from "@/lib/format";
+import { notaPembelianArangEscPos } from "@/lib/struk-escpos";
+import { cetakKeBluetooth, didukung } from "@/lib/printer-bluetooth";
 
 const props = defineProps({
     pembelian: { type: Object, required: true },
     store: { type: Object, default: () => ({}) },
 });
+
+const adaBluetooth = didukung();
+const sibuk = ref(false);
+const kabar = ref("");
+
+async function cetakBluetooth() {
+    sibuk.value = true;
+    kabar.value = "Menyambung ke printer Bluetooth…";
+
+    try {
+        await cetakKeBluetooth(notaPembelianArangEscPos(props.pembelian, props.store));
+        kabar.value = "Nota pembelian berhasil terkirim ke printer.";
+    } catch (e) {
+        kabar.value =
+            e?.name === "NotFoundError"
+                ? "Tidak ada printer yang dipilih."
+                : `Gagal mencetak: ${e?.message ?? e}`;
+    } finally {
+        sibuk.value = false;
+    }
+}
 
 function tinggiCetakMm(el) {
     const salinan = el.cloneNode(true);
@@ -145,24 +169,43 @@ function cetak() {
             <!-- Tombol Aksi di Layar -->
             <div class="mt-4 flex flex-col gap-2 no-print">
                 <button
+                    v-if="adaBluetooth"
                     type="button"
                     class="btn-primary w-full py-2.5 flex items-center justify-center gap-2 font-semibold"
-                    @click="cetak"
+                    :disabled="sibuk"
+                    @click="cetakBluetooth"
                 >
                     <Icon name="print" :size="18" />
-                    <span>Cetak Nota Pembelian (58mm)</span>
+                    <span>{{ sibuk ? "Mencetak…" : "Cetak ke printer Bluetooth" }}</span>
                 </button>
 
-                <div class="flex gap-2">
+                <p
+                    v-if="kabar"
+                    class="text-center text-xs text-ink-soft"
+                >
+                    {{ kabar }}
+                </p>
+
+                <button
+                    type="button"
+                    class="w-full py-2 flex items-center justify-center gap-2 text-xs font-medium"
+                    :class="adaBluetooth ? 'btn-secondary' : 'btn-primary'"
+                    @click="cetak"
+                >
+                    <Icon name="print" :size="16" />
+                    <span>{{ adaBluetooth ? "Cetak biasa (Dialog printer)" : "Cetak Nota (58mm)" }}</span>
+                </button>
+
+                <div class="flex gap-2 mt-1">
                     <Link
                         :href="route('arang.beli.create')"
-                        class="btn-secondary flex-1 text-center py-2 text-xs"
+                        class="btn-secondary flex-1 text-center py-2 text-xs font-medium"
                     >
                         + Kulak Lagi
                     </Link>
                     <Link
                         :href="route('arang.index')"
-                        class="btn-secondary flex-1 text-center py-2 text-xs"
+                        class="btn-secondary flex-1 text-center py-2 text-xs font-medium"
                     >
                         Arang
                     </Link>

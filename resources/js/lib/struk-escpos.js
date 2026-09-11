@@ -202,3 +202,119 @@ export function strukEscPos(sale, store) {
 
     return p.selesai();
 }
+
+export function strukPenjualanArangEscPos(penjualan, store) {
+    const kasbon = penjualan.payment_type === "kasbon";
+    const lunas = penjualan.status === "lunas";
+    const p = new Pita();
+
+    p.perintah(ESC, 0x40);
+
+    p.tengah();
+    p.besar(true).tebal(true);
+    for (const b of bungkus(store.store_name || "Kios BERKAH", LEBAR / 2)) p.baris(b);
+    p.besar(false).tebal(false);
+
+    if (store.store_address) {
+        for (const b of bungkus(store.store_address)) p.baris(b);
+    }
+    if (store.store_phone) p.baris(store.store_phone);
+
+    p.baris();
+    p.tebal(true).baris("STRUK PENJUALAN ARANG").tebal(false);
+
+    p.kiri();
+    p.garis();
+    p.baris(duaKolom("No. Nota", penjualan.no_nota));
+    p.baris(duaKolom("Waktu", tanggal(penjualan.created_at)));
+    p.baris(duaKolom("Kasir", penjualan.user?.name ?? "-"));
+    p.baris(duaKolom("Pembeli", penjualan.customer?.name ?? (penjualan.nama_pembeli || "Umum")));
+    p.baris(duaKolom("Metode", kasbon ? "KASBON" : penjualan.payment_type === "qris" ? "QRIS" : "TUNAI"));
+
+    p.garis();
+    const namaJenis = penjualan.arang_jenis?.nama || "Arang Kiloan";
+    for (const b of bungkus(namaJenis)) p.baris(b);
+    p.baris(duaKolom(`  ${penjualan.berat_kg} kg x ${rupiah(penjualan.harga_jual_per_kg)}`, rupiah(penjualan.total_harga)));
+
+    p.garis();
+    p.baris(duaKolom("Subtotal", rupiah(penjualan.total_harga)));
+    if (penjualan.diskon > 0) {
+        p.baris(duaKolom("Diskon", "-" + rupiah(penjualan.diskon)));
+    }
+
+    p.tebal(true).baris(duaKolom("TOTAL", rupiah(penjualan.grand_total))).tebal(false);
+
+    if (kasbon) {
+        p.baris(duaKolom("DP Diterima", rupiah(penjualan.paid)));
+        const sisa = Math.max(0, penjualan.grand_total - (penjualan.paid || 0));
+        p.tebal(true).baris(duaKolom("Sisa Kasbon", rupiah(sisa))).tebal(false);
+        p.baris();
+        p.tengah().tebal(true).baris(lunas ? "== LUNAS ==" : "== BELUM LUNAS ==").tebal(false).kiri();
+    } else if (penjualan.payment_type === "qris") {
+        p.tengah().tebal(true).baris("== LUNAS (QRIS) ==").tebal(false).kiri();
+    } else {
+        p.baris(duaKolom("Bayar", rupiah(penjualan.paid)));
+        p.baris(duaKolom("Kembali", rupiah(penjualan.change)));
+    }
+
+    if (penjualan.catatan) {
+        p.baris();
+        for (const b of bungkus("Catatan: " + penjualan.catatan)) p.baris(b);
+    }
+
+    p.tengah();
+    p.baris();
+    p.baris("Terima kasih atas pembelian Anda!");
+    p.baris("... SIMPAN STRUK INI ...");
+    p.kiri();
+
+    p.perintah(LF, LF, LF, LF);
+    return p.selesai();
+}
+
+export function notaPembelianArangEscPos(pembelian, store) {
+    const p = new Pita();
+
+    p.perintah(ESC, 0x40);
+
+    p.tengah();
+    p.besar(true).tebal(true);
+    for (const b of bungkus(store.store_name || "Kios BERKAH", LEBAR / 2)) p.baris(b);
+    p.besar(false).tebal(false);
+
+    if (store.store_address) {
+        for (const b of bungkus(store.store_address)) p.baris(b);
+    }
+    if (store.store_phone) p.baris(store.store_phone);
+
+    p.baris();
+    p.tebal(true).baris("TANDA TERIMA KULAK ARANG").tebal(false);
+
+    p.kiri();
+    p.garis();
+    p.baris(duaKolom("No. Bukti", "BELI-ARNG-" + String(pembelian.id).padStart(4, "0")));
+    p.baris(duaKolom("Waktu", tanggal(pembelian.created_at)));
+    p.baris(duaKolom("Pemasok", pembelian.nama_pemasok));
+    p.baris(duaKolom("Penerima", pembelian.user?.name ?? "-"));
+
+    p.garis();
+    const namaJenis = pembelian.arang_jenis?.nama || "Arang Kiloan";
+    for (const b of bungkus(namaJenis)) p.baris(b);
+    p.baris(duaKolom(`  ${pembelian.berat_kg} kg x ${rupiah(pembelian.harga_beli_per_kg)}`, rupiah(pembelian.total_harga)));
+
+    p.garis();
+    p.tebal(true).baris(duaKolom("DIBAYAR TUNAI", rupiah(pembelian.total_harga))).tebal(false);
+
+    if (pembelian.catatan) {
+        p.baris();
+        for (const b of bungkus("Catatan: " + pembelian.catatan)) p.baris(b);
+    }
+
+    p.tengah();
+    p.baris();
+    p.baris("== LUNAS DI TEMPAT ==");
+    p.kiri();
+
+    p.perintah(LF, LF, LF, LF);
+    return p.selesai();
+}
