@@ -70,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('customers', CustomerController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
         Route::post('/credit-payments', [CreditPaymentController::class, 'store'])->name('credit-payments.store');
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
 
         // Riwayat transaksi + koreksi nota (ubah keterangan, batal, retur).
         Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');

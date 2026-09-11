@@ -51,7 +51,7 @@ const metrics = computed(() => [
     },
 ]);
 
-const sku = (id) => "PRD-" + String(id).padStart(3, "0");
+const sku = (p) => p?.sku || (typeof p?.id === 'string' ? p.id : "PRD-" + String(p?.id ?? '').padStart(3, "0"));
 </script>
 
 <template>
@@ -136,7 +136,7 @@ const sku = (id) => "PRD-" + String(id).padStart(3, "0");
                                         >
                                         <span
                                             class="num block text-2xs text-ink-faint"
-                                            >ID: {{ sku(p.id) }}</span
+                                            >ID: {{ sku(p) }}</span
                                         >
                                     </span>
                                 </div>
@@ -144,10 +144,10 @@ const sku = (id) => "PRD-" + String(id).padStart(3, "0");
                             <td
                                 class="td num text-right font-semibold text-danger"
                             >
-                                {{ p.stock }}
+                                {{ p.stock }} <span v-if="p.unit" class="text-xs font-normal text-ink-faint">{{ p.unit }}</span>
                             </td>
                             <td class="td num text-right text-ink-faint">
-                                {{ p.low_stock }}
+                                {{ p.low_stock }} <span v-if="p.unit" class="text-xs font-normal">{{ p.unit }}</span>
                             </td>
                         </tr>
                         <tr v-if="!lowStockList.length">

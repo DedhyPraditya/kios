@@ -14,6 +14,35 @@ class Changelog
     {
         return [
             [
+                'version' => '1.5.1',
+                'date' => '2026-09-11',
+                'date_human' => '11 September 2026',
+                'title' => 'Laporan Keuangan Terpadu & Ekspor Excel Sekali Klik',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Halaman Laporan kini menggabungkan seluruh data toko — eceran dan arang kiloan — dalam satu tampilan. Lihat omzet gabungan, laba kotor terpadu, dan perincian Toko vs Arang secara berdampingan. Ditambah tombol Ekspor Excel/CSV untuk mengunduh pembukuan lengkap ke file yang langsung terbuka rapi di Microsoft Excel.',
+                'changes' => [
+                    [
+                        'category' => '📊 Laporan Terpadu',
+                        'type' => 'feat',
+                        'title' => 'Omzet, Laba, dan Transaksi Gabungan (Toko Eceran + Arang Kiloan)',
+                        'description' => 'Halaman Laporan kini menjumlahkan penjualan toko eceran dan arang kiloan menjadi satu angka. Tersedia juga panel perincian berdampingan agar Anda bisa membandingkan kontribusi masing-masing secara langsung.',
+                    ],
+                    [
+                        'category' => '📥 Ekspor Excel',
+                        'type' => 'feat',
+                        'title' => 'Unduh Laporan CSV/Excel Lengkap Sekali Klik',
+                        'description' => 'Tombol "Ekspor Excel / CSV" di halaman Laporan mengunduh file pembukuan lengkap: ringkasan eksekutif keuangan, daftar transaksi toko, daftar penjualan arang, dan daftar pembelian stok arang dari pembuat — semuanya dalam format yang langsung terbuka rapi di Excel atau Google Sheets.',
+                    ],
+                    [
+                        'category' => '🏠 Dashboard Lebih Lengkap',
+                        'type' => 'ui',
+                        'title' => 'Omzet Hari Ini & Tren 7 Hari Mencakup Arang',
+                        'description' => 'Kartu "Omzet hari ini" di Dashboard kini menjumlahkan penjualan eceran toko dan penjualan arang kiloan. Peringatan stok menipis juga kini mencakup varian arang yang stoknya di bawah 10 kg.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.5.0',
                 'date' => '2026-09-11',
                 'date_human' => '11 September 2026',
