@@ -2,7 +2,7 @@
 
 Catatan teknis aplikasi kasir untuk toko/kios milik tante: keputusan yang
 diambil, apa yang sudah jalan, dan apa yang belum.
-Terakhir diperbarui: 3 September 2026.
+Terakhir diperbarui: 11 September 2026.
 
 > Nama tampilan aplikasi: **Kios BERKAH**. Nama folder / repo tetap `kios-nizam`.
 
@@ -100,8 +100,10 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
 - Filter kategori (chip), grid produk dengan sisa stok.
 - Keranjang: ubah qty, hapus baris, subtotal per baris.
 - Diskon (nominal total), tombol nominal cepat, hitung kembalian.
-- **Metode bayar: Tunai / Kasbon.** Kasbon → pilih pelanggan, DP opsional, jatuh
-  tempo; ditolak bila pelanggan diblokir atau melebihi batas kredit.
+- **Metode bayar: Tunai / QRIS / Kasbon.** QRIS → tampil gambar kode QRIS toko
+  dan modal perbesar untuk pembeli scan, nominal pas otomatis, status langsung lunas.
+  Kasbon → pilih pelanggan, DP opsional, jatuh tempo; ditolak bila pelanggan
+  diblokir atau melebihi batas kredit. QRIS ditolak jika gambar belum diunggah.
 - Simpan transaksi dalam **DB transaction** + `lockForUpdate`; harga diambil ulang
   dari DB; tolak bila stok kurang / bayar kurang (tunai); no nota otomatis
   `INVYYYYMMDD-0001`; stok berkurang otomatis.
@@ -237,6 +239,8 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
 - Nama toko, alamat, telepon, kaki struk — tersimpan di tabel `settings`
   (di-cache) dan dibagikan ke semua halaman lewat `HandleInertiaRequests`.
 - Dipakai di struk, wordmark sidebar, dan top bar ponsel. Ada pratinjau struk.
+- **Unggah QRIS Toko**: kartu upload gambar QRIS (JPG/PNG/WEBP, maks 2MB),
+  pratinjau, ganti, dan hapus. Gambar disimpan di `storage/app/public/qris`.
 
 ### Pengguna (`/users`) — admin
 
@@ -447,7 +451,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ## 9. Pengujian
 
-`php artisan test` — **98 lulus** (689 assertion).
+`php artisan test` — **103 lulus** (722 assertion).
 
 - `PosTest`: pencatatan penjualan + pengurangan stok, tolak stok/bayar kurang,
   batas akses kasir.
@@ -478,6 +482,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - `ActivityLogTest`: siklus hidup produk, pembatalan nota, dan pelunasan kasbon otomatis mencatat audit trail; otorisasi halaman `/audit-logs`.
 - `DatabaseBackupTest`: pembuatan arsip database .sql.gz, pengunduhan, penghapusan, dan proteksi password pada pemulihan (restore).
 - `AppLogTest`: hak akses admin ke menu Log Aplikasi, proteksi kasir, dan fitur pencarian rilis pembaruan.
+- `QrisTest`: upload & hapus gambar QRIS di pengaturan; tolak transaksi QRIS jika gambar belum ada; transaksi QRIS berhasil (status lunas, kembalian 0, stok terpotong); QRIS terdata di rekap shift tanpa menambah uang laci; filter riwayat QRIS.
 
 ---
 
