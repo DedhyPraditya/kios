@@ -14,6 +14,41 @@ class Changelog
     {
         return [
             [
+                'version' => '1.5.0',
+                'date' => '2026-09-11',
+                'date_human' => '11 September 2026',
+                'title' => 'Kelola Bisnis Arang Kiloan Jadi Lebih Mudah — Lengkap dengan Cetak Struk Bluetooth',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Kabar gembira untuk usaha arang Anda! Kios BERKAH kini dilengkapi menu khusus "Arang" untuk mencatat pembelian arang kiloan dari pengrajin, penjualan kiloan ke pembeli, hitungan stok otomatis, hingga cetak struk langsung ke printer Bluetooth tanpa ribet.',
+                'changes' => [
+                    [
+                        'category' => '✨ Fitur Baru',
+                        'type' => 'feat',
+                        'title' => 'Pencatatan Khusus Arang Berbasis Kilogram (kg)',
+                        'description' => 'Kini Anda tidak perlu bingung mencampur arang dengan barang eceran toko. Sistem arang dibuat khusus dengan hitungan kilogram (kg), baik saat kulak dari pembuat arang maupun saat menjual ke pelanggan.',
+                    ],
+                    [
+                        'category' => '🔥 Stok & Varian Otomatis',
+                        'type' => 'feat',
+                        'title' => 'Pantau Stok Tiap Varian Arang Secara Real-Time',
+                        'description' => 'Kelola berbagai varian arang seperti arang batok kelapa atau arang kayu. Stok otomatis bertambah saat kulak dan berkurang saat terjual. Lengkap dengan peringatan otomatis jika stok mulai menipis.',
+                    ],
+                    [
+                        'category' => '🖨️ Cetak Struk & Bluetooth',
+                        'type' => 'ui',
+                        'title' => 'Cetak Struk Penjualan & Bukti Kulak ke Printer Bluetooth',
+                        'description' => 'Berikan struk rapi 58mm untuk pembeli atau tanda terima timbangan untuk pengrajin arang. Cukup satu sentuhan, struk langsung tercetak lewat printer Bluetooth di ponsel atau komputer kasir Anda.',
+                    ],
+                    [
+                        'category' => '💰 Keuangan Terpadu',
+                        'type' => 'system',
+                        'title' => 'Uang Laci Shift Kasir Tetap Rapi & Akurat',
+                        'description' => 'Uang tunai hasil penjualan arang otomatis masuk ke rekap kasir, dan pembayaran kulak tunai ke pembuat arang otomatis memotong kas laci — jadi hitungan fisik laci Anda di akhir shift selalu pas.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.4.0',
                 'date' => '2026-09-11',
                 'date_human' => '11 September 2026',
