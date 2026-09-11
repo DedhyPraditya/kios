@@ -149,19 +149,28 @@ export function strukEscPos(sale, store) {
     p.baris(duaKolom("Waktu", tanggal(sale.created_at)));
     p.baris(duaKolom("Kasir", sale.user?.name ?? "-"));
     if (kasbon) p.baris(duaKolom("Pelanggan", sale.customer?.name ?? "-"));
-    p.baris(duaKolom("Metode", kasbon ? "KASBON" : sale.payment_type === "qris" ? "QRIS" : "TUNAI"));
+    p.baris(
+        duaKolom(
+            "Metode",
+            kasbon ? "KASBON" : sale.payment_type === "qris" ? "QRIS" : "TUNAI",
+        ),
+    );
 
     p.garis();
     for (const it of sale.items ?? []) {
         for (const b of bungkus(it.name)) p.baris(b);
-        p.baris(duaKolom(`  ${it.qty} x ${rupiah(it.price)}`, rupiah(it.subtotal)));
+        p.baris(
+            duaKolom(`  ${it.qty} x ${rupiah(it.price)}`, rupiah(it.subtotal)),
+        );
     }
 
     p.garis();
     p.baris(duaKolom("Subtotal", rupiah(sale.subtotal)));
     if (sale.discount) p.baris(duaKolom("Diskon", "-" + rupiah(sale.discount)));
 
-    p.tebal(true).baris(duaKolom("TOTAL", rupiah(sale.total))).tebal(false);
+    p.tebal(true)
+        .baris(duaKolom("TOTAL", rupiah(sale.total)))
+        .tebal(false);
 
     if (kasbon) {
         p.baris(duaKolom("DP", rupiah(sale.paid)));
@@ -212,7 +221,8 @@ export function strukPenjualanArangEscPos(penjualan, store) {
 
     p.tengah();
     p.besar(true).tebal(true);
-    for (const b of bungkus(store.store_name || "Kios BERKAH", LEBAR / 2)) p.baris(b);
+    for (const b of bungkus(store.store_name || "Kios BERKAH", LEBAR / 2))
+        p.baris(b);
     p.besar(false).tebal(false);
 
     if (store.store_address) {
@@ -228,13 +238,32 @@ export function strukPenjualanArangEscPos(penjualan, store) {
     p.baris(duaKolom("No. Nota", penjualan.no_nota));
     p.baris(duaKolom("Waktu", tanggal(penjualan.created_at)));
     p.baris(duaKolom("Kasir", penjualan.user?.name ?? "-"));
-    p.baris(duaKolom("Pembeli", penjualan.customer?.name ?? (penjualan.nama_pembeli || "Umum")));
-    p.baris(duaKolom("Metode", kasbon ? "KASBON" : penjualan.payment_type === "qris" ? "QRIS" : "TUNAI"));
+    p.baris(
+        duaKolom(
+            "Pembeli",
+            penjualan.customer?.name ?? (penjualan.nama_pembeli || "Umum"),
+        ),
+    );
+    p.baris(
+        duaKolom(
+            "Metode",
+            kasbon
+                ? "KASBON"
+                : penjualan.payment_type === "qris"
+                  ? "QRIS"
+                  : "TUNAI",
+        ),
+    );
 
     p.garis();
     const namaJenis = penjualan.arang_jenis?.nama || "Arang Kiloan";
     for (const b of bungkus(namaJenis)) p.baris(b);
-    p.baris(duaKolom(`  ${penjualan.berat_kg} kg x ${rupiah(penjualan.harga_jual_per_kg)}`, rupiah(penjualan.total_harga)));
+    p.baris(
+        duaKolom(
+            `  ${penjualan.berat_kg} kg x ${rupiah(penjualan.harga_jual_per_kg)}`,
+            rupiah(penjualan.total_harga),
+        ),
+    );
 
     p.garis();
     p.baris(duaKolom("Subtotal", rupiah(penjualan.total_harga)));
@@ -242,14 +271,22 @@ export function strukPenjualanArangEscPos(penjualan, store) {
         p.baris(duaKolom("Diskon", "-" + rupiah(penjualan.diskon)));
     }
 
-    p.tebal(true).baris(duaKolom("TOTAL", rupiah(penjualan.grand_total))).tebal(false);
+    p.tebal(true)
+        .baris(duaKolom("TOTAL", rupiah(penjualan.grand_total)))
+        .tebal(false);
 
     if (kasbon) {
         p.baris(duaKolom("DP Diterima", rupiah(penjualan.paid)));
         const sisa = Math.max(0, penjualan.grand_total - (penjualan.paid || 0));
-        p.tebal(true).baris(duaKolom("Sisa Kasbon", rupiah(sisa))).tebal(false);
+        p.tebal(true)
+            .baris(duaKolom("Sisa Kasbon", rupiah(sisa)))
+            .tebal(false);
         p.baris();
-        p.tengah().tebal(true).baris(lunas ? "== LUNAS ==" : "== BELUM LUNAS ==").tebal(false).kiri();
+        p.tengah()
+            .tebal(true)
+            .baris(lunas ? "== LUNAS ==" : "== BELUM LUNAS ==")
+            .tebal(false)
+            .kiri();
     } else if (penjualan.payment_type === "qris") {
         p.tengah().tebal(true).baris("== LUNAS (QRIS) ==").tebal(false).kiri();
     } else {
@@ -279,7 +316,8 @@ export function notaPembelianArangEscPos(pembelian, store) {
 
     p.tengah();
     p.besar(true).tebal(true);
-    for (const b of bungkus(store.store_name || "Kios BERKAH", LEBAR / 2)) p.baris(b);
+    for (const b of bungkus(store.store_name || "Kios BERKAH", LEBAR / 2))
+        p.baris(b);
     p.besar(false).tebal(false);
 
     if (store.store_address) {
@@ -292,7 +330,12 @@ export function notaPembelianArangEscPos(pembelian, store) {
 
     p.kiri();
     p.garis();
-    p.baris(duaKolom("No. Bukti", "BELI-ARNG-" + String(pembelian.id).padStart(4, "0")));
+    p.baris(
+        duaKolom(
+            "No. Bukti",
+            "BELI-ARNG-" + String(pembelian.id).padStart(4, "0"),
+        ),
+    );
     p.baris(duaKolom("Waktu", tanggal(pembelian.created_at)));
     p.baris(duaKolom("Pemasok", pembelian.nama_pemasok));
     p.baris(duaKolom("Penerima", pembelian.user?.name ?? "-"));
@@ -300,10 +343,17 @@ export function notaPembelianArangEscPos(pembelian, store) {
     p.garis();
     const namaJenis = pembelian.arang_jenis?.nama || "Arang Kiloan";
     for (const b of bungkus(namaJenis)) p.baris(b);
-    p.baris(duaKolom(`  ${pembelian.berat_kg} kg x ${rupiah(pembelian.harga_beli_per_kg)}`, rupiah(pembelian.total_harga)));
+    p.baris(
+        duaKolom(
+            `  ${pembelian.berat_kg} kg x ${rupiah(pembelian.harga_beli_per_kg)}`,
+            rupiah(pembelian.total_harga),
+        ),
+    );
 
     p.garis();
-    p.tebal(true).baris(duaKolom("DIBAYAR TUNAI", rupiah(pembelian.total_harga))).tebal(false);
+    p.tebal(true)
+        .baris(duaKolom("DIBAYAR TUNAI", rupiah(pembelian.total_harga)))
+        .tebal(false);
 
     if (pembelian.catatan) {
         p.baris();
