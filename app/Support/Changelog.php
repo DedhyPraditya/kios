@@ -14,6 +14,35 @@ class Changelog
     {
         return [
             [
+                'version' => '1.5.2',
+                'date' => '2026-09-11',
+                'date_human' => '11 September 2026',
+                'title' => 'Ekspor Excel Resmi (.xlsx) Multi-Sheet Siap Saji Tanpa Olah Data',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Laporan penjualan kini dapat diunduh langsung sebagai file Microsoft Excel murni (.xlsx) dengan 4 lembar kerja (Ringkasan Eksekutif, Penjualan Toko, Penjualan Arang, dan Pembelian Stok Arang). Seluruh tabel sudah bergaris rapi, berwarna resmi, berformat angka Rupiah standar akuntansi, dan dilengkapi rumus jumlah otomatis (=SUM) sehingga siap dicetak atau diarsipkan tanpa perlu edit manual lagi.',
+                'changes' => [
+                    [
+                        'category' => '📊 Ekspor Excel (.xlsx)',
+                        'type' => 'feat',
+                        'title' => 'Buku Kerja Multi-Sheet Rapi & Standar Akuntansi',
+                        'description' => 'File Excel terbagi rapi menjadi 4 sheet: Ringkasan Eksekutif, Penjualan Toko Eceran, Penjualan Arang Kiloan, dan Pembelian Stok Arang dari Pembuat. Setiap sheet memiliki kop toko, tanggal cetak, dan judul resmi.',
+                    ],
+                    [
+                        'category' => '💰 Format Angka & Rumus Otomatis',
+                        'type' => 'ui',
+                        'title' => 'Format Rupiah Asli & Rumus SUM Siap Pakai',
+                        'description' => 'Seluruh angka omzet, modal, diskon, dan grand total otomatis berformat Rupiah ("Rp #,##0") yang tetap berupa angka asli (bukan teks) sehingga bisa dijumlahkan. Baris total di akhir tabel sudah otomatis menghitung dengan rumus SUM.',
+                    ],
+                    [
+                        'category' => '🔒 Kerapian Tampilan',
+                        'type' => 'ui',
+                        'title' => 'Kolom Pas & Freeze Header Otomatis',
+                        'description' => 'Lebar kolom otomatis disesuaikan dengan isi teks sehingga tidak ada tulisan terpotong atau tanda ###. Baris judul tabel dibekukan (freeze pane) agar tetap terlihat saat menggulir ribuan data transaksi.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.5.1',
                 'date' => '2026-09-11',
                 'date_human' => '11 September 2026',

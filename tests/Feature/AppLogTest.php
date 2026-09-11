@@ -23,7 +23,7 @@ class AppLogTest extends TestCase
                 ->has('logs')
                 ->has('system')
                 ->where('system.app_name', config('app.name'))
-                ->where('logs.0.version', '1.5.0')
+                ->where('logs.0.version', \App\Support\Changelog::all()[0]['version'])
             );
     }
 

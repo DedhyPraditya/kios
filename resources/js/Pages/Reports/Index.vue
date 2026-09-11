@@ -48,14 +48,25 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
             subtitle="Rekap omzet terpadu, laba kotor, produk terlaris, dan ekspor pembukuan"
         >
             <template #action>
-                <a
-                    :href="route('reports.export', { from: filter.from, to: filter.to })"
-                    class="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-transform active:scale-95"
-                    download
-                >
-                    <Icon name="download" :size="18" />
-                    <span>Ekspor Excel / CSV</span>
-                </a>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a
+                        :href="route('reports.export.excel', { from: filter.from, to: filter.to })"
+                        class="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-transform active:scale-95"
+                        download
+                        title="Unduh file Excel resmi (.xlsx) dengan tabel bergaris, warna rapi, dan data siap saji"
+                    >
+                        <Icon name="download" :size="18" />
+                        <span>Unduh Excel (.xlsx)</span>
+                    </a>
+                    <a
+                        :href="route('reports.export.csv', { from: filter.from, to: filter.to })"
+                        class="btn-ghost inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium"
+                        download
+                        title="Unduh format mentah CSV"
+                    >
+                        <span>CSV Mentah</span>
+                    </a>
+                </div>
             </template>
         </PageHeader>
 

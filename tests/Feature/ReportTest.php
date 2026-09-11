@@ -113,6 +113,45 @@ class ReportTest extends TestCase
             );
     }
 
+    public function test_admin_can_export_excel_report(): void
+    {
+        $admin = $this->admin();
+
+        $arang = ArangJenis::create([
+            'nama' => 'Batok Kelapa',
+            'harga_beli_default' => 6000,
+            'harga_jual_default' => 9000,
+            'aktif' => true,
+        ]);
+
+        ArangPenjualan::create([
+            'no_nota' => 'ARNG-XLS-0001',
+            'tanggal' => today(),
+            'arang_jenis_id' => $arang->id,
+            'nama_pembeli' => 'Pelanggan Arang',
+            'berat_kg' => 5,
+            'harga_jual_per_kg' => 9000,
+            'total_harga' => 45000,
+            'diskon' => 0,
+            'grand_total' => 45000,
+            'paid' => 45000,
+            'change' => 0,
+            'payment_type' => 'tunai',
+            'status' => 'lunas',
+            'user_id' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('reports.export.excel', [
+                'from' => today()->toDateString(),
+                'to' => today()->toDateString(),
+            ]));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
+    }
+
     public function test_admin_can_export_csv_report(): void
     {
         $admin = $this->admin();
@@ -142,7 +181,7 @@ class ReportTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->get(route('reports.export', [
+            ->get(route('reports.export.csv', [
                 'from' => today()->toDateString(),
                 'to' => today()->toDateString(),
             ]));
@@ -171,7 +210,11 @@ class ReportTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($kasir)
-            ->get(route('reports.export'))
+            ->get(route('reports.export.excel'))
+            ->assertForbidden();
+
+        $this->actingAs($kasir)
+            ->get(route('reports.export.csv'))
             ->assertForbidden();
     }
 }

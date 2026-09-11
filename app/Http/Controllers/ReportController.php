@@ -8,6 +8,7 @@ use App\Models\ArangPenjualan;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Setting;
+use App\Services\ReportExcelExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,12 +18,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
+    private function gatherReportData(Carbon $from, Carbon $to): array
     {
-        $from = $request->date('from') ?: Carbon::today();
-        $to = $request->date('to') ?: Carbon::today();
-        $from = $from->copy()->startOfDay();
-        $to = $to->copy()->endOfDay();
+        $store = Setting::values();
+        $storeName = $store['store_name'] ?? 'Kios BERKAH';
 
         // 1. Toko Eceran
         $salesInRange = Sale::valid()->whereBetween('created_at', [$from, $to]);
@@ -146,6 +145,7 @@ class ReportController extends Controller
             ->latest()
             ->limit(15)
             ->get()
+            ->toBase()
             ->map(fn (Sale $s) => [
                 'id' => $s->id,
                 'type' => 'toko',
@@ -162,6 +162,7 @@ class ReportController extends Controller
             ->latest()
             ->limit(15)
             ->get()
+            ->toBase()
             ->map(fn (ArangPenjualan $a) => [
                 'id' => $a->id,
                 'type' => 'arang',
@@ -173,21 +174,106 @@ class ReportController extends Controller
                 'created_at' => $a->created_at,
             ]);
 
-        $recent = $recentToko->merge($recentArang)->sortByDesc('created_at')->take(20)->values();
+        $recent = $recentToko->concat($recentArang)->sortByDesc('created_at')->take(20)->values();
 
         // 7. Piutang Total (Toko + Arang)
         $piutangToko = Sale::unpaid()->get()->sum(fn (Sale $s) => $s->outstanding());
         $piutangArang = (int) ArangPenjualan::where('status', 'belum_lunas')->sum(DB::raw('grand_total - paid'));
-        $piutangTotal = $piutangToko + $piutangArang;
+        $piutang = [
+            'total' => $piutangToko + $piutangArang,
+            'toko' => $piutangToko,
+            'arang' => $piutangArang,
+        ];
 
-        return Inertia::render('Reports/Index', [
-            'range' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+        return [
+            'storeName' => $storeName,
             'summary' => $summary,
             'breakdown' => $breakdown,
             'daily' => $daily,
             'topProducts' => $topProducts,
             'recent' => $recent,
-            'piutangTotal' => $piutangTotal,
+            'piutang' => $piutang,
+            'salesInRange' => $salesInRange,
+            'arangJualInRange' => $arangJualInRange,
+            'arangBeliInRange' => $arangBeliInRange,
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        $from = $request->date('from') ?: Carbon::today();
+        $to = $request->date('to') ?: Carbon::today();
+        $from = $from->copy()->startOfDay();
+        $to = $to->copy()->endOfDay();
+
+        $data = $this->gatherReportData($from, $to);
+
+        return Inertia::render('Reports/Index', [
+            'range' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'summary' => $data['summary'],
+            'breakdown' => $data['breakdown'],
+            'daily' => $data['daily'],
+            'topProducts' => $data['topProducts'],
+            'recent' => $data['recent'],
+            'piutangTotal' => $data['piutang']['total'],
+        ]);
+    }
+
+    public function export(Request $request, ReportExcelExportService $excelService)
+    {
+        if ($request->query('format') === 'csv') {
+            return $this->exportCsv($request);
+        }
+
+        return $this->exportExcel($request, $excelService);
+    }
+
+    public function exportExcel(Request $request, ReportExcelExportService $excelService): StreamedResponse
+    {
+        $from = $request->date('from') ?: Carbon::today();
+        $to = $request->date('to') ?: Carbon::today();
+        $from = $from->copy()->startOfDay();
+        $to = $to->copy()->endOfDay();
+
+        $data = $this->gatherReportData($from, $to);
+
+        $sales = (clone $data['salesInRange'])
+            ->with(['user:id,name', 'customer:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $arangJuals = (clone $data['arangJualInRange'])
+            ->with(['user:id,name', 'customer:id,name', 'arangJenis:id,nama'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $arangBelis = (clone $data['arangBeliInRange'])
+            ->with(['user:id,name', 'arangJenis:id,nama'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $spreadsheet = $excelService->generate(
+            $data['storeName'],
+            $from,
+            $to,
+            $data['summary'],
+            $data['breakdown'],
+            $data['daily'],
+            $data['topProducts'],
+            $sales,
+            $arangJuals,
+            $arangBelis,
+            $data['piutang']
+        );
+
+        $filename = 'Laporan-'.Str::slug($data['storeName']).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 
