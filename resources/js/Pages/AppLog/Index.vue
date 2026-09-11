@@ -47,6 +47,8 @@ function getBadgeColor(type) {
             return "bg-purple-50 text-purple-800 border-purple-200";
         case "fix":
             return "bg-amber-50 text-amber-900 border-amber-200";
+        case "launch":
+            return "bg-brand text-white border-brand";
         case "docs":
             return "bg-slate-100 text-slate-800 border-slate-200";
         default:
@@ -56,13 +58,13 @@ function getBadgeColor(type) {
 </script>
 
 <template>
-    <Head title="Log Aplikasi & Pembaruan" />
+    <Head title="Pembaruan Aplikasi" />
 
     <AuthenticatedLayout>
         <div class="space-y-6">
             <PageHeader
-                title="Log Aplikasi & Pembaruan"
-                subtitle="Catatan riwayat rilis, fitur baru, dan penyempurnaan sistem Kios BERKAH."
+                title="Pembaruan Aplikasi"
+                subtitle="Semua yang baru dan lebih baik di Kios BERKAH — selalu diperbarui untuk membantu toko Anda."
             />
 
             <!-- Search & Filter Bar -->
@@ -78,7 +80,7 @@ function getBadgeColor(type) {
                         <input
                             v-model="q.search"
                             type="search"
-                            placeholder="Cari fitur, perbaikan, atau versi pembaruan..."
+                            placeholder="Cari pembaruan, fitur, atau versi..."
                             class="field w-full py-2.5 pl-9 pr-3 text-sm"
                         />
                     </label>

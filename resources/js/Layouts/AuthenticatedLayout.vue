@@ -66,7 +66,7 @@ const navGroups = computed(() => {
                 items: [
                     { name: "reports.index", label: "Laporan", icon: "laporan" },
                     { name: "audit-logs.index", label: "Log Aktivitas", icon: "shield" },
-                    { name: "app-logs.index", label: "Log Aplikasi", icon: "history" },
+                    { name: "app-logs.index", label: "Pembaruan Aplikasi", icon: "history" },
                     { name: "backups.index", label: "Cadangan Data", icon: "database" },
                     { name: "users.index", label: "Pengguna", icon: "pengguna" },
                     { name: "settings.edit", label: "Pengaturan", icon: "gear" },
