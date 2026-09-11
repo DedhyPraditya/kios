@@ -53,7 +53,7 @@ function resetFilter() {
                 <div class="flex items-center gap-2">
                     <Link :href="route('arang.index')" class="btn-secondary flex items-center gap-1.5">
                         <Icon name="chevron" :size="16" class="rotate-90" />
-                        <span>Kembali ke Modul Arang</span>
+                        <span>Kembali ke Arang</span>
                     </Link>
                     <Link :href="route('arang.beli.create')" class="btn-secondary">
                         + Beli Arang

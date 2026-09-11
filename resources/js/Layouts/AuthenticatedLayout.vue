@@ -46,7 +46,7 @@ const navGroups = computed(() => {
 
     groups[0].items.push({
         name: "arang.index",
-        label: "Modul Arang",
+        label: "Arang",
         icon: "fire",
     });
 

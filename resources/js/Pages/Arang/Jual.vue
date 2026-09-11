@@ -112,7 +112,7 @@ function submit() {
             <template #actions>
                 <Link :href="route('arang.index')" class="btn-secondary flex items-center gap-1.5">
                     <Icon name="chevron" :size="16" class="rotate-90" />
-                    <span>Kembali ke Modul Arang</span>
+                    <span>Kembali ke Arang</span>
                 </Link>
             </template>
         </PageHeader>

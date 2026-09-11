@@ -17,11 +17,11 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
 </script>
 
 <template>
-    <Head title="Modul Arang" />
+    <Head title="Arang" />
 
     <AuthenticatedLayout>
         <PageHeader
-            title="Modul Arang"
+            title="Arang"
             subtitle="Pusat pengelolaan pembelian arang kiloan dari pembuat dan penjualan ke pelanggan."
         >
             <template #actions>

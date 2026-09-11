@@ -59,7 +59,7 @@ function cetak() {
                     :href="route('arang.index')"
                     class="text-xs text-brand hover:underline font-medium"
                 >
-                    &larr; Modul Arang
+                    &larr; Arang
                 </Link>
             </div>
 
@@ -207,7 +207,7 @@ function cetak() {
                         :href="route('arang.index')"
                         class="btn-secondary flex-1 text-center py-2 text-xs"
                     >
-                        Modul Arang
+                        Arang
                     </Link>
                 </div>
             </div>
