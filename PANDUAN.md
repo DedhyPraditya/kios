@@ -185,7 +185,7 @@ struk.
 ### Mencetak dari HP atau tablet
 
 Di ponsel, kotak cetak peramban tidak bisa diandalkan untuk kertas 58 mm.
-Karena itu halaman struk menampilkan tombol **Cetak ke printer Bluetooth** yang
+Karena itu halaman struk menampilkan tombol **Printer Bluetooth** yang
 mengirim struk langsung ke printer — tanpa kotak cetak, tanpa memilih ukuran
 kertas.
 
@@ -214,6 +214,28 @@ Kalau gagal, pesannya muncul tepat di bawah tombol:
   untuk sementara dan laporkan mereknya.
 - Pesan lain — biasanya printer mati, kehabisan daya, atau terlalu jauh.
   Dekatkan dan coba lagi.
+
+### Mencetak langsung dari PC (tanpa kotak cetak)
+
+Di Chrome atau Edge PC, halaman struk juga menampilkan tombol cetak langsung:
+
+- **Printer Bluetooth** — sama seperti di HP. Butuh Bluetooth di PC dan printer
+  yang mendukung Bluetooth hemat daya (BLE).
+- **Printer USB / COM** — untuk printer yang di Windows terbaca sebagai port
+  COM: printer USB dengan kabel USB-serial, atau printer Bluetooth yang sudah
+  dipasangkan (pairing) lewat **Pengaturan Windows → Bluetooth**. Saat pertama
+  kali ditekan, pilih port printernya dari daftar; pilihan itu diingat.
+
+Kalau kedua tombol tidak berhasil, pakai tombol **Cetak** biasa (kotak cetak)
+seperti di atas — jalur itu tetap bisa dipakai kapan saja.
+
+### Kode QR / barcode nomor nota di struk
+
+Di **Pengaturan → Kode nomor nota di struk**, pilih **QR code** atau
+**Barcode** agar nomor nota tercetak sebagai kode di bawah struk. Saat pembeli
+datang membawa struk (misalnya untuk retur), buka **Riwayat**, tekan tombol
+**Kamera** (atau scan dengan scanner kasir di kotak cari) — notanya langsung
+terbuka. Pilih **Barcode** bila scanner toko hanya bisa membaca barcode garis.
 
 ### Membaca warna stok di kartu produk
 
