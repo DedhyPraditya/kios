@@ -44,6 +44,10 @@ class UserController extends Controller
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
 
+        if ($data['role'] !== 'admin' && $this->isLastAdmin($user)) {
+            return back()->withErrors(['role' => 'Ini satu-satunya akun admin — perannya tidak bisa diubah.']);
+        }
+
         if (empty($data['password'])) {
             unset($data['password']);
         } else {
@@ -63,6 +67,10 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Tidak bisa menghapus akun sendiri.']);
         }
 
+        if ($this->isLastAdmin($user)) {
+            return back()->withErrors(['user' => 'Ini satu-satunya akun admin — tidak bisa dihapus.']);
+        }
+
         $userName = $user->name;
         $userId = $user->id;
         $user->delete();
@@ -70,5 +78,11 @@ class UserController extends Controller
         \App\Models\ActivityLog::record('user.delete', "Menghapus akun pengguna '{$userName}'", null, ['id' => $userId, 'name' => $userName]);
 
         return back()->with('success', 'Pengguna dihapus.');
+    }
+
+    /** Tanpa admin tersisa, tak ada yang bisa mengelola toko. */
+    private function isLastAdmin(User $user): bool
+    {
+        return $user->isAdmin() && User::where('role', 'admin')->count() <= 1;
     }
 }

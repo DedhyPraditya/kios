@@ -303,11 +303,11 @@ class ReportController extends Controller
             fwrite($out, "\xEF\xBB\xBF");
 
             // --- HEADER LAPORAN ---
-            fputcsv($out, ['LAPORAN PENJUALAN & KEUANGAN TERPADU']);
-            fputcsv($out, ['Nama Toko', $storeName]);
-            fputcsv($out, ['Periode', $from->format('d/m/Y') . ' s/d ' . $to->format('d/m/Y')]);
-            fputcsv($out, ['Waktu Unduh', now()->format('d/m/Y H:i:s')]);
-            fputcsv($out, []);
+            $this->csvRow($out, ['LAPORAN PENJUALAN & KEUANGAN TERPADU']);
+            $this->csvRow($out, ['Nama Toko', $storeName]);
+            $this->csvRow($out, ['Periode', $from->format('d/m/Y') . ' s/d ' . $to->format('d/m/Y')]);
+            $this->csvRow($out, ['Waktu Unduh', now()->format('d/m/Y H:i:s')]);
+            $this->csvRow($out, []);
 
             // 1. Data Toko Eceran
             $salesInRange = Sale::valid()->whereBetween('created_at', [$from, $to]);
@@ -340,49 +340,49 @@ class ReportController extends Controller
                 ->value('p');
 
             // --- RINGKASAN EKSEKUTIF ---
-            fputcsv($out, ['=== RINGKASAN EKSEKUTIF KEUANGAN ===']);
-            fputcsv($out, ['Indikator', 'Nilai Gabungan', 'Toko Eceran', 'Modul Arang']);
-            fputcsv($out, [
+            $this->csvRow($out, ['[ RINGKASAN EKSEKUTIF KEUANGAN ]']);
+            $this->csvRow($out, ['Indikator', 'Nilai Gabungan', 'Toko Eceran', 'Modul Arang']);
+            $this->csvRow($out, [
                 'Total Omzet Penjualan',
                 $tokoOmzet + $arangOmzet,
                 $tokoOmzet,
                 $arangOmzet,
             ]);
-            fputcsv($out, [
+            $this->csvRow($out, [
                 'Estimasi Laba Kotor',
                 $tokoProfit + $arangProfit,
                 $tokoProfit,
                 $arangProfit,
             ]);
-            fputcsv($out, [
+            $this->csvRow($out, [
                 'Jumlah Transaksi',
                 $tokoCount + $arangCount,
                 $tokoCount,
                 $arangCount,
             ]);
-            fputcsv($out, [
+            $this->csvRow($out, [
                 'Total Diskon Diberikan',
                 $tokoDiscount + $arangDiscount,
                 $tokoDiscount,
                 $arangDiscount,
             ]);
-            fputcsv($out, [
+            $this->csvRow($out, [
                 'Volume Arang Terjual (kg)',
                 $arangKg . ' kg',
                 '-',
                 $arangKg . ' kg',
             ]);
-            fputcsv($out, [
+            $this->csvRow($out, [
                 'Pembelian Stok Arang dari Pembuat',
                 $arangBeliStok,
                 '-',
                 $arangBeliStok,
             ]);
-            fputcsv($out, []);
+            $this->csvRow($out, []);
 
             // --- RINCIAN PENJUALAN BARANG TOKO ECERAN ---
-            fputcsv($out, ['=== RINCIAN PENJUALAN TOKO ECERAN ===']);
-            fputcsv($out, [
+            $this->csvRow($out, ['[ RINCIAN PENJUALAN TOKO ECERAN ]']);
+            $this->csvRow($out, [
                 'No. Nota',
                 'Waktu Transaksi',
                 'Kasir',
@@ -400,7 +400,7 @@ class ReportController extends Controller
                 ->get();
 
             foreach ($sales as $s) {
-                fputcsv($out, [
+                $this->csvRow($out, [
                     $s->invoice_no,
                     $s->created_at->format('d/m/Y H:i'),
                     $s->user?->name ?? '-',
@@ -412,11 +412,11 @@ class ReportController extends Controller
                     $s->total,
                 ]);
             }
-            fputcsv($out, []);
+            $this->csvRow($out, []);
 
             // --- RINCIAN PENJUALAN ARANG KILOAN ---
-            fputcsv($out, ['=== RINCIAN PENJUALAN ARANG KILOAN ===']);
-            fputcsv($out, [
+            $this->csvRow($out, ['[ RINCIAN PENJUALAN ARANG KILOAN ]']);
+            $this->csvRow($out, [
                 'No. Nota',
                 'Waktu Transaksi',
                 'Kasir',
@@ -437,7 +437,7 @@ class ReportController extends Controller
                 ->get();
 
             foreach ($arangJuals as $aj) {
-                fputcsv($out, [
+                $this->csvRow($out, [
                     $aj->no_nota,
                     $aj->created_at->format('d/m/Y H:i'),
                     $aj->user?->name ?? '-',
@@ -452,11 +452,11 @@ class ReportController extends Controller
                     $aj->catatan ?? '-',
                 ]);
             }
-            fputcsv($out, []);
+            $this->csvRow($out, []);
 
             // --- RINCIAN PEMBELIAN STOK ARANG ---
-            fputcsv($out, ['=== RINCIAN PEMBELIAN STOK ARANG DARI PEMBUAT ===']);
-            fputcsv($out, [
+            $this->csvRow($out, ['[ RINCIAN PEMBELIAN STOK ARANG DARI PEMBUAT ]']);
+            $this->csvRow($out, [
                 'No. Bukti',
                 'Waktu Pembelian',
                 'Penerima / Kasir',
@@ -474,8 +474,8 @@ class ReportController extends Controller
                 ->get();
 
             foreach ($arangBelis as $ab) {
-                fputcsv($out, [
-                    'BELI-ARNG-' . str_pad((string) $ab->id, 4, '0', STR_PAD_LEFT),
+                $this->csvRow($out, [
+                    $ab->no_nota ?? 'BELI-ARNG-' . str_pad((string) $ab->id, 4, '0', STR_PAD_LEFT),
                     $ab->created_at->format('d/m/Y H:i'),
                     $ab->user?->name ?? '-',
                     $ab->nama_pemasok,
@@ -491,5 +491,26 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Tulis satu baris CSV. Teks berawalan = + - @ diberi tanda kutip tunggal
+     * agar tidak dijalankan sebagai rumus saat dibuka di Excel (formula
+     * injection lewat nama pelanggan, pemasok, atau catatan).
+     */
+    private function csvRow($out, array $fields): void
+    {
+        $safe = array_map(function ($v) {
+            if (! is_string($v) || $v === '' || is_numeric($v)) {
+                return $v;
+            }
+            if (preg_match('/^[=+@\t\r]/', $v) || ($v[0] === '-' && strlen($v) > 1)) {
+                return "'".$v;
+            }
+
+            return $v;
+        }, $fields);
+
+        fputcsv($out, $safe);
     }
 }

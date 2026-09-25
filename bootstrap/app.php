@@ -14,7 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // Hanya percayai header X-Forwarded-* dari proxy yang disebut di
+        // TRUSTED_PROXIES (mis. "127.0.0.1" atau "*" di balik Cloudflare/Nginx).
+        // Mempercayai semua sumber membuat IP bisa dipalsukan, sehingga batas
+        // percobaan login per IP bisa diakali.
+        $proxies = env('TRUSTED_PROXIES');
+        if ($proxies) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,

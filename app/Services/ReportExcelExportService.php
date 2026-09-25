@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\CarbonInterface;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -70,7 +71,7 @@ class ReportExcelExportService
 
         // Store Name
         $sheet->mergeCells("A1:{$lastCol}1");
-        $sheet->setCellValue('A1', strtoupper($storeName));
+        $this->text($sheet, 'A1', strtoupper($storeName));
         $sheet->getStyle('A1')->getFont()->setSize(16)->setBold(true)->getColor()->setRGB(self::THEME_DARK);
         $sheet->getRowDimension(1)->setRowHeight(24);
 
@@ -273,10 +274,10 @@ class ReportExcelExportService
                 $row++;
                 $sheet->setCellValue("A{$row}", "#{$rank}");
                 $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->setCellValue("B{$row}", $tp['name'] ?? '-');
+                $this->text($sheet, "B{$row}", $tp['name'] ?? '-');
                 $sheet->setCellValue("C{$row}", (float) ($tp['qty'] ?? 0));
                 $sheet->getStyle("C{$row}")->getNumberFormat()->setFormatCode('#,##0.##');
-                $sheet->setCellValue("D{$row}", $tp['unit'] ?? 'pcs');
+                $this->text($sheet, "D{$row}", $tp['unit'] ?? 'pcs');
                 $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $this->setFormattedValue($sheet, "E{$row}", $tp['omzet'] ?? 0, 'currency', true);
                 $sheet->getRowDimension($row)->setRowHeight(19);
@@ -341,8 +342,8 @@ class ReportExcelExportService
                 $sheet->setCellValue("C{$row}", $s->created_at ? $s->created_at->format('d/m/Y H:i') : '-');
                 $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $sheet->setCellValue("D{$row}", $s->user?->name ?? '-');
-                $sheet->setCellValue("E{$row}", $s->customer?->name ?? 'Umum');
+                $this->text($sheet, "D{$row}", $s->user?->name ?? '-');
+                $this->text($sheet, "E{$row}", $s->customer?->name ?? 'Umum');
 
                 $sheet->setCellValue("F{$row}", strtoupper($s->payment_type ?? 'TUNAI'));
                 $sheet->getStyle("F{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -426,11 +427,11 @@ class ReportExcelExportService
                 $sheet->setCellValue("C{$row}", $aj->created_at ? $aj->created_at->format('d/m/Y H:i') : '-');
                 $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $sheet->setCellValue("D{$row}", $aj->user?->name ?? '-');
+                $this->text($sheet, "D{$row}", $aj->user?->name ?? '-');
                 $pembeli = $aj->customer?->name ?? ($aj->nama_pembeli ?: 'Umum');
-                $sheet->setCellValue("E{$row}", $pembeli);
+                $this->text($sheet, "E{$row}", $pembeli);
 
-                $sheet->setCellValue("F{$row}", $aj->arangJenis?->nama ?? 'Arang');
+                $this->text($sheet, "F{$row}", $aj->arangJenis?->nama ?? 'Arang');
 
                 $sheet->setCellValue("G{$row}", (float) $aj->berat_kg);
                 $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
@@ -451,7 +452,7 @@ class ReportExcelExportService
                     $sheet->getStyle("L{$row}")->getFont()->getColor()->setRGB('DC2626')->setBold(true);
                 }
 
-                $sheet->setCellValue("M{$row}", $aj->catatan ?? '-');
+                $this->text($sheet, "M{$row}", $aj->catatan ?? '-');
                 $sheet->getRowDimension($row)->setRowHeight(19);
             }
 
@@ -515,16 +516,16 @@ class ReportExcelExportService
                 $sheet->setCellValue("A{$row}", $no++);
                 $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $bukti = 'BELI-ARNG-' . str_pad((string) $ab->id, 4, '0', STR_PAD_LEFT);
+                $bukti = $ab->no_nota ?? 'BELI-ARNG-' . str_pad((string) $ab->id, 4, '0', STR_PAD_LEFT);
                 $sheet->setCellValue("B{$row}", $bukti);
                 $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 $sheet->setCellValue("C{$row}", $ab->created_at ? $ab->created_at->format('d/m/Y H:i') : '-');
                 $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $sheet->setCellValue("D{$row}", $ab->user?->name ?? '-');
-                $sheet->setCellValue("E{$row}", $ab->nama_pemasok);
-                $sheet->setCellValue("F{$row}", $ab->arangJenis?->nama ?? 'Arang');
+                $this->text($sheet, "D{$row}", $ab->user?->name ?? '-');
+                $this->text($sheet, "E{$row}", $ab->nama_pemasok);
+                $this->text($sheet, "F{$row}", $ab->arangJenis?->nama ?? 'Arang');
 
                 $sheet->setCellValue("G{$row}", (float) $ab->berat_kg);
                 $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
@@ -533,7 +534,7 @@ class ReportExcelExportService
                 $sheet->setCellValue("I{$row}", (int) $ab->total_harga);
 
                 $this->applyCurrencyFormat($sheet, "H{$row}:I{$row}");
-                $sheet->setCellValue("J{$row}", $ab->catatan ?? '-');
+                $this->text($sheet, "J{$row}", $ab->catatan ?? '-');
                 $sheet->getRowDimension($row)->setRowHeight(19);
             }
 
@@ -557,6 +558,15 @@ class ReportExcelExportService
 
         $this->applyTableBorders($sheet, "A{$headerRow}:J{$row}");
         $this->autoFitColumns($sheet, range('A', 'J'));
+    }
+
+    /**
+     * Tulis teks masukan pengguna (nama, catatan) sebagai teks murni. Tanpa
+     * ini, nilai berawalan "=" dianggap rumus oleh Excel (formula injection).
+     */
+    private function text(Worksheet $sheet, string $cell, ?string $value): void
+    {
+        $sheet->setCellValueExplicit($cell, (string) $value, DataType::TYPE_STRING);
     }
 
     private function styleTableHeader(Worksheet $sheet, string $range, string $bgColor): void

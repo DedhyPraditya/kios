@@ -44,6 +44,7 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->accountThrottleKey(), 15 * 60);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -51,6 +52,7 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->accountThrottleKey());
     }
 
     /**
@@ -60,13 +62,21 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        // Per IP: 5 kali. Per akun dari IP mana pun: 20 kali / 15 menit, agar
+        // tebak kata sandi dari banyak alamat IP tetap tertahan.
+        $key = match (true) {
+            RateLimiter::tooManyAttempts($this->throttleKey(), 5) => $this->throttleKey(),
+            RateLimiter::tooManyAttempts($this->accountThrottleKey(), 20) => $this->accountThrottleKey(),
+            default => null,
+        };
+
+        if (! $key) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($key);
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -82,5 +92,10 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    public function accountThrottleKey(): string
+    {
+        return 'login-account|'.Str::transliterate(Str::lower($this->string('email')));
     }
 }

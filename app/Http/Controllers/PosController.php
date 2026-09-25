@@ -76,6 +76,12 @@ class PosController extends Controller
             foreach ($qtyById as $id => $qty) {
                 $product = $products[$id];
 
+                if (! $product->is_active) {
+                    throw ValidationException::withMessages([
+                        'items' => "{$product->name} sedang tidak dijual.",
+                    ]);
+                }
+
                 if ($product->stock < $qty) {
                     throw ValidationException::withMessages([
                         'items' => "Stok {$product->name} tidak cukup (sisa {$product->stock}).",

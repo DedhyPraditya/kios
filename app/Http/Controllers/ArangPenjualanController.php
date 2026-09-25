@@ -8,6 +8,7 @@ use App\Models\CashSession;
 use App\Models\Customer;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ArangPenjualanController extends Controller
@@ -45,15 +46,34 @@ class ArangPenjualanController extends Controller
             return back()->withErrors(['customer_id' => 'Pelanggan harus dipilih untuk transaksi kasbon.']);
         }
 
-        $jenis = ArangJenis::findOrFail($validated['arang_jenis_id']);
-        $berat = (float) $validated['berat_kg'];
-
-        if ($jenis->stok_kg < $berat) {
-            return back()->withErrors([
-                'berat_kg' => "Stok arang {$jenis->nama} tidak mencukupi. Sisa stok tersedia: {$jenis->stok_kg} kg.",
-            ]);
+        if (! empty($validated['customer_id'])
+            && Customer::whereKey($validated['customer_id'])->value('is_blocked')) {
+            return back()->withErrors(['customer_id' => 'Pelanggan ini diblokir dari transaksi.']);
         }
 
+        $berat = (float) $validated['berat_kg'];
+
+        // Kunci baris jenis arang agar dua penjualan bersamaan tidak sama-sama
+        // lolos cek stok (stok dihitung dari total beli − total jual).
+        return DB::transaction(function () use ($validated, $berat, $request) {
+            $jenis = ArangJenis::whereKey($validated['arang_jenis_id'])->lockForUpdate()->firstOrFail();
+
+            if (! $jenis->aktif) {
+                return back()->withErrors(['arang_jenis_id' => "Arang {$jenis->nama} sedang tidak dijual."]);
+            }
+
+            if ($jenis->stok_kg < $berat) {
+                return back()->withErrors([
+                    'berat_kg' => "Stok arang {$jenis->nama} tidak mencukupi. Sisa stok tersedia: {$jenis->stok_kg} kg.",
+                ]);
+            }
+
+            return $this->simpan($validated, $berat, $request);
+        });
+    }
+
+    private function simpan(array $validated, float $berat, Request $request)
+    {
         $hargaPerKg = (int) $validated['harga_jual_per_kg'];
         $totalHarga = (int) round($berat * $hargaPerKg);
         $diskon = (int) ($validated['diskon'] ?? 0);
@@ -75,6 +95,7 @@ class ArangPenjualanController extends Controller
             $change = 0;
             $status = 'lunas';
         } elseif ($paymentType === 'kasbon') {
+            $paid = min($paid, $grandTotal); // DP tidak boleh melebihi total
             $change = 0;
             $status = ($paid >= $grandTotal) ? 'lunas' : 'belum_lunas';
         }
