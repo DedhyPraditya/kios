@@ -14,6 +14,70 @@ class Changelog
     {
         return [
             [
+                'version' => '1.6.0',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'QRIS Dinamis: Pembeli Cukup Scan, Nominal Langsung Terisi',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Bayar pakai QRIS kini secepat bayar tunai! Kode QR di layar kasir otomatis berisi total belanja, jadi pembeli tinggal scan dan konfirmasi di aplikasi e-wallet atau m-banking mereka — tidak perlu mengetik nominal, tidak ada lagi salah ketik angka. Uang tetap masuk ke rekening QRIS toko Anda seperti biasa.',
+                'changes' => [
+                    [
+                        'category' => '⚡ QRIS Dinamis',
+                        'type' => 'feat',
+                        'title' => 'Nominal Belanja Otomatis Masuk ke Kode QR',
+                        'description' => 'Setiap kali metode QRIS dipilih, aplikasi membuat kode QR baru yang sudah berisi total belanja. Pembeli scan, nominal langsung muncul, tinggal bayar. Berlaku di Kasir maupun Jual Arang, termasuk tampilan layar penuh lewat tombol "Perbesar".',
+                    ],
+                    [
+                        'category' => '✅ Cek QRIS Instan',
+                        'type' => 'feat',
+                        'title' => 'Tahu Langsung Apakah QRIS Anda Siap Dipakai',
+                        'description' => 'Saat mengunggah gambar QRIS di menu Pengaturan, aplikasi langsung memeriksa kodenya dan menampilkan nama merchant yang terbaca. Jika gambar kurang jelas, Anda langsung diberi saran agar QRIS dinamis bisa berjalan sempurna.',
+                    ],
+                    [
+                        'category' => '🛠️ Lebih Andal',
+                        'type' => 'fix',
+                        'title' => 'Gambar QRIS Selalu Tampil di Kasir',
+                        'description' => 'Gambar QRIS kini dijamin tampil di layar kasir dan halaman Jual Arang tanpa pengaturan server tambahan. Tidak ada lagi kotak QRIS kosong saat pembeli siap membayar.',
+                    ],
+                ],
+            ],
+            [
+                'version' => '1.5.4',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'Arang Makin Rapi: Menu Khusus, Nomor Nota, dan Pencarian Kilat',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Usaha arang Anda kini punya "ruang kerja" sendiri di menu samping. Setiap pembelian arang dari pembuat juga mendapat nomor nota resmi, dan seluruh riwayat bisa dicari dalam sekejap — cukup ketik nomor nota atau nama pemasok / pembeli.',
+                'changes' => [
+                    [
+                        'category' => '🗂️ Menu Arang Sendiri',
+                        'type' => 'ui',
+                        'title' => 'Semua Urusan Arang dalam Satu Kelompok Menu',
+                        'description' => 'Ringkasan Arang, Jual Arang, Beli Arang, Riwayat Arang, dan Jenis Arang kini berkumpul dalam kelompok "Arang" di menu samping. Satu klik langsung ke tujuan, tanpa perlu mencari tombol di halaman.',
+                    ],
+                    [
+                        'category' => '🧾 Nomor Nota Pembelian',
+                        'type' => 'feat',
+                        'title' => 'Setiap Pembelian Arang Punya Nomor Nota',
+                        'description' => 'Pembelian arang dari pembuat atau pemasok kini otomatis mendapat nomor nota (contoh: BELI-ARNG-20260925-0001) yang tercetak di nota dan tersimpan rapi. Nota lama tetap memakai nomor yang sudah tercetak, jadi arsip Anda tidak berubah.',
+                    ],
+                    [
+                        'category' => '🔎 Pencarian Kilat',
+                        'type' => 'feat',
+                        'title' => 'Cari Riwayat Arang dengan Nomor Nota atau Nama',
+                        'description' => 'Halaman Riwayat Arang kini punya kotak pencarian. Ketik nomor nota, nama pemasok, atau nama pembeli — hasilnya muncul seketika dan bisa dipadukan dengan filter jenis arang serta tanggal.',
+                    ],
+                    [
+                        'category' => '🛠️ Perbaikan',
+                        'type' => 'fix',
+                        'title' => 'Tombol Tambah Jenis Arang Kembali Muncul',
+                        'description' => 'Tombol di bagian atas halaman-halaman arang, termasuk "Tambah Jenis Arang", kini tampil sebagaimana mestinya sehingga varian arang baru bisa langsung ditambahkan.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.5.3',
                 'date' => '2026-09-25',
                 'date_human' => '25 September 2026',
