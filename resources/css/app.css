@@ -102,6 +102,10 @@
     .btn-outline {
         @apply btn border border-brand bg-transparent text-brand hover:bg-brand/5;
     }
+    /* Nama lain btn-outline; dipakai halaman arang, laporan, dan struk. */
+    .btn-secondary {
+        @apply btn-outline;
+    }
     /* Alert: solid amber, dark text — critical warnings only. */
     .btn-alert {
         @apply btn bg-amber text-ink hover:brightness-[0.97];
