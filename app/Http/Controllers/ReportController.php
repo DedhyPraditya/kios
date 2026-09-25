@@ -78,7 +78,7 @@ class ReportController extends Controller
         }
 
         $tokoProfit = (int) (clone $itemsInRange)
-            ->selectRaw('COALESCE(SUM((CAST(price AS SIGNED) - CAST(cost AS SIGNED)) * CAST(qty - returned_qty AS SIGNED)), 0) as p')
+            ->selectRaw('COALESCE(SUM((price - cost) * (qty - returned_qty)), 0) as p')
             ->value('p');
 
         // 2. Modul Arang (tidak punya kategori, jadi kosong saat filter kategori dipakai)
@@ -96,7 +96,7 @@ class ReportController extends Controller
 
         $arangProfit = (int) (clone $arangJualInRange)
             ->join('arang_jenis', 'arang_penjualan.arang_jenis_id', '=', 'arang_jenis.id')
-            ->selectRaw('COALESCE(SUM(CAST(arang_penjualan.grand_total AS SIGNED) - (arang_penjualan.berat_kg * arang_jenis.harga_beli_default)), 0) as p')
+            ->selectRaw('COALESCE(SUM(arang_penjualan.grand_total - (arang_penjualan.berat_kg * arang_jenis.harga_beli_default)), 0) as p')
             ->value('p');
 
         // 3. Ringkasan Terpadu

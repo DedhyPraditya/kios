@@ -545,8 +545,10 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ### Fitur toko
 
-- [ ] Ubah kolom uang jadi bilangan bertanda (`bigInteger`, bukan
+- [x] Ubah kolom uang jadi bilangan bertanda (`bigInteger`, bukan
       `unsignedBigInteger`) supaya pengurangan tak perlu dicor satu per satu.
+      Migrasi `2026_09_26_100002` (diuji di MySQL 8.0.30: naik, turun, dan
+      data lama tetap); `CAST(... AS SIGNED)` di laporan & piutang dihapus.
 - [ ] Diskon per item + diskon persen (sekarang hanya nominal total).
 - [x] Multi-metode bayar QRIS (unggah QRIS di Pengaturan, scan kasir dengan modal perbesar, cetak struk web/Bluetooth, rekap shift non-tunai).
 - [ ] Pajak / PPN opsional.
