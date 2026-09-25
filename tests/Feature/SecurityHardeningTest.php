@@ -114,7 +114,7 @@ class SecurityHardeningTest extends TestCase
 
         $jual = fn (array $extra) => $this->actingAs($kasir)->post(route('arang.jual.store'), [
             'tanggal' => now()->toDateString(), 'arang_jenis_id' => $jenis->id, 'berat_kg' => 1,
-            'harga_jual_per_kg' => 5000, 'payment_type' => 'kasbon', 'paid' => 0, ...$extra,
+            'harga_jual_per_kg' => 5000, 'payment_type' => 'tunai', 'paid' => 5000, ...$extra,
         ]);
 
         $jual(['customer_id' => $diblokir->id])->assertSessionHasErrors('customer_id');
@@ -123,26 +123,6 @@ class SecurityHardeningTest extends TestCase
         $jual(['customer_id' => Customer::create(['name' => 'Bu B'])->id])->assertSessionHasErrors('arang_jenis_id');
 
         $this->assertDatabaseCount('arang_penjualan', 0);
-    }
-
-    public function test_dp_kasbon_arang_tidak_melebihi_total(): void
-    {
-        $kasir = User::factory()->create(['role' => 'kasir']);
-        $jenis = ArangJenis::create([
-            'nama' => 'Batok', 'harga_beli_default' => 3000, 'harga_jual_default' => 5000, 'aktif' => true,
-        ]);
-        ArangPembelian::create([
-            'tanggal' => now()->toDateString(), 'arang_jenis_id' => $jenis->id, 'nama_pemasok' => 'Pak A',
-            'berat_kg' => 10, 'harga_beli_per_kg' => 3000, 'total_harga' => 30000, 'user_id' => $kasir->id,
-        ]);
-
-        $this->actingAs($kasir)->post(route('arang.jual.store'), [
-            'tanggal' => now()->toDateString(), 'arang_jenis_id' => $jenis->id, 'berat_kg' => 2,
-            'harga_jual_per_kg' => 5000, 'payment_type' => 'kasbon', 'paid' => 50000,
-            'customer_id' => Customer::create(['name' => 'Bu B'])->id,
-        ]);
-
-        $this->assertDatabaseHas('arang_penjualan', ['grand_total' => 10000, 'paid' => 10000, 'status' => 'lunas']);
     }
 
     private function pembelianBerumus(): User

@@ -273,6 +273,7 @@ function resetFilter() {
                             </td>
                             <td class="td text-center">
                                 <Link
+                                    v-if="item.bisa_struk"
                                     :href="item.type === 'jual' ? route('arang.penjualan.receipt', item.raw_id) : route('arang.pembelian.receipt', item.raw_id)"
                                     class="btn-secondary py-1 px-2 text-2xs inline-flex items-center gap-1"
                                     title="Cetak Struk / Nota"
@@ -280,6 +281,7 @@ function resetFilter() {
                                     <Icon name="print" :size="13" />
                                     <span>Struk</span>
                                 </Link>
+                                <span v-else class="text-2xs text-ink-soft">—</span>
                             </td>
                         </tr>
                     </tbody>

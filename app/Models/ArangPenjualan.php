@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\NomorNota;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -48,12 +49,10 @@ class ArangPenjualan extends Model
         static::creating(function (ArangPenjualan $penjualan) {
             if (empty($penjualan->no_nota)) {
                 $prefix = 'ARNG-' . now()->format('Ymd') . '-';
-                $last = static::where('no_nota', 'like', $prefix . '%')->latest('id')->first();
-                $seq = 1;
-                if ($last) {
-                    $parts = explode('-', $last->no_nota);
-                    $seq = ((int) end($parts)) + 1;
-                }
+                $seq = NomorNota::berikutnya(
+                    rtrim($prefix, '-'),
+                    fn () => NomorNota::terbesarDi('arang_penjualan', 'no_nota', $prefix)
+                );
                 $penjualan->no_nota = $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
             }
         });

@@ -261,6 +261,7 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
                                 </td>
                                 <td class="td text-center">
                                     <Link
+                                        v-if="trx.bisa_struk"
                                         :href="trx.type === 'jual' ? route('arang.penjualan.receipt', trx.raw_id) : route('arang.pembelian.receipt', trx.raw_id)"
                                         class="btn-secondary py-1 px-2 text-2xs inline-flex items-center gap-1"
                                         title="Cetak Struk / Nota"
@@ -268,6 +269,7 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
                                         <Icon name="print" :size="13" />
                                         <span>Struk</span>
                                     </Link>
+                                    <span v-else class="text-2xs text-ink-soft">—</span>
                                 </td>
                             </tr>
                         </tbody>

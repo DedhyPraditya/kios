@@ -37,14 +37,13 @@ class ArangPenjualanController extends Controller
             'berat_kg' => ['required', 'numeric', 'min:0.01'],
             'harga_jual_per_kg' => ['required', 'integer', 'min:0'],
             'diskon' => ['nullable', 'integer', 'min:0'],
-            'payment_type' => ['required', 'in:tunai,qris,kasbon'],
+            // Arang tidak dijual kasbon — hanya tunai atau QRIS.
+            'payment_type' => ['required', 'in:tunai,qris'],
             'paid' => ['nullable', 'integer', 'min:0'],
             'catatan' => ['nullable', 'string', 'max:255'],
+        ], [
+            'payment_type.in' => 'Penjualan arang hanya bisa tunai atau QRIS.',
         ]);
-
-        if ($validated['payment_type'] === 'kasbon' && empty($validated['customer_id'])) {
-            return back()->withErrors(['customer_id' => 'Pelanggan harus dipilih untuk transaksi kasbon.']);
-        }
 
         if (! empty($validated['customer_id'])
             && Customer::whereKey($validated['customer_id'])->value('is_blocked')) {
@@ -60,6 +59,13 @@ class ArangPenjualanController extends Controller
 
             if (! $jenis->aktif) {
                 return back()->withErrors(['arang_jenis_id' => "Arang {$jenis->nama} sedang tidak dijual."]);
+            }
+
+            // Harga & diskon ditentukan admin. Kasir memakai harga jual yang
+            // diatur admin di Jenis Arang, tanpa diskon — isian dari form diabaikan.
+            if (! $request->user()->isAdmin()) {
+                $validated['harga_jual_per_kg'] = $jenis->harga_jual_default;
+                $validated['diskon'] = 0;
             }
 
             if ($jenis->stok_kg < $berat) {
@@ -94,10 +100,6 @@ class ArangPenjualanController extends Controller
             $paid = $grandTotal;
             $change = 0;
             $status = 'lunas';
-        } elseif ($paymentType === 'kasbon') {
-            $paid = min($paid, $grandTotal); // DP tidak boleh melebihi total
-            $change = 0;
-            $status = ($paid >= $grandTotal) ? 'lunas' : 'belum_lunas';
         }
 
         $activeSession = CashSession::openFor($request->user());
@@ -125,8 +127,10 @@ class ArangPenjualanController extends Controller
             ->with('success', "Penjualan arang ({$penjualan->no_nota}) sebanyak {$berat} kg berhasil dicatat.");
     }
 
-    public function receipt(ArangPenjualan $penjualan)
+    public function receipt(Request $request, ArangPenjualan $penjualan)
     {
+        abort_unless($request->user()->canViewReceiptOf($penjualan->user_id), 403);
+
         $penjualan->load(['arangJenis', 'customer:id,name,phone', 'user:id,name']);
 
         return Inertia::render('Arang/ReceiptPenjualan', [

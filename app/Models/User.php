@@ -28,6 +28,12 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /** Struk/nota hanya boleh dibuka admin atau pegawai yang membuatnya. */
+    public function canViewReceiptOf(?int $pembuatId): bool
+    {
+        return $this->isAdmin() || $pembuatId === $this->id;
+    }
+
     /**
      * Get the attributes that should be cast.
      *

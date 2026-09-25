@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\BackupException;
 use App\Models\User;
 use App\Services\DatabaseBackupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia as Assert;
+use RuntimeException;
 use Tests\TestCase;
 
 class DatabaseBackupTest extends TestCase
@@ -126,5 +128,29 @@ class DatabaseBackupTest extends TestCase
             'action' => 'backup.restore',
             'user_id' => $admin->id,
         ]);
+    }
+
+    public function test_galat_teknis_backup_tidak_tampil_di_layar(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->mock(DatabaseBackupService::class)
+            ->shouldReceive('createBackup')
+            ->andThrow(new RuntimeException('SQLSTATE[HY000] rahasia server'));
+
+        $this->actingAs($admin)
+            ->post(route('backups.store'))
+            ->assertSessionHas('error', 'Gagal membuat cadangan. Detail teknis sudah dicatat di log aplikasi.');
+    }
+
+    public function test_galat_backup_yang_ramah_tetap_ditampilkan(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->mock(DatabaseBackupService::class)
+            ->shouldReceive('deleteBackup')
+            ->andThrow(new BackupException('Nama berkas cadangan tidak valid.'));
+
+        $this->actingAs($admin)
+            ->delete(route('backups.destroy', 'x.sql'))
+            ->assertSessionHas('error', 'Gagal menghapus berkas cadangan: Nama berkas cadangan tidak valid.');
     }
 }

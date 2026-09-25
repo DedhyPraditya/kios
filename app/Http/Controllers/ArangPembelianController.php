@@ -53,8 +53,10 @@ class ArangPembelianController extends Controller
             ->with('success', 'Pembelian arang sebanyak ' . $berat . ' kg berhasil dicatat.');
     }
 
-    public function receipt(ArangPembelian $pembelian)
+    public function receipt(Request $request, ArangPembelian $pembelian)
     {
+        abort_unless($request->user()->canViewReceiptOf($pembelian->user_id), 403);
+
         $pembelian->load(['arangJenis', 'user:id,name']);
 
         return Inertia::render('Arang/ReceiptPembelian', [

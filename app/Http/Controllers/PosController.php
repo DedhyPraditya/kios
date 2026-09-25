@@ -176,8 +176,10 @@ class PosController extends Controller
         return redirect()->route('pos.receipt', $sale);
     }
 
-    public function receipt(Sale $sale)
+    public function receipt(Request $request, Sale $sale)
     {
+        abort_unless($request->user()->canViewReceiptOf($sale->user_id), 403);
+
         $sale->load(['items', 'user:id,name', 'customer:id,name,phone']);
 
         return Inertia::render('Pos/Receipt', [

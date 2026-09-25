@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PosTest extends TestCase
@@ -81,5 +83,42 @@ class PosTest extends TestCase
     {
         $this->actingAs($this->kasir)->get(route('products.index'))->assertForbidden();
         $this->actingAs($this->admin)->get(route('products.index'))->assertOk();
+    }
+
+    public function test_nomor_nota_berurutan_dan_lanjut_dari_data_lama(): void
+    {
+        // Nota lama hari ini sudah sampai 0007 sebelum tabel penghitung ada.
+        $prefix = 'INV'.now()->format('Ymd');
+        Sale::create([
+            'invoice_no' => $prefix.'-0007', 'user_id' => $this->kasir->id, 'payment_type' => 'tunai',
+            'status' => 'lunas', 'subtotal' => 5000, 'discount' => 0, 'total' => 5000, 'paid' => 5000, 'change' => 0,
+        ]);
+
+        $jual = fn () => $this->actingAs($this->kasir)->post(route('pos.store'), [
+            'items' => [['id' => $this->product->id, 'qty' => 1]],
+            'paid' => 5000,
+        ]);
+        $jual();
+        $jual();
+
+        $this->assertSame(
+            [$prefix.'-0007', $prefix.'-0008', $prefix.'-0009'],
+            Sale::orderBy('id')->pluck('invoice_no')->all()
+        );
+        $this->assertSame(9, DB::table('nomor_urut')->where('awalan', $prefix)->value('terakhir'));
+    }
+
+    public function test_struk_hanya_untuk_admin_dan_kasir_pembuatnya(): void
+    {
+        $this->actingAs($this->kasir)->post(route('pos.store'), [
+            'items' => [['id' => $this->product->id, 'qty' => 1]],
+            'paid' => 5000,
+        ]);
+        $sale = Sale::firstOrFail();
+        $kasirLain = User::factory()->create(['role' => 'kasir']);
+
+        $this->actingAs($kasirLain)->get(route('pos.receipt', $sale))->assertForbidden();
+        $this->actingAs($this->kasir)->get(route('pos.receipt', $sale))->assertOk();
+        $this->actingAs($this->admin)->get(route('pos.receipt', $sale))->assertOk();
     }
 }

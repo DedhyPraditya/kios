@@ -207,46 +207,78 @@ class ArangTest extends TestCase
         $this->assertEquals(90000, $summary['expected_cash']);
     }
 
-    public function test_penjualan_kasbon_arang_memerlukan_pelanggan(): void
+    public function test_penjualan_arang_tidak_bisa_kasbon(): void
     {
-        // Isi stok 10 kg
+        $this->isiStok(10.0);
+        $customer = Customer::create(['name' => 'Pak Budi', 'phone' => '08123456789']);
+
+        $this->actingAs($this->kasir)->post(route('arang.jual.store'), [
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'customer_id' => $customer->id,
+            'berat_kg' => 2.0,
+            'harga_jual_per_kg' => 5000,
+            'payment_type' => 'kasbon',
+            'paid' => 0,
+        ])->assertSessionHasErrors('payment_type');
+
+        $this->assertDatabaseCount('arang_penjualan', 0);
+    }
+
+    public function test_kasir_memakai_harga_admin_dan_tanpa_diskon(): void
+    {
+        $this->isiStok(10.0);
+
+        // Kasir mencoba menurunkan harga dan memberi diskon — diabaikan.
+        $this->actingAs($this->kasir)->post(route('arang.jual.store'), [
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'berat_kg' => 2.0,
+            'harga_jual_per_kg' => 1,
+            'diskon' => 9000,
+            'payment_type' => 'tunai',
+            'paid' => 10000,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('arang_penjualan', [
+            'user_id' => $this->kasir->id,
+            'harga_jual_per_kg' => 5000,
+            'diskon' => 0,
+            'grand_total' => 10000,
+        ]);
+    }
+
+    public function test_admin_boleh_mengubah_harga_dan_diskon(): void
+    {
+        $this->isiStok(10.0);
+
+        $this->actingAs($this->admin)->post(route('arang.jual.store'), [
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'berat_kg' => 2.0,
+            'harga_jual_per_kg' => 4500,
+            'diskon' => 1000,
+            'payment_type' => 'qris',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('arang_penjualan', [
+            'user_id' => $this->admin->id,
+            'harga_jual_per_kg' => 4500,
+            'diskon' => 1000,
+            'grand_total' => 8000,
+        ]);
+    }
+
+    private function isiStok(float $kg): void
+    {
         ArangPembelian::create([
             'tanggal' => now()->toDateString(),
             'arang_jenis_id' => $this->jenisBatok->id,
             'nama_pemasok' => 'Pemasok',
-            'berat_kg' => 10.0,
+            'berat_kg' => $kg,
             'harga_beli_per_kg' => 3000,
-            'total_harga' => 30000,
-            'user_id' => $this->kasir->id,
-        ]);
-
-        // Gagal tanpa customer_id
-        $response = $this->actingAs($this->kasir)->post(route('arang.jual.store'), [
-            'tanggal' => now()->toDateString(),
-            'arang_jenis_id' => $this->jenisBatok->id,
-            'berat_kg' => 2.0,
-            'harga_jual_per_kg' => 5000,
-            'payment_type' => 'kasbon',
-            'paid' => 0,
-        ]);
-        $response->assertSessionHasErrors('customer_id');
-
-        // Berhasil dengan customer_id
-        $customer = Customer::create(['name' => 'Pak Budi', 'phone' => '08123456789']);
-        $responseSuccess = $this->actingAs($this->kasir)->post(route('arang.jual.store'), [
-            'tanggal' => now()->toDateString(),
-            'arang_jenis_id' => $this->jenisBatok->id,
-            'customer_id' => $customer->id,
-            'berat_kg' => 2.0,
-            'harga_jual_per_kg' => 5000,
-            'payment_type' => 'kasbon',
-            'paid' => 0,
-        ]);
-        $penjualanKasbon = ArangPenjualan::where('customer_id', $customer->id)->first();
-        $responseSuccess->assertRedirect(route('arang.penjualan.receipt', $penjualanKasbon->id));
-        $this->assertDatabaseHas('arang_penjualan', [
-            'customer_id' => $customer->id,
-            'status' => 'belum_lunas',
+            'total_harga' => (int) ($kg * 3000),
+            'user_id' => $this->admin->id,
         ]);
     }
 
@@ -336,5 +368,36 @@ class ArangTest extends TestCase
 
         $resJual = $this->actingAs($this->kasir)->get(route('arang.penjualan.receipt', $penjualan->id));
         $resJual->assertOk();
+    }
+
+    public function test_struk_arang_hanya_untuk_admin_dan_pembuatnya(): void
+    {
+        $penjualan = ArangPenjualan::create([
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'berat_kg' => 1.0,
+            'harga_jual_per_kg' => 5000,
+            'total_harga' => 5000,
+            'grand_total' => 5000,
+            'paid' => 5000,
+            'payment_type' => 'tunai',
+            'status' => 'lunas',
+            'user_id' => $this->kasir->id,
+        ]);
+        $pembelian = ArangPembelian::create([
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'nama_pemasok' => 'Pak Joko',
+            'berat_kg' => 5.0,
+            'harga_beli_per_kg' => 3000,
+            'total_harga' => 15000,
+            'user_id' => $this->kasir->id,
+        ]);
+        $kasirLain = User::factory()->create(['role' => 'kasir']);
+
+        $this->actingAs($kasirLain)->get(route('arang.penjualan.receipt', $penjualan))->assertForbidden();
+        $this->actingAs($kasirLain)->get(route('arang.pembelian.receipt', $pembelian))->assertForbidden();
+        $this->actingAs($this->admin)->get(route('arang.penjualan.receipt', $penjualan))->assertOk();
+        $this->actingAs($this->admin)->get(route('arang.pembelian.receipt', $pembelian))->assertOk();
     }
 }

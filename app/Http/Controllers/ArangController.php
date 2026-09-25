@@ -41,6 +41,7 @@ class ArangController extends Controller
                 'payment_type' => 'tunai',
                 'status' => 'lunas',
                 'user' => $p->user?->name ?? '-',
+                'bisa_struk' => auth()->user()->canViewReceiptOf($p->user_id),
                 'created_at' => $p->created_at,
             ]);
 
@@ -62,6 +63,7 @@ class ArangController extends Controller
                 'payment_type' => $j->payment_type,
                 'status' => $j->status,
                 'user' => $j->user?->name ?? '-',
+                'bisa_struk' => auth()->user()->canViewReceiptOf($j->user_id),
                 'created_at' => $j->created_at,
             ]);
 
@@ -141,6 +143,7 @@ class ArangController extends Controller
                 'payment_type' => 'tunai',
                 'status' => 'lunas',
                 'user' => $p->user?->name ?? '-',
+                'bisa_struk' => auth()->user()->canViewReceiptOf($p->user_id),
                 'catatan' => $p->catatan,
                 'created_at' => $p->created_at,
             ]);
@@ -162,6 +165,7 @@ class ArangController extends Controller
                 'payment_type' => $j->payment_type,
                 'status' => $j->status,
                 'user' => $j->user?->name ?? '-',
+                'bisa_struk' => auth()->user()->canViewReceiptOf($j->user_id),
                 'catatan' => $j->catatan,
                 'created_at' => $j->created_at,
             ]);

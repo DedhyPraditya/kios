@@ -4,7 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Icon from "@/Components/Icon.vue";
 import QrisCode from "@/Components/QrisCode.vue";
-import { Head, Link, useForm } from "@inertiajs/vue3";
+import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
 const props = defineProps({
@@ -12,6 +12,9 @@ const props = defineProps({
     customers: { type: Array, default: () => [] },
     store: { type: Object, default: () => ({}) },
 });
+
+// Harga & diskon ditentukan admin; kasir hanya memakai harga bawaan.
+const isAdmin = computed(() => usePage().props.auth?.user?.role === "admin");
 
 const urlParams = new URLSearchParams(window.location.search);
 const defaultJenisId = urlParams.get("jenis_id")
@@ -73,8 +76,6 @@ watch(
     (val) => {
         if (val === "qris") {
             form.paid = grandTotal.value;
-        } else if (val === "kasbon") {
-            form.paid = 0;
         } else if (val === "tunai") {
             form.paid = grandTotal.value;
         }
@@ -108,7 +109,7 @@ function submit() {
     <AuthenticatedLayout>
         <PageHeader
             title="Formulir Penjualan Arang"
-            subtitle="Transaksi penjualan arang kiloan dengan opsi pembayaran Tunai, QRIS, atau Kasbon."
+            subtitle="Transaksi penjualan arang kiloan dengan pembayaran Tunai atau QRIS."
         >
             <template #action>
                 <Link :href="route('arang.index')" class="btn-secondary flex items-center gap-1.5">
@@ -219,10 +220,15 @@ function submit() {
                                 type="number"
                                 min="0"
                                 class="field num w-full"
+                                :readonly="!isAdmin"
+                                :class="{ 'bg-surface-soft cursor-not-allowed': !isAdmin }"
                                 required
                             />
                             <p class="mt-1 text-2xs text-ink-soft">
-                                Bawaan: {{ rupiah(selectedJenis?.harga_jual_default || 0) }} (dapat disesuaikan)
+                                <template v-if="isAdmin">
+                                    Bawaan: {{ rupiah(selectedJenis?.harga_jual_default || 0) }} (dapat disesuaikan)
+                                </template>
+                                <template v-else>Harga ditentukan admin di Jenis Arang.</template>
                             </p>
                             <p v-if="form.errors.harga_jual_per_kg" class="mt-1 text-2xs text-danger">
                                 {{ form.errors.harga_jual_per_kg }}
@@ -230,8 +236,8 @@ function submit() {
                         </div>
                     </div>
 
-                    <!-- Diskon -->
-                    <div>
+                    <!-- Diskon (hanya admin) -->
+                    <div v-if="isAdmin">
                         <label class="label mb-1 block" for="diskon">Potongan / Diskon (Rp)</label>
                         <input
                             id="diskon"
@@ -288,7 +294,7 @@ function submit() {
                     <!-- Pilihan Pembayaran -->
                     <div class="border-t border-line pt-4">
                         <label class="label mb-2 block font-semibold">Metode Pembayaran</label>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-2 gap-3">
                             <label
                                 class="flex cursor-pointer flex-col items-center justify-center rounded-lg border p-3 text-center transition-colors"
                                 :class="form.payment_type === 'tunai' ? 'border-brand bg-brand-wash text-brand-ink font-semibold' : 'border-line hover:bg-surface-soft text-ink'"
@@ -315,20 +321,6 @@ function submit() {
                                 />
                                 <Icon name="qr" :size="20" class="mb-1" />
                                 <span>QRIS</span>
-                            </label>
-
-                            <label
-                                class="flex cursor-pointer flex-col items-center justify-center rounded-lg border p-3 text-center transition-colors"
-                                :class="form.payment_type === 'kasbon' ? 'border-amber-400 bg-amber-50 text-amber-900 font-semibold' : 'border-line hover:bg-surface-soft text-ink'"
-                            >
-                                <input
-                                    v-model="form.payment_type"
-                                    type="radio"
-                                    value="kasbon"
-                                    class="sr-only"
-                                />
-                                <Icon name="customer" :size="20" class="mb-1" />
-                                <span>Kasbon</span>
                             </label>
                         </div>
 
@@ -370,22 +362,6 @@ function submit() {
                             />
                             <p v-if="form.errors.paid" class="mt-1 text-2xs text-danger">
                                 {{ form.errors.paid }}
-                            </p>
-                        </div>
-
-                        <!-- Panel Kasbon DP -->
-                        <div v-if="form.payment_type === 'kasbon'" class="mt-4">
-                            <label class="label mb-1 block" for="dp">Uang Muka / DP Dibayar (Rp)</label>
-                            <input
-                                id="dp"
-                                v-model.number="form.paid"
-                                type="number"
-                                min="0"
-                                placeholder="0 jika belum bayar sama sekali"
-                                class="field num w-full"
-                            />
-                            <p v-if="!form.customer_id" class="mt-1 text-2xs text-amber-700 font-semibold">
-                                * Harap pilih pelanggan terdaftar di atas untuk mencatat kasbon.
                             </p>
                         </div>
                     </div>
@@ -450,21 +426,6 @@ function submit() {
                         <div class="flex justify-between font-bold text-headline-sm border-t border-brand/20 pt-1">
                             <span class="text-brand-ink">Kembalian:</span>
                             <span class="num text-success">{{ rupiah(kembalian) }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Rincian Kasbon -->
-                    <div
-                        v-if="form.payment_type === 'kasbon'"
-                        class="card-amber p-3 rounded-lg space-y-1 text-body-sm"
-                    >
-                        <div class="flex justify-between">
-                            <span class="text-ink-soft">DP Masuk:</span>
-                            <span class="num text-ink">{{ rupiah(form.paid) }}</span>
-                        </div>
-                        <div class="flex justify-between font-bold text-amber-900 border-t border-amber-300 pt-1">
-                            <span>Sisa Hutang:</span>
-                            <span class="num">{{ rupiah(Math.max(0, grandTotal - (form.paid || 0))) }}</span>
                         </div>
                     </div>
 

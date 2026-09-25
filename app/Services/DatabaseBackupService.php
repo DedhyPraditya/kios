@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Exceptions\BackupException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 class DatabaseBackupService
 {
@@ -41,12 +41,12 @@ class DatabaseBackupService
         } elseif ($driver === 'sqlite') {
             $sql .= $this->dumpSqlite();
         } else {
-            throw new RuntimeException("Driver database '{$driver}' tidak didukung untuk pencadangan.");
+            throw new BackupException("Driver database '{$driver}' tidak didukung untuk pencadangan.");
         }
 
         $compressed = gzencode($sql, 9);
         if ($compressed === false) {
-            throw new RuntimeException('Gagal mengompresi cadangan basis data.');
+            throw new BackupException('Gagal mengompresi cadangan basis data.');
         }
 
         File::put($filepath, $compressed);
@@ -99,12 +99,12 @@ class DatabaseBackupService
     {
         $cleanName = basename($filename);
         if ($cleanName !== $filename || (! str_ends_with($filename, '.sql.gz') && ! str_ends_with($filename, '.sql'))) {
-            throw new RuntimeException('Nama berkas cadangan tidak valid.');
+            throw new BackupException('Nama berkas cadangan tidak valid.');
         }
 
         $path = $this->backupDir.DIRECTORY_SEPARATOR.$cleanName;
         if (! File::exists($path)) {
-            throw new RuntimeException("Berkas cadangan '{$cleanName}' tidak ditemukan.");
+            throw new BackupException("Berkas cadangan '{$cleanName}' tidak ditemukan.");
         }
 
         return $path;
@@ -131,7 +131,7 @@ class DatabaseBackupService
         if (str_ends_with($filename, '.sql.gz')) {
             $sql = gzdecode($raw);
             if ($sql === false) {
-                throw new RuntimeException('Gagal mendekompresi berkas cadangan .sql.gz.');
+                throw new BackupException('Gagal mendekompresi berkas cadangan .sql.gz.');
             }
         } else {
             $sql = $raw;

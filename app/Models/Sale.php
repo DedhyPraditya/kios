@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\NomorNota;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -122,7 +123,7 @@ class Sale extends Model
     public static function makeInvoiceNo(): string
     {
         $prefix = 'INV'.now()->format('Ymd');
-        $seq = static::whereDate('created_at', today())->count() + 1;
+        $seq = NomorNota::berikutnya($prefix, fn () => NomorNota::terbesarDi('sales', 'invoice_no', $prefix.'-'));
 
         return $prefix.'-'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
