@@ -18,6 +18,9 @@ class ReportExcelExportService
     private const BG_TOTAL = 'F1F5F9'; // Accounting Total row
     private const BORDER_COLOR = 'CBD5E1'; // Soft gray border
 
+    /** Keterangan filter (kasir/kategori) yang tampil di kop tiap sheet. */
+    private ?string $filterNote = null;
+
     public function generate(
         string $storeName,
         CarbonInterface $from,
@@ -29,8 +32,10 @@ class ReportExcelExportService
         $sales,
         $arangJuals,
         $arangBelis,
-        array $piutang
+        array $piutang,
+        ?string $filterNote = null
     ): Spreadsheet {
+        $this->filterNote = $filterNote;
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()
             ->setCreator($storeName)
@@ -84,7 +89,10 @@ class ReportExcelExportService
         // Meta info
         $sheet->mergeCells("A3:{$lastCol}3");
         $meta = 'Periode: ' . $from->format('d/m/Y') . ' s/d ' . $to->format('d/m/Y') . '   |   Waktu Unduh: ' . now()->format('d/m/Y H:i:s') . ' WIB';
-        $sheet->setCellValue('A3', $meta);
+        if ($this->filterNote) {
+            $meta .= '   |   Filter: ' . $this->filterNote;
+        }
+        $this->text($sheet, 'A3', $meta);
         $sheet->getStyle('A3')->getFont()->setSize(9)->setItalic(true)->getColor()->setRGB('64748B');
         $sheet->getRowDimension(3)->setRowHeight(18);
     }

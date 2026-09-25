@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\ArangJenis;
 use App\Models\ArangPembelian;
 use App\Models\ArangPenjualan;
+use App\Models\Category;
+use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Setting;
+use App\Models\User;
 use App\Services\ReportExcelExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,30 +21,71 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    private function gatherReportData(Carbon $from, Carbon $to): array
+    /**
+     * Filter laporan dari query string: rentang tanggal, kasir, kategori.
+     *
+     * @return array{0: Carbon, 1: Carbon, 2: ?int, 3: ?int}
+     */
+    private function filters(Request $request): array
+    {
+        $from = ($request->date('from') ?: Carbon::today())->copy()->startOfDay();
+        $to = ($request->date('to') ?: Carbon::today())->copy()->endOfDay();
+
+        return [$from, $to, $request->integer('kasir') ?: null, $request->integer('kategori') ?: null];
+    }
+
+    /**
+     * Semua angka laporan. Dipakai halaman Laporan, ekspor Excel, dan CSV
+     * supaya ketiganya selalu sama.
+     *
+     * Filter kategori hanya berlaku untuk barang toko: arang tidak punya
+     * kategori sehingga tidak ikut dihitung. Omzet per kategori dihitung dari
+     * harga barang (sebelum diskon nota), karena diskon nota tidak bisa
+     * dibagi ke tiap kategori.
+     */
+    private function gatherReportData(Carbon $from, Carbon $to, ?int $kasirId = null, ?int $categoryId = null): array
     {
         $store = Setting::values();
         $storeName = $store['store_name'] ?? 'Kios BERKAH';
 
+        $productIdsInCategory = $categoryId
+            ? Product::withTrashed()->where('category_id', $categoryId)->select('id')
+            : null;
+
         // 1. Toko Eceran
-        $salesInRange = Sale::valid()->whereBetween('created_at', [$from, $to]);
-        $tokoCount = (clone $salesInRange)->count();
-        $tokoOmzet = (int) (clone $salesInRange)->sum(DB::raw('total - refunded'));
-        $tokoDiscount = (int) (clone $salesInRange)->sum('discount');
-        $tokoRefunded = (int) (clone $salesInRange)->sum('refunded');
+        $salesInRange = Sale::valid()
+            ->whereBetween('created_at', [$from, $to])
+            ->when($kasirId, fn ($q) => $q->where('user_id', $kasirId))
+            ->when($categoryId, fn ($q) => $q->whereHas('items', fn ($i) => $i->whereIn('product_id', $productIdsInCategory)));
 
         $itemsInRange = SaleItem::whereHas(
             'sale',
-            fn ($q) => $q->valid()->whereBetween('created_at', [$from, $to]),
-        );
+            fn ($q) => $q->valid()
+                ->whereBetween('created_at', [$from, $to])
+                ->when($kasirId, fn ($q) => $q->where('user_id', $kasirId)),
+        )->when($categoryId, fn ($q) => $q->whereIn('product_id', $productIdsInCategory));
+
+        $tokoCount = (clone $salesInRange)->count();
+        if ($categoryId) {
+            $tokoOmzet = (int) (clone $itemsInRange)->sum(DB::raw('price * (qty - returned_qty)'));
+            $tokoDiscount = 0;
+            $tokoRefunded = (int) (clone $itemsInRange)->sum(DB::raw('price * returned_qty'));
+        } else {
+            $tokoOmzet = (int) (clone $salesInRange)->sum(DB::raw('total - refunded'));
+            $tokoDiscount = (int) (clone $salesInRange)->sum('discount');
+            $tokoRefunded = (int) (clone $salesInRange)->sum('refunded');
+        }
 
         $tokoProfit = (int) (clone $itemsInRange)
             ->selectRaw('COALESCE(SUM((CAST(price AS SIGNED) - CAST(cost AS SIGNED)) * CAST(qty - returned_qty AS SIGNED)), 0) as p')
             ->value('p');
 
-        // 2. Modul Arang
-        $arangJualInRange = ArangPenjualan::whereBetween('created_at', [$from, $to]);
-        $arangBeliInRange = ArangPembelian::whereBetween('created_at', [$from, $to]);
+        // 2. Modul Arang (tidak punya kategori, jadi kosong saat filter kategori dipakai)
+        $arangFilter = fn ($q) => $q
+            ->when($kasirId, fn ($q) => $q->where('user_id', $kasirId))
+            ->when($categoryId, fn ($q) => $q->whereRaw('1 = 0'));
+        $arangJualInRange = ArangPenjualan::whereBetween('arang_penjualan.created_at', [$from, $to])->tap($arangFilter);
+        $arangBeliInRange = ArangPembelian::whereBetween('created_at', [$from, $to])->tap($arangFilter);
 
         $arangCount = (clone $arangJualInRange)->count();
         $arangOmzet = (int) (clone $arangJualInRange)->sum('grand_total');
@@ -49,9 +93,8 @@ class ReportController extends Controller
         $arangKg = (float) (clone $arangJualInRange)->sum('berat_kg');
         $arangBeliStok = (int) (clone $arangBeliInRange)->sum('total_harga');
 
-        $arangProfit = (int) DB::table('arang_penjualan')
+        $arangProfit = (int) (clone $arangJualInRange)
             ->join('arang_jenis', 'arang_penjualan.arang_jenis_id', '=', 'arang_jenis.id')
-            ->whereBetween('arang_penjualan.created_at', [$from, $to])
             ->selectRaw('COALESCE(SUM(CAST(arang_penjualan.grand_total AS SIGNED) - (arang_penjualan.berat_kg * arang_jenis.harga_beli_default)), 0) as p')
             ->value('p');
 
@@ -82,14 +125,22 @@ class ReportController extends Controller
         ];
 
         // 4. Omzet Harian Terpadu
-        $tokoDaily = (clone $salesInRange)
-            ->selectRaw('DATE(created_at) as d, COUNT(*) as trx, SUM(total - refunded) as omzet')
-            ->groupBy('d')
-            ->get()
-            ->keyBy('d');
+        $tokoDaily = $categoryId
+            ? (clone $itemsInRange)
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->selectRaw('DATE(sales.created_at) as d, COUNT(DISTINCT sales.id) as trx, SUM(sale_items.price * (sale_items.qty - sale_items.returned_qty)) as omzet')
+                ->groupBy('d')
+                ->toBase()
+                ->get()
+                ->keyBy('d')
+            : (clone $salesInRange)
+                ->selectRaw('DATE(created_at) as d, COUNT(*) as trx, SUM(total - refunded) as omzet')
+                ->groupBy('d')
+                ->get()
+                ->keyBy('d');
 
         $arangDaily = (clone $arangJualInRange)
-            ->selectRaw('DATE(created_at) as d, COUNT(*) as trx, SUM(grand_total) as omzet')
+            ->selectRaw('DATE(arang_penjualan.created_at) as d, COUNT(*) as trx, SUM(grand_total) as omzet')
             ->groupBy('d')
             ->get()
             ->keyBy('d');
@@ -123,12 +174,12 @@ class ReportController extends Controller
                 'omzet' => (int) $r->omzet,
             ]);
 
-        $topArang = DB::table('arang_penjualan')
+        $topArang = (clone $arangJualInRange)
             ->join('arang_jenis', 'arang_penjualan.arang_jenis_id', '=', 'arang_jenis.id')
-            ->whereBetween('arang_penjualan.created_at', [$from, $to])
             ->selectRaw("arang_jenis.nama as raw_name, ROUND(SUM(arang_penjualan.berat_kg), 1) as qty, 'kg' as unit, SUM(arang_penjualan.grand_total) as omzet")
             ->groupBy('arang_jenis.nama')
             ->havingRaw('SUM(arang_penjualan.berat_kg) > 0')
+            ->toBase()
             ->get()
             ->map(fn ($r) => [
                 'name' => 'Arang ' . $r->raw_name,
@@ -201,15 +252,15 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        $from = $request->date('from') ?: Carbon::today();
-        $to = $request->date('to') ?: Carbon::today();
-        $from = $from->copy()->startOfDay();
-        $to = $to->copy()->endOfDay();
+        [$from, $to, $kasirId, $categoryId] = $this->filters($request);
 
-        $data = $this->gatherReportData($from, $to);
+        $data = $this->gatherReportData($from, $to, $kasirId, $categoryId);
 
         return Inertia::render('Reports/Index', [
             'range' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'filters' => ['kasir' => $kasirId, 'kategori' => $categoryId],
+            'kasirList' => User::orderBy('name')->get(['id', 'name']),
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
             'summary' => $data['summary'],
             'breakdown' => $data['breakdown'],
             'daily' => $data['daily'],
@@ -230,12 +281,9 @@ class ReportController extends Controller
 
     public function exportExcel(Request $request, ReportExcelExportService $excelService): StreamedResponse
     {
-        $from = $request->date('from') ?: Carbon::today();
-        $to = $request->date('to') ?: Carbon::today();
-        $from = $from->copy()->startOfDay();
-        $to = $to->copy()->endOfDay();
+        [$from, $to, $kasirId, $categoryId] = $this->filters($request);
 
-        $data = $this->gatherReportData($from, $to);
+        $data = $this->gatherReportData($from, $to, $kasirId, $categoryId);
 
         $sales = (clone $data['salesInRange'])
             ->with(['user:id,name', 'customer:id,name'])
@@ -263,7 +311,8 @@ class ReportController extends Controller
             $sales,
             $arangJuals,
             $arangBelis,
-            $data['piutang']
+            $data['piutang'],
+            $this->keteranganFilter($kasirId, $categoryId)
         );
 
         $filename = 'Laporan-'.Str::slug($data['storeName']).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.xlsx';
@@ -279,13 +328,10 @@ class ReportController extends Controller
 
     public function exportCsv(Request $request): StreamedResponse
     {
-        $from = $request->date('from') ?: Carbon::today();
-        $to = $request->date('to') ?: Carbon::today();
-        $from = $from->copy()->startOfDay();
-        $to = $to->copy()->endOfDay();
-
-        $store = Setting::values();
-        $storeName = $store['store_name'] ?? 'Kios BERKAH';
+        [$from, $to, $kasirId, $categoryId] = $this->filters($request);
+        $data = $this->gatherReportData($from, $to, $kasirId, $categoryId);
+        $storeName = $data['storeName'];
+        $keteranganFilter = $this->keteranganFilter($kasirId, $categoryId);
 
         $filename = 'Laporan-'.Str::slug($storeName).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.csv';
 
@@ -297,7 +343,7 @@ class ReportController extends Controller
             'Expires' => '0',
         ];
 
-        $callback = function () use ($from, $to, $storeName) {
+        $callback = function () use ($from, $to, $storeName, $data, $keteranganFilter) {
             $out = fopen('php://output', 'w');
             // UTF-8 BOM untuk Microsoft Excel compatibility
             fwrite($out, "\xEF\xBB\xBF");
@@ -307,37 +353,18 @@ class ReportController extends Controller
             $this->csvRow($out, ['Nama Toko', $storeName]);
             $this->csvRow($out, ['Periode', $from->format('d/m/Y') . ' s/d ' . $to->format('d/m/Y')]);
             $this->csvRow($out, ['Waktu Unduh', now()->format('d/m/Y H:i:s')]);
+            if ($keteranganFilter) {
+                $this->csvRow($out, ['Filter', $keteranganFilter]);
+            }
             $this->csvRow($out, []);
 
-            // 1. Data Toko Eceran
-            $salesInRange = Sale::valid()->whereBetween('created_at', [$from, $to]);
-            $tokoCount = (clone $salesInRange)->count();
-            $tokoOmzet = (int) (clone $salesInRange)->sum(DB::raw('total - refunded'));
-            $tokoDiscount = (int) (clone $salesInRange)->sum('discount');
-
-            $itemsInRange = SaleItem::whereHas(
-                'sale',
-                fn ($q) => $q->valid()->whereBetween('created_at', [$from, $to]),
-            );
-            $tokoProfit = (int) (clone $itemsInRange)
-                ->selectRaw('COALESCE(SUM((CAST(price AS SIGNED) - CAST(cost AS SIGNED)) * CAST(qty - returned_qty AS SIGNED)), 0) as p')
-                ->value('p');
-
-            // 2. Data Modul Arang
-            $arangJualInRange = ArangPenjualan::whereBetween('created_at', [$from, $to]);
-            $arangBeliInRange = ArangPembelian::whereBetween('created_at', [$from, $to]);
-
-            $arangCount = (clone $arangJualInRange)->count();
-            $arangOmzet = (int) (clone $arangJualInRange)->sum('grand_total');
-            $arangDiscount = (int) (clone $arangJualInRange)->sum('diskon');
-            $arangKg = (float) (clone $arangJualInRange)->sum('berat_kg');
-            $arangBeliStok = (int) (clone $arangBeliInRange)->sum('total_harga');
-
-            $arangProfit = (int) DB::table('arang_penjualan')
-                ->join('arang_jenis', 'arang_penjualan.arang_jenis_id', '=', 'arang_jenis.id')
-                ->whereBetween('arang_penjualan.created_at', [$from, $to])
-                ->selectRaw('COALESCE(SUM(CAST(arang_penjualan.grand_total AS SIGNED) - (arang_penjualan.berat_kg * arang_jenis.harga_beli_default)), 0) as p')
-                ->value('p');
+            $salesInRange = $data['salesInRange'];
+            $arangJualInRange = $data['arangJualInRange'];
+            $arangBeliInRange = $data['arangBeliInRange'];
+            ['toko' => $toko, 'arang' => $arang] = $data['breakdown'];
+            [$tokoOmzet, $tokoProfit, $tokoCount, $tokoDiscount] = [$toko['omzet'], $toko['profit'], $toko['count'], $toko['discount']];
+            [$arangOmzet, $arangProfit, $arangCount, $arangDiscount] = [$arang['omzet'], $arang['profit'], $arang['count'], $arang['discount']];
+            [$arangKg, $arangBeliStok] = [$arang['berat_kg'], $arang['beli_stok']];
 
             // --- RINGKASAN EKSEKUTIF ---
             $this->csvRow($out, ['[ RINGKASAN EKSEKUTIF KEUANGAN ]']);
@@ -491,6 +518,17 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /** Keterangan filter untuk kop ekspor, mis. "Kasir: Budi, Kategori: Minuman". */
+    private function keteranganFilter(?int $kasirId, ?int $categoryId): ?string
+    {
+        $bagian = array_filter([
+            $kasirId ? 'Kasir: '.(User::whereKey($kasirId)->value('name') ?? '-') : null,
+            $categoryId ? 'Kategori: '.(Category::whereKey($categoryId)->value('name') ?? '-').' (tanpa arang, sebelum diskon nota)' : null,
+        ]);
+
+        return $bagian ? implode(', ', $bagian) : null;
     }
 
     /**

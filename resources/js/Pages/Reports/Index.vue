@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import Icon from '@/Components/Icon.vue';
@@ -14,13 +14,27 @@ const props = defineProps({
     topProducts: Array,
     recent: Array,
     piutangTotal: Number,
+    filters: { type: Object, default: () => ({}) },
+    kasirList: { type: Array, default: () => [] },
+    categories: { type: Array, default: () => [] },
 });
 
-const filter = reactive({ from: props.range.from, to: props.range.to });
+const filter = reactive({
+    from: props.range.from,
+    to: props.range.to,
+    kasir: props.filters.kasir ?? '',
+    kategori: props.filters.kategori ?? '',
+});
+
+// Parameter yang dikirim ke server & tombol ekspor (filter kosong tidak ikut).
+const params = computed(() =>
+    Object.fromEntries(Object.entries(filter).filter(([, v]) => v !== '' && v !== null)),
+);
+const kategoriAktif = computed(() => !!props.filters.kategori);
 const loading = ref(false);
 
 function apply() {
-    router.get(route('reports.index'), { ...filter }, {
+    router.get(route('reports.index'), params.value, {
         preserveState: true,
         onStart: () => (loading.value = true),
         onFinish: () => (loading.value = false),
@@ -50,7 +64,7 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
             <template #action>
                 <div class="flex flex-wrap items-center gap-2">
                     <a
-                        :href="route('reports.export.excel', { from: filter.from, to: filter.to })"
+                        :href="route('reports.export.excel', params)"
                         class="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-transform active:scale-95"
                         download
                         title="Unduh file Excel resmi (.xlsx) dengan tabel bergaris, warna rapi, dan data siap saji"
@@ -59,7 +73,7 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
                         <span>Unduh Excel (.xlsx)</span>
                     </a>
                     <a
-                        :href="route('reports.export.csv', { from: filter.from, to: filter.to })"
+                        :href="route('reports.export.csv', params)"
                         class="btn-ghost inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium"
                         download
                         title="Unduh format mentah CSV"
@@ -99,6 +113,24 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
                     class="num border-0 bg-transparent py-2.5 pl-0 pr-3 text-sm text-ink focus:outline-none focus:ring-0"
                 />
             </div>
+            <select
+                v-model="filter.kasir"
+                class="filter-pill"
+                aria-label="Filter kasir"
+                @change="apply"
+            >
+                <option value="">Semua kasir</option>
+                <option v-for="k in kasirList" :key="k.id" :value="k.id">{{ k.name }}</option>
+            </select>
+            <select
+                v-model="filter.kategori"
+                class="filter-pill"
+                aria-label="Filter kategori"
+                @change="apply"
+            >
+                <option value="">Semua kategori</option>
+                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
             <button
                 @click="apply"
                 :disabled="loading"
@@ -129,6 +161,14 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
                 </button>
             </div>
         </div>
+
+        <p
+            v-if="kategoriAktif"
+            class="mt-3 rounded-control border border-amber/40 bg-amber-wash px-4 py-2.5 text-body-sm text-amber-ink"
+        >
+            Filter kategori aktif: angka hanya dari barang toko pada kategori ini, dihitung dari harga barang sebelum
+            diskon nota. Penjualan arang tidak ikut dihitung.
+        </p>
 
         <!-- 4 Kartu Metrik Gabungan -->
         <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
