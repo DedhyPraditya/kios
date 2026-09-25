@@ -14,6 +14,82 @@ class Changelog
     {
         return [
             [
+                'version' => '1.6.2',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'Toko Lebih Aman & Lonceng Notifikasi Lebih Pintar',
+                'type' => 'fix',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Pembaruan keamanan dan kerapian menyeluruh. Nomor nota tidak lagi bisa kembar walau dua kasir menyimpan bersamaan, harga arang kini sepenuhnya di tangan admin, struk hanya bisa dibuka oleh yang berhak, dan lonceng notifikasi lebih cermat mengingatkan stok menipis serta kasbon jatuh tempo.',
+                'changes' => [
+                    [
+                        'category' => '🔐 Keamanan',
+                        'type' => 'sec',
+                        'title' => 'Login dan Ekspor Laporan Lebih Aman',
+                        'description' => 'Batas percobaan login kini tidak bisa diakali, dan akun otomatis dikunci sementara bila kata sandi salah berkali-kali. File Excel/CSV hasil ekspor juga aman dibuka: tulisan dari pengguna tidak akan pernah dijalankan sebagai rumus.',
+                    ],
+                    [
+                        'category' => '🧾 Nomor Nota',
+                        'type' => 'fix',
+                        'title' => 'Nomor Nota Tidak Pernah Kembar',
+                        'description' => 'Dua kasir yang menyimpan transaksi di detik yang sama kini tetap mendapat nomor nota berurutan — tidak ada lagi transaksi gagal tersimpan. Berlaku untuk nota kasir, jual arang, dan beli arang.',
+                    ],
+                    [
+                        'category' => '🔥 Jual Arang',
+                        'type' => 'feat',
+                        'title' => 'Harga Arang Ditentukan Admin, Pembayaran Tunai atau QRIS',
+                        'description' => 'Kasir otomatis memakai harga jual yang diatur admin di Jenis Arang, tanpa bisa mengubah harga atau memberi diskon. Admin tetap leluasa menyesuaikan harga dan diskon saat menjual. Penjualan arang kini hanya tunai atau QRIS, sesuai aturan toko.',
+                    ],
+                    [
+                        'category' => '🛡️ Struk & Data',
+                        'type' => 'sec',
+                        'title' => 'Struk Hanya untuk Admin dan Pembuatnya',
+                        'description' => 'Struk kasir dan nota arang kini hanya bisa dibuka admin atau pegawai yang membuat transaksinya. Produk nonaktif juga tidak bisa lagi terjual, dan admin terakhir tidak bisa terhapus secara tidak sengaja.',
+                    ],
+                    [
+                        'category' => '🔔 Lonceng Notifikasi',
+                        'type' => 'fix',
+                        'title' => 'Notifikasi Lebih Cermat dan Nyaman Dipakai',
+                        'description' => 'Stok yang sudah diisi ulang lalu menipis lagi kembali diingatkan, dan kasbon yang ditandai sebelum tempo muncul lagi saat lewat tempo. Panel tetap terbuka saat mencentang notifikasi, tampil penuh di layar HP, dan tombol "Lihat Semua Produk Menipis" langsung menampilkan produk yang menipis saja.',
+                    ],
+                    [
+                        'category' => '💾 Cadangan Data',
+                        'type' => 'fix',
+                        'title' => 'Pesan Gagal Cadangan Lebih Jelas',
+                        'description' => 'Bila pencadangan atau pemulihan gagal, pesan yang tampil kini singkat dan mudah dipahami. Rincian teknisnya tersimpan di catatan aplikasi untuk pemeriksaan.',
+                    ],
+                ],
+            ],
+            [
+                'version' => '1.6.1',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'Scan Barcode Pakai Kamera HP',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Tidak punya alat scanner? Tidak masalah! Kamera HP kini bisa dipakai untuk scan barcode, baik di Kasir maupun saat mendaftarkan produk baru. Tampilan Dashboard di ponsel dan laptop juga dirapikan.',
+                'changes' => [
+                    [
+                        'category' => '📷 Scan Kamera',
+                        'type' => 'feat',
+                        'title' => 'Tombol "Kamera" di Kasir',
+                        'description' => 'Tekan tombol "Kamera" di kotak cari kasir, arahkan ke barcode, dan barang langsung masuk keranjang. Kamera tetap menyala untuk scan beruntun, lengkap dengan senter, getar, dan bunyi sebagai tanda berhasil.',
+                    ],
+                    [
+                        'category' => '📦 Data Produk',
+                        'type' => 'feat',
+                        'title' => 'Isi Barcode Produk Lewat Kamera',
+                        'description' => 'Saat menambah atau mengubah produk, barcode cukup di-scan dengan kamera — tidak perlu mengetik angka panjang satu per satu.',
+                    ],
+                    [
+                        'category' => '📊 Dashboard',
+                        'type' => 'ui',
+                        'title' => 'Angka Omzet Selalu Rapi di Kartu',
+                        'description' => 'Angka omzet yang besar tidak lagi keluar dari kartu di layar ponsel maupun laptop.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.6.0',
                 'date' => '2026-09-25',
                 'date_human' => '25 September 2026',

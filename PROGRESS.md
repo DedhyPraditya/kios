@@ -551,7 +551,8 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [x] Multi-metode bayar QRIS (unggah QRIS di Pengaturan, scan kasir dengan modal perbesar, cetak struk web/Bluetooth, rekap shift non-tunai).
 - [ ] Pajak / PPN opsional.
 - [ ] Satuan ganda (pcs / dus) & harga grosir.
-- [ ] Ekspor laporan Excel / PDF + tombolnya di halaman Laporan.
+- [x] Ekspor laporan Excel (.xlsx) & CSV + tombolnya di halaman Laporan (v1.5.1–v1.5.2).
+- [ ] Ekspor laporan PDF.
 - [ ] Filter tambahan di Laporan: per kasir, per kategori.
 - [ ] Cetak langsung ESC/POS **di PC** (kini baru di ponsel lewat Web Bluetooth
       — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi
@@ -563,12 +564,12 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ### Tampilan
 
+- [x] Panel notifikasi pada lonceng (dropdown interaktif stok menipis & kasbon tempo).
 - [ ] Unggah logo sendiri lewat Pengaturan (lambang bawaan sudah terpasang).
 - [ ] Grafik interaktif (Chart.js) menggantikan bar CSS.
 - [ ] Upload foto produk; impor produk massal (CSV); cetak label barcode.
 - [ ] Dialog konfirmasi hapus yang rapi (kini `confirm()` bawaan browser).
 - [ ] Pencarian global (ikon cari sudah dihapus dari top bar).
-- [x] Panel notifikasi pada lonceng (dropdown interaktif stok menipis & kasbon tempo).
 - [ ] Ringkas angka besar di kartu metrik (mis. `Rp1,2 jt`).
 - [ ] Aksesibilitas: `aria-label` tombol ikon, perangkap fokus modal, urutan tab.
 - [ ] Loading state / skeleton antar halaman.
