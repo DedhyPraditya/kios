@@ -72,6 +72,25 @@ class QrisTest extends TestCase
         Storage::disk('public')->assertMissing($storedImage);
     }
 
+    public function test_gambar_qris_disajikan_lewat_route_tanpa_storage_link(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->kasir)->get(route('qris.image'))->assertNotFound();
+
+        $this->actingAs($this->admin)->post(route('settings.update'), [
+            'store_name' => 'Kios BERKAH',
+            'qris_image' => UploadedFile::fake()->image('qris.png', 300, 300),
+        ]);
+
+        $url = Setting::values()['qris_url'];
+        $this->assertStringContainsString('/qris-toko', $url);
+
+        $this->actingAs($this->kasir)->get($url)
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
+    }
+
     public function test_rejects_qris_sale_when_qris_not_uploaded(): void
     {
         // Pastikan QRIS belum diunggah

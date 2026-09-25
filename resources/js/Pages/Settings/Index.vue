@@ -4,6 +4,7 @@ import PageHeader from "@/Components/PageHeader.vue";
 import Icon from "@/Components/Icon.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
+import { qrisMerchantName, readQrisFromImage } from "@/lib/qris";
 
 const props = defineProps({
     store: Object,
@@ -23,6 +24,24 @@ const qrisPreview = ref(props.store.qris_url ?? null);
 const isNewImageSelected = ref(false);
 const fileError = ref("");
 
+// Cek apakah kode QR di gambar terbaca, karena QRIS dinamis di kasir
+// (nominal terisi otomatis) hanya bisa dibuat dari QR yang terbaca.
+const qrisCheck = ref(null); // null | "checking" | { ok, merchant }
+let checkRun = 0;
+async function checkQris(source) {
+    const id = ++checkRun;
+    qrisCheck.value = "checking";
+    let payload = null;
+    try {
+        payload = await readQrisFromImage(source);
+    } catch {
+        payload = null;
+    }
+    if (id !== checkRun) return;
+    qrisCheck.value = { ok: !!payload, merchant: payload ? qrisMerchantName(payload) : "" };
+}
+if (props.store.qris_url) checkQris(props.store.qris_url);
+
 function onFileChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -41,6 +60,7 @@ function onFileChange(e) {
     form.remove_qris = false;
     isNewImageSelected.value = true;
     qrisPreview.value = URL.createObjectURL(file);
+    checkQris(file);
 }
 
 function removeQris() {
@@ -48,6 +68,8 @@ function removeQris() {
     form.remove_qris = true;
     isNewImageSelected.value = false;
     qrisPreview.value = null;
+    qrisCheck.value = null;
+    checkRun++;
     fileError.value = "";
     if (fileInput.value) {
         fileInput.value.value = "";
@@ -184,6 +206,21 @@ function submit() {
                                 </p>
                                 <p class="text-2xs text-ink-soft">
                                     {{ isNewImageSelected ? "Klik 'Simpan pengaturan' di bawah untuk menerapkan perubahan." : "Kode ini akan langsung tampil di kasir saat metode QRIS dipilih." }}
+                                </p>
+                                <p v-if="qrisCheck === 'checking'" class="text-2xs text-ink-faint">
+                                    Memeriksa kode QRIS…
+                                </p>
+                                <p
+                                    v-else-if="qrisCheck?.ok"
+                                    class="text-2xs font-semibold text-brand-ink"
+                                >
+                                    ✓ QRIS terbaca<span v-if="qrisCheck.merchant"> ({{ qrisCheck.merchant }})</span>
+                                    — di kasir, nominal belanja akan terisi otomatis.
+                                </p>
+                                <p v-else-if="qrisCheck" class="text-2xs text-amber-ink">
+                                    Kode QRIS di gambar tidak terbaca. QRIS tetap bisa dipakai, tetapi
+                                    pembeli harus mengetik nominal sendiri. Coba unggah gambar yang lebih
+                                    jelas: hasil unduhan dari aplikasi merchant, bukan foto stiker.
                                 </p>
                                 <div class="flex flex-wrap gap-2 pt-1">
                                     <button

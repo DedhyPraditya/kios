@@ -35,7 +35,10 @@ class Setting extends Model
         );
 
         $merged = [...self::DEFAULTS, ...array_filter($stored, fn ($v) => $v !== null)];
-        $merged['qris_url'] = !empty($merged['qris_image']) ? asset('storage/'.$merged['qris_image']) : null;
+        // `v` berubah tiap gambar diganti, supaya browser tidak memakai cache lama.
+        $merged['qris_url'] = !empty($merged['qris_image'])
+            ? route('qris.image', ['v' => substr(md5($merged['qris_image']), 0, 8)])
+            : null;
 
         return $merged;
     }

@@ -16,6 +16,20 @@ class SettingController extends Controller
         ]);
     }
 
+    /**
+     * Gambar QRIS toko. Disajikan lewat route, bukan /storage, agar tetap
+     * tampil walau `php artisan storage:link` belum/tidak bisa dijalankan.
+     */
+    public function qris()
+    {
+        $path = Setting::get('qris_image');
+        abort_unless($path && Storage::disk('public')->exists($path), 404);
+
+        return Storage::disk('public')->response($path, null, [
+            'Cache-Control' => 'private, max-age=86400',
+        ]);
+    }
+
     public function update(Request $request)
     {
         $data = $request->validate([

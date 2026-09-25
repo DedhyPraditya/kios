@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Icon from "@/Components/Icon.vue";
+import QrisCode from "@/Components/QrisCode.vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
@@ -339,12 +340,8 @@ function submit() {
                             <p class="text-body-sm font-semibold text-brand-ink mb-2">
                                 Pindai QRIS untuk membayar {{ rupiah(grandTotal) }}
                             </p>
-                            <div v-if="store?.qris_image_path" class="flex justify-center my-2">
-                                <img
-                                    :src="'/storage/' + store.qris_image_path"
-                                    alt="QRIS Toko"
-                                    class="max-h-56 max-w-xs rounded-lg border border-line object-contain shadow-sm bg-white p-2"
-                                />
+                            <div v-if="store?.qris_url" class="mx-auto my-2 w-56 rounded-lg border border-line bg-white p-2 shadow-sm">
+                                <QrisCode :image-url="store.qris_url" :amount="grandTotal" />
                             </div>
                             <div v-else class="text-2xs text-ink-soft italic">
                                 Belum ada gambar QRIS di Pengaturan Toko. Kasir bisa menggunakan barcode cetak di meja kasir.

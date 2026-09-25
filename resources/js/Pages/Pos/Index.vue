@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
 import Modal from "@/Components/Modal.vue";
 import StockBadge from "@/Components/StockBadge.vue";
+import QrisCode from "@/Components/QrisCode.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
@@ -559,20 +560,11 @@ const quickAmounts = computed(() => {
                                 </div>
 
                                 <div
-                                    class="relative mx-auto h-40 w-40 overflow-hidden rounded-xl border border-line bg-white p-2 shadow-inner cursor-pointer hover:ring-2 hover:ring-brand/40 transition-all group"
+                                    class="mx-auto w-44 cursor-pointer rounded-xl border border-line bg-white p-2 shadow-inner transition-all hover:ring-2 hover:ring-brand/40"
                                     title="Klik untuk memperbesar QRIS ke layar penuh"
                                     @click="showQrisModal = true"
                                 >
-                                    <img
-                                        :src="store.qris_url"
-                                        alt="QRIS Toko"
-                                        class="h-full w-full object-contain"
-                                    />
-                                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-                                        <span class="text-2xs text-white bg-black/60 px-2 py-1 rounded-full font-medium">
-                                            Perbesar
-                                        </span>
-                                    </div>
+                                    <QrisCode :image-url="store.qris_url" :amount="total" />
                                 </div>
 
                                 <div class="rounded-lg bg-surface-muted/60 p-2">
@@ -749,12 +741,11 @@ const quickAmounts = computed(() => {
                 </div>
 
                 <div class="my-5 flex flex-col items-center justify-center">
-                    <div class="rounded-2xl border-2 border-line bg-white p-4 shadow-md max-w-[280px] sm:max-w-[320px] aspect-square flex items-center justify-center">
-                        <img
+                    <div class="w-full max-w-[280px] rounded-2xl border-2 border-line bg-white p-4 shadow-md sm:max-w-[320px]">
+                        <QrisCode
                             v-if="store.qris_url"
-                            :src="store.qris_url"
-                            alt="QRIS Pembayaran"
-                            class="max-h-full max-w-full object-contain"
+                            :image-url="store.qris_url"
+                            :amount="total"
                         />
                     </div>
 

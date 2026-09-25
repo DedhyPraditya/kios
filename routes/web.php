@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
     Route::get('/pos/struk/{sale}', [PosController::class, 'receipt'])->name('pos.receipt');
+    Route::get('/qris-toko', [SettingController::class, 'qris'])->name('qris.image');
 
     // Tutup kasir: kasir mengelola shift-nya sendiri, admin bisa semua.
     Route::get('/shift', [CashSessionController::class, 'index'])->name('shift.index');
