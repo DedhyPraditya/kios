@@ -130,8 +130,8 @@ class ArangPenjualanController extends Controller
             ['berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'diskon' => $diskon, 'total' => $grandTotal]
         );
 
-        return redirect()->route('arang.penjualan.receipt', $penjualan->id)
-            ->with('success', "Penjualan arang ({$penjualan->no_nota}) sebanyak {$berat} kg berhasil dicatat.");
+        // Tanpa banner: halaman struk sudah punya baris status, sama seperti struk kasir.
+        return redirect()->route('arang.penjualan.receipt', $penjualan->id);
     }
 
     public function receipt(Request $request, ArangPenjualan $penjualan)

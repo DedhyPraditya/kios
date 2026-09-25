@@ -56,8 +56,8 @@ class ArangPembelianController extends Controller
             ['berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'total' => $totalHarga]
         );
 
-        return redirect()->route('arang.pembelian.receipt', $pembelian->id)
-            ->with('success', 'Pembelian arang sebanyak ' . $berat . ' kg berhasil dicatat.');
+        // Tanpa banner: halaman struk sudah punya baris status, sama seperti struk kasir.
+        return redirect()->route('arang.pembelian.receipt', $pembelian->id);
     }
 
     public function receipt(Request $request, ArangPembelian $pembelian)

@@ -1,11 +1,11 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import Icon from "@/Components/Icon.vue";
 import NotaCode from "@/Components/NotaCode.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head } from "@inertiajs/vue3";
 import { rupiah, tanggal } from "@/lib/format";
 import { strukEscPos } from "@/lib/struk-escpos";
-import CetakLangsung from "@/Components/CetakLangsung.vue";
+import StrukAksi from "@/Components/StrukAksi.vue";
+import StrukStatus from "@/Components/StrukStatus.vue";
 
 const props = defineProps({ sale: Object, store: Object });
 
@@ -59,13 +59,7 @@ const buatEscPos = () => strukEscPos(props.sale, props.store);
 
     <AuthenticatedLayout>
         <div class="mx-auto max-w-sm">
-            <div class="mb-4 flex items-center gap-2 text-sm text-brand-ink">
-                <span
-                    class="grid h-6 w-6 place-items-center rounded-full bg-brand-wash"
-                    >✓</span
-                >
-                Transaksi tersimpan
-            </div>
+            <StrukStatus pesan="Transaksi tersimpan" />
 
             <div id="struk" class="card tape px-6 pb-6 text-sm">
                 <div class="text-center">
@@ -226,20 +220,12 @@ const buatEscPos = () => strukEscPos(props.sale, props.store);
                 </p>
             </div>
 
-            <CetakLangsung class="mt-4" :buat="buatEscPos" />
-
-            <div class="mt-4 flex gap-2 print:hidden">
-                <button
-                    @click="cetak"
-                    type="button"
-                    class="btn-ghost flex-1"
-                >
-                    <Icon name="print" :size="18" /> Cetak
-                </button>
-                <Link :href="route('pos.index')" class="btn-primary flex-1">
-                    Transaksi baru
-                </Link>
-            </div>
+            <StrukAksi
+                :buat="buatEscPos"
+                :baru-href="route('pos.index')"
+                baru-label="Transaksi baru"
+                @cetak="cetak"
+            />
         </div>
     </AuthenticatedLayout>
 </template>

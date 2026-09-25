@@ -1,13 +1,11 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import Icon from "@/Components/Icon.vue";
 import NotaCode from "@/Components/NotaCode.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head } from "@inertiajs/vue3";
 import { rupiah, tanggal } from "@/lib/format";
 import { strukPenjualanArangEscPos } from "@/lib/struk-escpos";
-import CetakLangsung from "@/Components/CetakLangsung.vue";
-import { didukung } from "@/lib/printer-bluetooth";
-import { serialDidukung } from "@/lib/printer-serial";
+import StrukAksi from "@/Components/StrukAksi.vue";
+import StrukStatus from "@/Components/StrukStatus.vue";
 
 const props = defineProps({
     penjualan: { type: Object, required: true },
@@ -19,7 +17,6 @@ const isQris = props.penjualan.payment_type === "qris";
 const lunas = props.penjualan.status === "lunas";
 
 
-const adaCetakLangsung = didukung() || serialDidukung();
 const buatEscPos = () => strukPenjualanArangEscPos(props.penjualan, props.store);
 
 function tinggiCetakMm(el) {
@@ -58,19 +55,7 @@ function cetak() {
 
     <AuthenticatedLayout>
         <div class="mx-auto max-w-sm">
-            <!-- Status Sukses Bar -->
-            <div class="mb-4 flex items-center justify-between no-print">
-                <div class="flex items-center gap-2 text-sm text-brand-ink">
-                    <span class="grid h-6 w-6 place-items-center rounded-full bg-brand-wash">✓</span>
-                    <span class="font-medium">Penjualan Berhasil Dicatat</span>
-                </div>
-                <Link
-                    :href="route('arang.index')"
-                    class="text-xs text-brand hover:underline font-medium"
-                >
-                    &larr; Arang
-                </Link>
-            </div>
+            <StrukStatus pesan="Penjualan arang tersimpan" :kembali-href="route('arang.index')" kembali-label="Arang" />
 
             <!-- Kertas Struk 58mm -->
             <div id="struk-penjualan" class="card tape px-6 pb-6 text-sm bg-white text-ink">
@@ -196,35 +181,13 @@ function cetak() {
                 </div>
             </div>
 
-            <!-- Tombol Aksi di Layar -->
-            <div class="mt-4 flex flex-col gap-2 no-print">
-                <CetakLangsung :buat="buatEscPos" berhasil="Struk berhasil terkirim ke printer." />
-
-                <button
-                    type="button"
-                    class="w-full py-2 flex items-center justify-center gap-2 text-xs font-medium"
-                    :class="adaCetakLangsung ? 'btn-secondary' : 'btn-primary'"
-                    @click="cetak"
-                >
-                    <Icon name="print" :size="16" />
-                    <span>{{ adaCetakLangsung ? "Cetak biasa (Dialog printer)" : "Cetak Struk (58mm)" }}</span>
-                </button>
-
-                <div class="flex gap-2 mt-1">
-                    <Link
-                        :href="route('arang.jual.create')"
-                        class="btn-secondary flex-1 text-center py-2 text-xs font-medium"
-                    >
-                        + Jual Lagi
-                    </Link>
-                    <Link
-                        :href="route('arang.index')"
-                        class="btn-secondary flex-1 text-center py-2 text-xs font-medium"
-                    >
-                        Arang
-                    </Link>
-                </div>
-            </div>
+            <StrukAksi
+                :buat="buatEscPos"
+                berhasil="Struk berhasil terkirim ke printer."
+                :baru-href="route('arang.jual.create')"
+                baru-label="Jual arang lagi"
+                @cetak="cetak"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
