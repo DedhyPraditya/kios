@@ -501,6 +501,51 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] **Pasang Task Scheduler** (`php artisan schedule:run` tiap menit) — hanya
       perlu kalau fitur shift dipakai. Perintahnya ada di bagian 6.
 
+### Temuan review keamanan & bug (25 Sep 2026) — menunggu keputusan
+
+> Hasil review kode. Yang aman diperbaiki langsung sudah masuk di commit
+> `b540315` (celah batas login lewat `X-Forwarded-For`, formula injection
+> ekspor Excel/CSV, admin terakhir, produk nonaktif, stok arang bersamaan,
+> validasi Jual Arang). Butir di bawah butuh keputusan atau tindakan pemilik.
+
+- [ ] 🔴 **Kasbon arang tidak masuk piutang.** Penjualan arang dengan metode
+      kasbon (`arang_penjualan.status = belum_lunas`) tidak dihitung di
+      `Customer::outstanding()`, tidak tampil di halaman **Piutang**, tidak bisa
+      dilunasi lewat `CreditPaymentController` (hanya menarget tabel `sales`),
+      dan tidak ikut batas kredit pelanggan. Akibatnya pelanggan bisa berhutang
+      arang tanpa batas dan hutangnya sulit ditagih.
+      *Keputusan:* satukan ke alur piutang yang ada (pembayaran hutang bisa
+      menarget nota arang, batas kredit ikut menghitung) — perlu kolom/relasi
+      baru di `credit_payments` + migrasi. Laporan (`ReportController`) sudah
+      menjumlah piutang arang terpisah, jadi angka laporan jadi patokan uji.
+- [ ] 🟠 **`APP_DEBUG=true` / `APP_ENV=local` di `.env`.** Bila PC ini juga
+      dipakai sebagai server untuk kasir/HP, halaman galat bisa membocorkan kode
+      dan konfigurasi. *Tindakan:* di server yang dipakai sehari-hari set
+      `APP_ENV=production` dan `APP_DEBUG=false`, lalu `php artisan config:cache`.
+      Isi `TRUSTED_PROXIES` hanya bila di balik reverse proxy / Cloudflare.
+- [ ] 🟠 **HTTPS & lokasi server untuk scan kamera HP.** Kamera browser hanya
+      jalan di `https://` atau `localhost`; di `http://192.168.x.x` diblokir.
+      Selain itu bila server = PC kasir, HP ikut tak bisa membuka aplikasi saat
+      PC mati listrik. *Keputusan:* hosting/VPS ber-HTTPS, atau perangkat server
+      terpisah ber-UPS dengan sertifikat lokal.
+- [ ] 🟡 **Nomor nota bisa bentrok bila dua transaksi tersimpan di detik yang
+      sama.** `Sale::makeInvoiceNo()` menghitung jumlah nota hari ini + 1, dan
+      nomor nota arang mengambil nota terakhir + 1 — keduanya tanpa kunci. Dua
+      kasir bersamaan → nomor sama → galat unik (500). Jarang untuk satu kasir.
+      *Pilihan:* tabel penghitung nomor dengan `lockForUpdate`, atau coba ulang
+      otomatis saat bentrok.
+- [ ] 🟡 **Harga & diskon Jual Arang bebas diisi kasir.** `harga_jual_per_kg`
+      dan `diskon` datang dari form tanpa batas (bisa Rp0/kg atau diskon
+      penuh). Wajar bila harga arang memang ditawar, tapi membuka celah
+      kecurangan. *Pilihan:* batas bawah = harga beli standar, diskon maksimal
+      (mis. 10%), atau perubahan harga di luar standar hanya oleh admin /
+      tercatat di Log Aktivitas.
+- [ ] ⚪ **Pesan galat backup menampilkan teks exception** (`BackupController`)
+      — hanya terlihat admin; rapikan jadi pesan umum + catat detail ke log.
+- [ ] ⚪ **Struk bisa dibuka siapa pun yang login lewat ID** (`/pos/struk/{id}`,
+      struk arang). Risiko kecil untuk toko satu kasir; batasi ke admin atau
+      pembuat nota bila nanti ada banyak pegawai.
+
 ### Fitur toko
 
 - [ ] Ubah kolom uang jadi bilangan bertanda (`bigInteger`, bukan
