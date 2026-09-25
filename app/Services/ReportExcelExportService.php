@@ -159,6 +159,14 @@ class ReportExcelExportService
                 'note' => 'Potongan harga promosi / diskon langsung',
             ],
             [
+                'name' => 'PPN Dipungut',
+                'total' => $summary['tax'] ?? 0,
+                'toko' => $summary['tax'] ?? 0,
+                'arang' => '-',
+                'format' => 'currency',
+                'note' => 'Sudah termasuk di omzet; disetor ke negara, bukan keuntungan',
+            ],
+            [
                 'name' => 'Volume Arang Terjual',
                 'total' => $breakdown['arang']['berat_kg'] ?? 0,
                 'toko' => '-',

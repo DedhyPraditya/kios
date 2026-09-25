@@ -20,8 +20,11 @@ const props = defineProps({
 const search = ref("");
 const activeCat = ref(null);
 const searchBox = ref(null);
-const cart = ref([]); // { id, name, price, stock, qty }
+// Baris keranjang: satu per produk + satuan.
+// { key, id, name, unitId, unitName, isi, qty, discInput, discMode }
+const cart = ref([]);
 const discount = ref(0);
+const discountMode = ref("rp"); // rp | pct
 const paid = ref(0);
 const note = ref("");
 const processing = ref(false);
@@ -40,6 +43,38 @@ const selectedCustomer = computed(
     () => props.customers.find((c) => c.id === customerId.value) ?? null,
 );
 
+const productById = computed(() => Object.fromEntries(props.products.map((p) => [p.id, p])));
+
+// Harga per satuan dasar: harga grosir dengan minimal beli terbesar yang terpenuhi.
+function tierPrice(product, qty) {
+    const tier = [...(product.wholesale_prices ?? [])]
+        .filter((w) => qty >= w.min_qty)
+        .sort((a, b) => b.min_qty - a.min_qty)[0];
+    return tier ? Math.min(tier.price, product.price) : product.price;
+}
+function rowPrice(row) {
+    const product = productById.value[row.id];
+    if (!product) return 0;
+    if (row.unitId) return product.units.find((u) => u.id === row.unitId)?.price ?? 0;
+    return tierPrice(product, row.qty);
+}
+function rowIsGrosir(row) {
+    const product = productById.value[row.id];
+    return !row.unitId && !!product && rowPrice(row) < product.price;
+}
+function rowGross(row) {
+    return rowPrice(row) * row.qty;
+}
+// Diskon baris dalam rupiah; persen dibulatkan ke rupiah terdekat.
+function rowDiscount(row) {
+    const val = Math.max(Number(row.discInput) || 0, 0);
+    const rp = row.discMode === "pct" ? Math.round((rowGross(row) * Math.min(val, 100)) / 100) : val;
+    return Math.min(rp, rowGross(row));
+}
+function rowTotal(row) {
+    return rowGross(row) - rowDiscount(row);
+}
+
 const filtered = computed(() => {
     const q = search.value.trim().toLowerCase();
     return props.products.filter((p) => {
@@ -52,13 +87,21 @@ const filtered = computed(() => {
     });
 });
 
-const subtotal = computed(() =>
-    cart.value.reduce((s, i) => s + i.price * i.qty, 0),
+const subtotal = computed(() => cart.value.reduce((s, r) => s + rowTotal(r), 0));
+const discountPercent = computed(() =>
+    discountMode.value === "pct" ? Math.min(Math.max(Number(discount.value) || 0, 0), 100) : null,
 );
 const discountValue = computed(() =>
-    Math.min(Math.max(Number(discount.value) || 0, 0), subtotal.value),
+    discountPercent.value !== null
+        ? Math.round((subtotal.value * discountPercent.value) / 100)
+        : Math.min(Math.max(Number(discount.value) || 0, 0), subtotal.value),
 );
-const total = computed(() => subtotal.value - discountValue.value);
+// PPN opsional (Pengaturan), ditambahkan di atas total setelah diskon.
+const taxRate = computed(() =>
+    props.store?.tax_enabled && props.store.tax_enabled !== "0" ? Number(props.store.tax_rate) || 0 : 0,
+);
+const tax = computed(() => Math.round(((subtotal.value - discountValue.value) * taxRate.value) / 100));
+const total = computed(() => subtotal.value - discountValue.value + tax.value);
 const paidNum = computed(() => Number(paid.value) || 0);
 const change = computed(() => {
     if (isQris.value || isKasbon.value) return 0;
@@ -84,38 +127,72 @@ const canPay = computed(() => {
     return paidNum.value >= total.value;
 });
 
+// Sisa stok (satuan dasar) setelah dikurangi semua baris produk ini di keranjang.
 function stockLeft(product) {
-    const inCart = cart.value.find((i) => i.id === product.id);
-    return product.stock - (inCart ? inCart.qty : 0);
+    const used = cart.value
+        .filter((r) => r.id === product.id)
+        .reduce((s, r) => s + r.qty * r.isi, 0);
+    return product.stock - used;
 }
-function addToCart(product) {
-    if (stockLeft(product) <= 0) {
-        errorMsg.value = `Stok ${product.name} habis.`;
+function rowKey(productId, unitId) {
+    return `${productId}-${unitId ?? 0}`;
+}
+function addToCart(product, unit = null) {
+    const isi = unit?.isi ?? 1;
+    if (stockLeft(product) < isi) {
+        errorMsg.value = `Stok ${product.name} tidak cukup${unit ? ` untuk 1 ${unit.name}` : ""}.`;
         return false;
     }
     errorMsg.value = "";
-    const row = cart.value.find((i) => i.id === product.id);
+    const key = rowKey(product.id, unit?.id);
+    const row = cart.value.find((r) => r.key === key);
     if (row) row.qty++;
     else
         cart.value.push({
+            key,
             id: product.id,
             name: product.name,
-            price: product.price,
-            stock: product.stock,
+            unitId: unit?.id ?? null,
+            unitName: unit?.name ?? null,
+            isi,
             qty: 1,
+            discInput: 0,
+            discMode: "rp",
+            discOpen: false,
         });
     return true;
 }
 function inc(row) {
-    const product = props.products.find((p) => p.id === row.id);
-    if (row.qty < product.stock) row.qty++;
+    const product = productById.value[row.id];
+    if (product && stockLeft(product) >= row.isi) row.qty++;
 }
 function dec(row) {
     row.qty--;
     if (row.qty <= 0) removeRow(row);
 }
 function removeRow(row) {
-    cart.value = cart.value.filter((i) => i.id !== row.id);
+    cart.value = cart.value.filter((r) => r.key !== row.key);
+}
+// Ganti satuan baris (mis. pcs -> dus); bila baris satuan itu sudah ada, digabung.
+function changeUnit(row, unitId) {
+    const product = productById.value[row.id];
+    const unit = unitId ? product.units.find((u) => u.id === unitId) : null;
+    const key = rowKey(row.id, unit?.id);
+    const other = cart.value.find((r) => r.key === key && r !== row);
+    const isi = unit?.isi ?? 1;
+    const lainnya = stockLeft(product) + row.qty * row.isi;
+    const qty = Math.max(1, Math.min(row.qty, Math.floor(lainnya / isi)));
+    if (lainnya < isi) {
+        errorMsg.value = `Stok ${product.name} tidak cukup untuk 1 ${unit?.name ?? "pcs"}.`;
+        return;
+    }
+    errorMsg.value = "";
+    if (other) {
+        other.qty += qty;
+        removeRow(row);
+        return;
+    }
+    Object.assign(row, { key, unitId: unit?.id ?? null, unitName: unit?.name ?? null, isi, qty });
 }
 // Scan tanpa Enter: begitu isi kotak cari sama persis dengan barcode produk,
 // tunggu sebentar (scanner mengetik sangat cepat) lalu masukkan ke keranjang.
@@ -136,8 +213,14 @@ function onSearchInput() {
     fastRun = now - lastInputAt < SCAN_KEY_GAP_MS ? fastRun + 1 : 1;
     lastInputAt = now;
 }
+// Barcode produk (satuan dasar) atau barcode satuan lain (mis. dus).
 function findByBarcode(code) {
-    return props.products.find((p) => p.barcode && p.barcode === code);
+    for (const p of props.products) {
+        if (p.barcode && p.barcode === code) return { product: p, unit: null };
+        const unit = (p.units ?? []).find((u) => u.barcode && u.barcode === code);
+        if (unit) return { product: p, unit };
+    }
+    return null;
 }
 function reportMissing(code) {
     scanMissing.value = code;
@@ -158,13 +241,14 @@ function onCameraScan(code) {
         return;
     }
     scanMissing.value = "";
-    if (!addToCart(hit)) {
+    if (!addToCart(hit.product, hit.unit)) {
         cameraFeedback.value = { ok: false, text: errorMsg.value };
         beep(false);
         return;
     }
-    const qty = cart.value.find((i) => i.id === hit.id)?.qty ?? 1;
-    cameraFeedback.value = { ok: true, text: `✓ ${hit.name} — ${qty}×` };
+    const qty = cart.value.find((r) => r.key === rowKey(hit.product.id, hit.unit?.id))?.qty ?? 1;
+    const satuan = hit.unit ? ` ${hit.unit.name}` : "";
+    cameraFeedback.value = { ok: true, text: `✓ ${hit.product.name} — ${qty}${satuan}×` };
     beep(true);
 }
 function openCamera() {
@@ -181,7 +265,7 @@ watch(search, (val) => {
         const hit = findByBarcode(q);
         if (hit) {
             scanMissing.value = "";
-            addToCart(hit);
+            addToCart(hit.product, hit.unit);
             search.value = "";
             nextTick(() => searchBox.value?.focus());
         } else if (fastRun >= SCAN_MIN_LENGTH) {
@@ -201,7 +285,7 @@ function onSearchEnter() {
     const scanned = fastRun >= SCAN_MIN_LENGTH;
     if (hit) {
         scanMissing.value = "";
-        addToCart(hit);
+        addToCart(hit.product, hit.unit);
         search.value = "";
     } else if (scanned) {
         reportMissing(q);
@@ -216,6 +300,7 @@ function onSearchEnter() {
 function resetSale() {
     cart.value = [];
     discount.value = 0;
+    discountMode.value = "rp";
     paid.value = 0;
     note.value = "";
     errorMsg.value = "";
@@ -238,8 +323,14 @@ function pay() {
     router.post(
         route("pos.store"),
         {
-            items: cart.value.map((i) => ({ id: i.id, qty: i.qty })),
+            items: cart.value.map((r) => ({
+                id: r.id,
+                unit_id: r.unitId,
+                qty: r.qty,
+                discount: rowDiscount(r),
+            })),
             discount: discountValue.value,
+            discount_percent: discountPercent.value,
             paid: payloadPaid,
             note: note.value || null,
             payment_type: paymentType.value,
@@ -380,6 +471,14 @@ const quickAmounts = computed(() => {
                         >
                             {{ rupiah(p.price) }}
                         </span>
+                        <span
+                            v-if="p.units?.length || p.wholesale_prices?.length"
+                            class="mt-0.5 text-2xs text-ink-soft"
+                        >
+                            <template v-if="p.units?.length">+ {{ p.units.map((u) => u.name).join(", ") }}</template>
+                            <template v-if="p.units?.length && p.wholesale_prices?.length"> · </template>
+                            <template v-if="p.wholesale_prices?.length">grosir</template>
+                        </span>
                         <!-- Warna stok mengikuti aturan yang sama dengan halaman
                              Produk; angkanya sisa stok setelah dikurangi keranjang. -->
                         <StockBadge
@@ -423,7 +522,7 @@ const quickAmounts = computed(() => {
                     </div>
 
                     <ul v-else class="tape-rule divide-y divide-line px-4 max-h-72 overflow-y-auto">
-                        <li v-for="row in cart" :key="row.id" class="py-3">
+                        <li v-for="row in cart" :key="row.key" class="py-3">
                             <div class="flex items-start justify-between gap-2">
                                 <span class="text-sm font-medium text-ink">
                                     {{ row.name }}
@@ -434,6 +533,29 @@ const quickAmounts = computed(() => {
                                 >
                                     Hapus
                                 </button>
+                            </div>
+                            <div
+                                v-if="productById[row.id]?.units?.length || rowIsGrosir(row)"
+                                class="mt-1 flex flex-wrap items-center gap-2"
+                            >
+                                <select
+                                    v-if="productById[row.id]?.units?.length"
+                                    :value="row.unitId ?? ''"
+                                    class="field w-auto py-0.5 pl-2 pr-7 text-2xs"
+                                    aria-label="Satuan"
+                                    @change="changeUnit(row, $event.target.value ? Number($event.target.value) : null)"
+                                >
+                                    <option value="">pcs</option>
+                                    <option v-for="u in productById[row.id].units" :key="u.id" :value="u.id">
+                                        {{ u.name }} (isi {{ u.isi }})
+                                    </option>
+                                </select>
+                                <span
+                                    v-if="rowIsGrosir(row)"
+                                    class="rounded bg-brand-wash px-1.5 py-0.5 text-2xs font-semibold text-brand-ink"
+                                >
+                                    Harga grosir
+                                </span>
                             </div>
                             <div
                                 class="mt-1.5 flex items-center justify-between"
@@ -458,13 +580,44 @@ const quickAmounts = computed(() => {
                                         +
                                     </button>
                                     <span class="num text-2xs text-ink-faint">
-                                        @ {{ rupiah(row.price) }}
+                                        @ {{ rupiah(rowPrice(row)) }}{{ row.unitName ? `/${row.unitName}` : "" }}
                                     </span>
                                 </div>
                                 <span
                                     class="num text-sm font-semibold text-ink"
                                 >
-                                    {{ rupiah(row.price * row.qty) }}
+                                    {{ rupiah(rowTotal(row)) }}
+                                </span>
+                            </div>
+                            <div class="mt-1 flex items-center justify-between gap-2 text-2xs">
+                                <button
+                                    v-if="!row.discOpen && !rowDiscount(row)"
+                                    type="button"
+                                    class="text-ink-faint hover:text-brand-ink"
+                                    @click="row.discOpen = true"
+                                >
+                                    + Diskon barang
+                                </button>
+                                <label v-else class="flex items-center gap-1.5 text-ink-soft">
+                                    Diskon
+                                    <input
+                                        v-model="row.discInput"
+                                        type="number"
+                                        min="0"
+                                        :max="row.discMode === 'pct' ? 100 : undefined"
+                                        class="field num w-20 py-0.5 text-right text-2xs"
+                                    />
+                                    <button
+                                        type="button"
+                                        class="rounded border border-line px-1.5 py-0.5 font-semibold hover:border-brand"
+                                        :title="row.discMode === 'pct' ? 'Ganti ke rupiah' : 'Ganti ke persen'"
+                                        @click="row.discMode = row.discMode === 'pct' ? 'rp' : 'pct'"
+                                    >
+                                        {{ row.discMode === "pct" ? "%" : "Rp" }}
+                                    </button>
+                                </label>
+                                <span v-if="rowDiscount(row)" class="num text-danger">
+                                    −{{ rupiah(rowDiscount(row)) }}
                                 </span>
                             </div>
                         </li>
@@ -478,14 +631,34 @@ const quickAmounts = computed(() => {
                         <label
                             class="flex items-center justify-between text-ink-soft"
                         >
-                            <span>Diskon</span>
-                            <input
-                                v-model="discount"
-                                type="number"
-                                min="0"
-                                class="field num w-28 py-1 text-right text-sm"
-                            />
+                            <span>
+                                Diskon nota
+                                <span v-if="discountMode === 'pct' && discountValue" class="num text-2xs">
+                                    (−{{ rupiah(discountValue) }})
+                                </span>
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <input
+                                    v-model="discount"
+                                    type="number"
+                                    min="0"
+                                    :max="discountMode === 'pct' ? 100 : undefined"
+                                    class="field num w-24 py-1 text-right text-sm"
+                                />
+                                <button
+                                    type="button"
+                                    class="rounded-control border border-line px-2 py-1 text-xs font-semibold hover:border-brand"
+                                    :title="discountMode === 'pct' ? 'Ganti ke rupiah' : 'Ganti ke persen'"
+                                    @click="discountMode = discountMode === 'pct' ? 'rp' : 'pct'"
+                                >
+                                    {{ discountMode === "pct" ? "%" : "Rp" }}
+                                </button>
+                            </span>
                         </label>
+                        <div v-if="taxRate" class="flex justify-between text-ink-soft">
+                            <span>PPN {{ taxRate }}%</span>
+                            <span class="num">{{ rupiah(tax) }}</span>
+                        </div>
                         <div
                             class="tape-rule flex justify-between pt-2.5 text-base font-bold text-ink"
                         >

@@ -22,7 +22,11 @@ class PosController extends Controller
         return Inertia::render('Pos/Index', [
             'store' => Setting::values(),
             'products' => Product::active()
-                ->with('category:id,name')
+                ->with([
+                    'category:id,name',
+                    'units:id,product_id,name,isi,price,barcode',
+                    'wholesalePrices:id,product_id,min_qty,price',
+                ])
                 ->orderBy('name')
                 ->get(['id', 'category_id', 'barcode', 'name', 'price', 'stock', 'low_stock']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
@@ -44,8 +48,11 @@ class PosController extends Controller
         $data = $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.unit_id' => ['nullable', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
+            'items.*.discount' => ['nullable', 'integer', 'min:0'],
             'discount' => ['nullable', 'integer', 'min:0'],
+            'discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'paid' => ['required', 'integer', 'min:0'],
             'note' => ['nullable', 'string', 'max:255'],
             'payment_type' => ['nullable', Rule::in(['tunai', 'kasbon', 'qris'])],
@@ -64,17 +71,29 @@ class PosController extends Controller
 
         $sale = DB::transaction(function () use ($data, $request, $shift) {
             $ids = collect($data['items'])->pluck('id');
-            $products = Product::whereIn('id', $ids)->lockForUpdate()->get()->keyBy('id');
+            $products = Product::whereIn('id', $ids)
+                ->with(['units', 'wholesalePrices'])
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
-            $qtyById = collect($data['items'])
-                ->groupBy('id')
-                ->map(fn ($rows) => collect($rows)->sum('qty'));
+            // Satu baris per produk + satuan; baris kembar digabung.
+            $rows = collect($data['items'])
+                ->groupBy(fn ($r) => $r['id'].'-'.($r['unit_id'] ?? 0))
+                ->map(fn ($rs) => [
+                    'id' => $rs[0]['id'],
+                    'unit_id' => $rs[0]['unit_id'] ?? null,
+                    'qty' => $rs->sum('qty'),
+                    'discount' => $rs->sum(fn ($r) => (int) ($r['discount'] ?? 0)),
+                ])
+                ->values();
 
             $subtotal = 0;
             $lines = [];
+            $baseQtyById = [];
 
-            foreach ($qtyById as $id => $qty) {
-                $product = $products[$id] ?? null;
+            foreach ($rows as $row) {
+                $product = $products[$row['id']] ?? null;
 
                 if (! $product) {
                     throw ValidationException::withMessages([
@@ -88,27 +107,62 @@ class PosController extends Controller
                     ]);
                 }
 
-                if ($product->stock < $qty) {
-                    throw ValidationException::withMessages([
-                        'items' => "Stok {$product->name} tidak cukup (sisa {$product->stock}).",
-                    ]);
+                $unit = null;
+                if ($row['unit_id']) {
+                    $unit = $product->units->firstWhere('id', $row['unit_id']);
+                    if (! $unit) {
+                        throw ValidationException::withMessages([
+                            'items' => "Satuan untuk {$product->name} sudah berubah. Muat ulang halaman kasir.",
+                        ]);
+                    }
                 }
 
-                $lineSubtotal = $product->price * $qty;
+                $qty = (int) $row['qty'];
+                $isi = $unit?->isi ?? 1;
+                // Harga dihitung ulang di server: harga satuan, atau harga grosir
+                // bila jumlah satuan dasar mencapai minimal beli.
+                $price = $unit ? $unit->price : $product->priceFor($qty);
+                $gross = $price * $qty;
+                $lineDiscount = min((int) $row['discount'], $gross);
+                $lineSubtotal = $gross - $lineDiscount;
                 $subtotal += $lineSubtotal;
+                $baseQtyById[$product->id] = ($baseQtyById[$product->id] ?? 0) + $qty * $isi;
 
                 $lines[] = [
                     'product_id' => $product->id,
+                    'product_unit_id' => $unit?->id,
                     'name' => $product->name,
-                    'price' => $product->price,
-                    'cost' => $product->cost,
+                    'unit_name' => $unit?->name,
+                    'unit_isi' => $isi,
+                    'price' => $price,
+                    'cost' => $product->cost * $isi,
                     'qty' => $qty,
+                    'discount' => $lineDiscount,
                     'subtotal' => $lineSubtotal,
                 ];
             }
 
-            $discount = min((int) ($data['discount'] ?? 0), $subtotal);
-            $total = $subtotal - $discount;
+            foreach ($baseQtyById as $id => $baseQty) {
+                if ($products[$id]->stock < $baseQty) {
+                    throw ValidationException::withMessages([
+                        'items' => "Stok {$products[$id]->name} tidak cukup (sisa {$products[$id]->stock}).",
+                    ]);
+                }
+            }
+
+            // Diskon nota: persen (dihitung di server) atau nominal.
+            $discountPercent = isset($data['discount_percent']) && $data['discount_percent'] > 0
+                ? round((float) $data['discount_percent'], 2)
+                : null;
+            $discount = $discountPercent !== null
+                ? (int) round($subtotal * $discountPercent / 100)
+                : min((int) ($data['discount'] ?? 0), $subtotal);
+
+            // PPN opsional, ditambahkan di atas total setelah diskon.
+            $store = Setting::values();
+            $taxRate = ! empty($store['tax_enabled']) ? max(0, min(100, (float) $store['tax_rate'])) : 0;
+            $tax = (int) round(($subtotal - $discount) * $taxRate / 100);
+            $total = $subtotal - $discount + $tax;
             $isKasbon = $data['payment_type'] === 'kasbon';
             $isQris = $data['payment_type'] === 'qris';
             $paid = (int) $data['paid'];
@@ -159,6 +213,9 @@ class PosController extends Controller
                 'status' => $isKasbon && ($total - $paid) > 0 ? 'belum_lunas' : 'lunas',
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'discount_percent' => $discountPercent,
+                'tax_rate' => $taxRate,
+                'tax' => $tax,
                 'total' => $total,
                 'paid' => $paid,
                 'change' => ($isKasbon || $isQris) ? 0 : $paid - $total,
@@ -168,7 +225,7 @@ class PosController extends Controller
 
             $sale->items()->createMany($lines);
 
-            foreach ($qtyById as $id => $qty) {
+            foreach ($baseQtyById as $id => $qty) {
                 StockMovement::apply($products[$id], -$qty, 'penjualan', [
                     'user_id' => $request->user()->id,
                     'sale_id' => $sale->id,

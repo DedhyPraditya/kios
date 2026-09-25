@@ -12,7 +12,7 @@ class Sale extends Model
 {
     protected $fillable = [
         'invoice_no', 'user_id', 'cash_session_id', 'customer_id', 'payment_type', 'status',
-        'subtotal', 'discount', 'total', 'paid', 'change', 'due_date', 'note',
+        'subtotal', 'discount', 'discount_percent', 'tax_rate', 'tax', 'total', 'paid', 'change', 'due_date', 'note',
         'voided_at', 'voided_by', 'void_reason', 'refunded',
     ];
 
@@ -21,6 +21,9 @@ class Sale extends Model
         return [
             'subtotal' => 'integer',
             'discount' => 'integer',
+            'discount_percent' => 'float',
+            'tax_rate' => 'float',
+            'tax' => 'integer',
             'total' => 'integer',
             'paid' => 'integer',
             'change' => 'integer',

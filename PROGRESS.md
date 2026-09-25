@@ -549,10 +549,10 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
       `unsignedBigInteger`) supaya pengurangan tak perlu dicor satu per satu.
       Migrasi `2026_09_26_100002` (diuji di MySQL 8.0.30: naik, turun, dan
       data lama tetap); `CAST(... AS SIGNED)` di laporan & piutang dihapus.
-- [ ] Diskon per item + diskon persen (sekarang hanya nominal total).
+- [x] Diskon per item + diskon persen: tiap baris kasir punya "+ Diskon barang" (Rp/%), diskon nota bisa Rp atau % (`sales.discount_percent`, dihitung ulang di server). Kolom `sale_items.discount`; `subtotal` baris = harga x qty - diskon baris. Laba & retur memakai harga bersih baris.
 - [x] Multi-metode bayar QRIS (unggah QRIS di Pengaturan, scan kasir dengan modal perbesar, cetak struk web/Bluetooth, rekap shift non-tunai).
-- [ ] Pajak / PPN opsional.
-- [ ] Satuan ganda (pcs / dus) & harga grosir.
+- [x] Pajak / PPN opsional: Pengaturan → "Tarik PPN di kasir" + tarif (`tax_enabled`, `tax_rate`). PPN ditambahkan di atas total setelah diskon, disimpan per nota (`sales.tax_rate`, `sales.tax`), tampil di struk & laporan ("PPN dipungut"); retur ikut mengembalikan PPN secara proporsional.
+- [x] Satuan ganda (pcs / dus) & harga grosir: tabel `product_units` (nama, isi, harga, barcode sendiri) dan `product_wholesale_prices` (bertingkat, per pcs). Stok tetap per pcs; `sale_items.unit_name/unit_isi` untuk konversi stok saat jual, batal, retur. Kasir memilih satuan per baris atau scan barcode dus; harga grosir otomatis. *Belum dicoba di layar oleh pemilik.*
 - [x] Ekspor laporan Excel (.xlsx) & CSV + tombolnya di halaman Laporan (v1.5.1–v1.5.2).
 - [x] Ekspor laporan PDF A4 (`barryvdh/laravel-dompdf`, view `laporan/pdf.blade.php`, ikut filter kasir/kategori).
 - [x] Filter tambahan di Laporan: per kasir, per kategori (ikut ke ekspor Excel/CSV; kategori = barang toko saja, sebelum diskon nota).

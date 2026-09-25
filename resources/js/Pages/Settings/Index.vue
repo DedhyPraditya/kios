@@ -17,6 +17,8 @@ const form = useForm({
     store_phone: props.store.store_phone ?? "",
     receipt_footer: props.store.receipt_footer ?? "",
     receipt_code: props.store.receipt_code ?? "none",
+    tax_enabled: props.store.tax_enabled === "1" || props.store.tax_enabled === true,
+    tax_rate: Number(props.store.tax_rate ?? 11),
     qris_image: null,
     remove_qris: false,
 });
@@ -174,6 +176,35 @@ function submit() {
                                 Nota bisa dicari dengan scan kode ini di Riwayat Transaksi atau Riwayat Arang.
                                 Pilih Barcode bila scanner toko hanya membaca barcode garis.
                             </p>
+                        </div>
+
+                        <div class="rounded-card border border-line p-3">
+                            <label class="flex items-center gap-2 text-sm font-semibold text-ink">
+                                <input
+                                    v-model="form.tax_enabled"
+                                    type="checkbox"
+                                    class="rounded border-line text-brand focus:ring-brand/20"
+                                />
+                                Tarik PPN di kasir
+                            </label>
+                            <div v-if="form.tax_enabled" class="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+                                <span>Tarif</span>
+                                <input
+                                    v-model.number="form.tax_rate"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    class="field num w-20 px-2 py-1.5 text-sm"
+                                    aria-label="Tarif PPN (persen)"
+                                />
+                                <span>%</span>
+                            </div>
+                            <p class="mt-1 text-2xs text-ink-soft">
+                                PPN ditambahkan di atas total belanja (setelah diskon) dan tercetak di struk.
+                                Hanya aktifkan bila toko terdaftar sebagai Pengusaha Kena Pajak (PKP).
+                            </p>
+                            <p v-if="form.errors.tax_rate" class="mt-1 text-xs text-danger">{{ form.errors.tax_rate }}</p>
                         </div>
                     </div>
                 </div>

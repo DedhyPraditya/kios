@@ -71,7 +71,16 @@ banyak — cukup 4–8 kelompok besar.
    - **Aktif — tampil di layar kasir** — biarkan tercentang. Hilangkan
      centangnya untuk barang yang sedang tidak dijual (barangnya tetap ada di
      daftar dan riwayat, hanya hilang dari layar Kasir).
+   - **Satuan lain** (opsional) — untuk barang yang juga dijual per dus, pak,
+     atau renteng. Tekan **+ Satuan**, isi nama (mis. `dus`), **isi** berapa
+     pcs, harga per dus, dan barcode dus kalau ada. Stok tetap dihitung per
+     pcs: menjual 1 dus isi 40 mengurangi stok 40.
+   - **Harga grosir** (opsional) — tekan **+ Tingkat**, mis. *beli ≥ 10 pcs,
+     harga Rp3.300*. Di kasir harganya turun sendiri begitu jumlahnya tercapai.
 3. **Simpan**. Ulangi untuk semua barang.
+
+Produk yang dihapus hanya **diarsipkan**: riwayat nota dan stoknya tetap ada.
+Untuk mengembalikannya, pilih saringan **Produk terhapus** lalu **Pulihkan**.
 
 > Kalau barangnya banyak, isi dulu yang paling laku (20–30 barang). Sisanya bisa
 > ditambah sambil jalan.
@@ -136,9 +145,17 @@ Hanya perlu kalau Anda melayani hutang.
    - **Ketuk kartu produk**. Saring dulu dengan tombol kategori kalau perlu.
 3. Barang yang sama diketuk dua kali = jumlahnya jadi 2. Untuk mengubah:
    - tombol **−** dan **+** di baris struk;
-   - tombol **HAPUS** di kanan nama barang untuk membuang satu baris.
-4. **Diskon** (kalau ada): isi kotak **Diskon** dengan nominal potongan, mis.
-   `2000`. Total langsung menyesuaikan.
+   - tombol **HAPUS** di kanan nama barang untuk membuang satu baris;
+   - pilihan **pcs / dus** di baris struk untuk barang yang punya satuan lain
+     (scan barcode dus juga langsung masuk sebagai dus). Label **Harga grosir**
+     muncul bila harga grosir sedang berlaku.
+4. **Diskon** (kalau ada):
+   - per barang: tekan **+ Diskon barang** di baris itu;
+   - untuk seluruh nota: kotak **Diskon nota**.
+
+   Tombol **Rp / %** di sebelah kotak diskon mengganti antara potongan rupiah
+   (mis. `2000`) dan persen (mis. `10`). Total langsung menyesuaikan. Bila PPN
+   diaktifkan di Pengaturan, baris **PPN** muncul dan ikut dijumlahkan.
 5. **Terima uang.** Isi kotak **Bayar** dengan uang yang diserahkan pembeli.
    Ada tombol cepat: **Pas** (uang pas) dan pecahan Rp5.000–Rp100.000.
 6. Baris **Kembali** menunjukkan kembalian yang harus Anda berikan.
@@ -434,8 +451,15 @@ Menu **Laporan** (khusus admin):
    - **Laba kotor** — omzet dikurangi harga modal barang yang terjual. Angka ini
      hanya benar kalau **harga modal produk diisi rajin**.
    - **Transaksi** — jumlah nota.
-   - **Total diskon** — potongan yang Anda berikan.
-3. Di bawahnya: grafik **Omzet harian**, **Produk terlaris**, dan **Transaksi
+   - **Total diskon** — potongan yang Anda berikan (diskon nota + diskon per barang).
+
+   Bila PPN aktif, di bawah kartu tertulis berapa PPN yang ikut di dalam omzet —
+   uang itu disetor ke negara, bukan keuntungan.
+3. Saringan **Semua kasir** dan **Semua kategori** untuk melihat hasil satu
+   kasir atau satu kategori barang saja.
+4. Tombol **Unduh Excel**, **Unduh PDF**, dan **CSV** mengunduh laporan sesuai
+   rentang tanggal dan saringan yang sedang dipakai.
+5. Di bawahnya: grafik **Omzet harian**, **Produk terlaris**, dan **Transaksi
    terakhir** (tautan **Riwayat lengkap** untuk daftar penuh).
 
 ---

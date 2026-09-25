@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SaleItem extends Model
 {
     protected $fillable = [
-        'sale_id', 'product_id', 'name', 'price', 'cost', 'qty', 'returned_qty', 'subtotal',
+        'sale_id', 'product_id', 'product_unit_id', 'name', 'unit_name', 'unit_isi',
+        'price', 'cost', 'qty', 'discount', 'returned_qty', 'subtotal',
     ];
 
     protected function casts(): array
@@ -19,6 +20,8 @@ class SaleItem extends Model
             'qty' => 'integer',
             'returned_qty' => 'integer',
             'subtotal' => 'integer',
+            'discount' => 'integer',
+            'unit_isi' => 'integer',
         ];
     }
 
@@ -30,6 +33,18 @@ class SaleItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    /** Nilai bersih satu satuan setelah diskon baris (dipakai retur & laporan). */
+    public function netUnitPrice(): float
+    {
+        return $this->qty > 0 ? $this->subtotal / $this->qty : 0;
+    }
+
+    /** Jumlah satuan dasar untuk $qty satuan di baris ini (mis. 2 dus x 40). */
+    public function baseQty(int $qty): int
+    {
+        return $qty * max($this->unit_isi, 1);
     }
 
     /** Sisa yang masih boleh diretur dari baris ini. */

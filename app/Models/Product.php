@@ -55,6 +55,31 @@ class Product extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function units(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class)->orderBy('isi');
+    }
+
+    public function wholesalePrices(): HasMany
+    {
+        return $this->hasMany(ProductWholesalePrice::class)->orderBy('min_qty');
+    }
+
+    /**
+     * Harga per satuan dasar untuk pembelian sebanyak $qty: harga grosir
+     * dengan minimal beli terbesar yang terpenuhi, atau harga biasa.
+     * Relasi `wholesalePrices` sebaiknya sudah dimuat.
+     */
+    public function priceFor(int $qty): int
+    {
+        $tier = $this->wholesalePrices
+            ->filter(fn (ProductWholesalePrice $w) => $qty >= $w->min_qty)
+            ->sortByDesc('min_qty')
+            ->first();
+
+        return $tier ? min($tier->price, $this->price) : $this->price;
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

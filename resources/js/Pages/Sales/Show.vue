@@ -162,11 +162,18 @@ function fillAll() {
                         </thead>
                         <tbody class="divide-y divide-line">
                             <tr v-for="i in sale.items" :key="i.id" class="row-hover">
-                                <td class="td text-ink">{{ i.name }}</td>
-                                <td class="td num text-right text-ink-soft">
-                                    {{ rupiah(i.price) }}
+                                <td class="td text-ink">
+                                    {{ i.name }}
+                                    <span v-if="i.discount" class="block text-2xs text-danger">
+                                        Diskon −{{ rupiah(i.discount) }}
+                                    </span>
                                 </td>
-                                <td class="td num text-right">{{ i.qty }}</td>
+                                <td class="td num text-right text-ink-soft">
+                                    {{ rupiah(i.price) }}{{ i.unit_name ? `/${i.unit_name}` : "" }}
+                                </td>
+                                <td class="td num text-right">
+                                    {{ i.qty }}{{ i.unit_name ? ` ${i.unit_name}` : "" }}
+                                </td>
                                 <td class="td num text-right">
                                     <span
                                         :class="
@@ -192,10 +199,16 @@ function fillAll() {
                         <dd class="num">{{ rupiah(sale.subtotal) }}</dd>
                     </div>
                     <div v-if="sale.discount" class="flex justify-between">
-                        <dt class="text-ink-soft">Diskon</dt>
+                        <dt class="text-ink-soft">
+                            Diskon nota{{ sale.discount_percent ? ` (${Number(sale.discount_percent)}%)` : "" }}
+                        </dt>
                         <dd class="num text-danger">
                             −{{ rupiah(sale.discount) }}
                         </dd>
+                    </div>
+                    <div v-if="sale.tax" class="flex justify-between">
+                        <dt class="text-ink-soft">PPN {{ Number(sale.tax_rate) }}%</dt>
+                        <dd class="num">{{ rupiah(sale.tax) }}</dd>
                     </div>
                     <div v-if="sale.refunded" class="flex justify-between">
                         <dt class="text-ink-soft">Nilai retur</dt>
@@ -412,7 +425,9 @@ function fillAll() {
                     </thead>
                     <tbody class="divide-y divide-line">
                         <tr v-for="i in sale.items" :key="i.id">
-                            <td class="td text-ink">{{ i.name }}</td>
+                            <td class="td text-ink">
+                                {{ i.name }}<span v-if="i.unit_name" class="text-ink-soft"> ({{ i.unit_name }})</span>
+                            </td>
                             <td class="td num text-right text-ink-soft">
                                 {{ i.returnable }}
                             </td>

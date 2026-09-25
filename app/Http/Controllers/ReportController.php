@@ -41,7 +41,7 @@ class ReportController extends Controller
      *
      * Filter kategori hanya berlaku untuk barang toko: arang tidak punya
      * kategori sehingga tidak ikut dihitung. Omzet per kategori dihitung dari
-     * harga barang (sebelum diskon nota), karena diskon nota tidak bisa
+     * harga barang setelah diskon per barang (sebelum diskon nota), karena diskon nota tidak bisa
      * dibagi ke tiap kategori.
      */
     private function gatherReportData(Carbon $from, Carbon $to, ?int $kasirId = null, ?int $categoryId = null): array
@@ -66,20 +66,30 @@ class ReportController extends Controller
                 ->when($kasirId, fn ($q) => $q->where('user_id', $kasirId)),
         )->when($categoryId, fn ($q) => $q->whereIn('product_id', $productIdsInCategory));
 
+        // Nilai bersih baris (sudah dikurangi diskon baris) untuk barang yang tidak diretur.
+        $netLine = 'subtotal * (qty - returned_qty) / qty';
+
         $tokoCount = (clone $salesInRange)->count();
         if ($categoryId) {
-            $tokoOmzet = (int) (clone $itemsInRange)->sum(DB::raw('price * (qty - returned_qty)'));
+            $tokoOmzet = (int) round((clone $itemsInRange)->sum(DB::raw($netLine)));
             $tokoDiscount = 0;
-            $tokoRefunded = (int) (clone $itemsInRange)->sum(DB::raw('price * returned_qty'));
+            $tokoRefunded = (int) round((clone $itemsInRange)->sum(DB::raw('subtotal * returned_qty / qty')));
         } else {
             $tokoOmzet = (int) (clone $salesInRange)->sum(DB::raw('total - refunded'));
-            $tokoDiscount = (int) (clone $salesInRange)->sum('discount');
+            // Diskon nota + diskon per baris barang.
+            $tokoDiscount = (int) (clone $salesInRange)->sum('discount')
+                + (int) (clone $itemsInRange)->sum('discount');
             $tokoRefunded = (int) (clone $salesInRange)->sum('refunded');
         }
 
-        $tokoProfit = (int) (clone $itemsInRange)
-            ->selectRaw('COALESCE(SUM((price - cost) * (qty - returned_qty)), 0) as p')
-            ->value('p');
+        // PPN yang dipungut; bagian barang yang diretur ikut dikurangi.
+        $tokoTax = $categoryId ? 0 : (int) round((clone $salesInRange)
+            ->where('tax', '>', 0)
+            ->sum(DB::raw('tax * (total - refunded) / total')));
+
+        $tokoProfit = (int) round((float) (clone $itemsInRange)
+            ->selectRaw("COALESCE(SUM({$netLine} - cost * (qty - returned_qty)), 0) as p")
+            ->value('p'));
 
         // 2. Modul Arang (tidak punya kategori, jadi kosong saat filter kategori dipakai)
         $arangFilter = fn ($q) => $q
@@ -106,6 +116,7 @@ class ReportController extends Controller
             'profit' => $tokoProfit + $arangProfit,
             'discount' => $tokoDiscount + $arangDiscount,
             'refunded' => $tokoRefunded,
+            'tax' => $tokoTax,
         ];
 
         $breakdown = [
@@ -129,7 +140,7 @@ class ReportController extends Controller
         $tokoDaily = $categoryId
             ? (clone $itemsInRange)
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->selectRaw('DATE(sales.created_at) as d, COUNT(DISTINCT sales.id) as trx, SUM(sale_items.price * (sale_items.qty - sale_items.returned_qty)) as omzet')
+                ->selectRaw('DATE(sales.created_at) as d, COUNT(DISTINCT sales.id) as trx, SUM(sale_items.subtotal * (sale_items.qty - sale_items.returned_qty) / sale_items.qty) as omzet')
                 ->groupBy('d')
                 ->toBase()
                 ->get()
@@ -149,7 +160,7 @@ class ReportController extends Controller
         $allDates = $tokoDaily->keys()->merge($arangDaily->keys())->unique()->sort()->values();
         $daily = $allDates->map(function ($date) use ($tokoDaily, $arangDaily) {
             $tTrx = $tokoDaily[$date]->trx ?? 0;
-            $tOmzet = (int) ($tokoDaily[$date]->omzet ?? 0);
+            $tOmzet = (int) round((float) ($tokoDaily[$date]->omzet ?? 0));
             $aTrx = $arangDaily[$date]->trx ?? 0;
             $aOmzet = (int) ($arangDaily[$date]->omzet ?? 0);
 
@@ -164,15 +175,16 @@ class ReportController extends Controller
 
         // 5. Produk Terlaris Terpadu
         $topItems = (clone $itemsInRange)
-            ->selectRaw("name, SUM(qty - returned_qty) as qty, 'pcs' as unit, SUM(price * (qty - returned_qty)) as omzet")
-            ->groupBy('name')
+            ->selectRaw("name, unit_name, SUM(qty - returned_qty) as qty, SUM({$netLine}) as omzet")
+            ->groupBy('name', 'unit_name')
             ->havingRaw('SUM(qty - returned_qty) > 0')
+            ->toBase()
             ->get()
             ->map(fn ($r) => [
                 'name' => $r->name,
-                'qty' => $r->qty,
-                'unit' => 'pcs',
-                'omzet' => (int) $r->omzet,
+                'qty' => (int) $r->qty,
+                'unit' => $r->unit_name ?? 'pcs',
+                'omzet' => (int) round($r->omzet),
             ]);
 
         $topArang = (clone $arangJualInRange)
@@ -421,6 +433,12 @@ class ReportController extends Controller
                 $tokoDiscount + $arangDiscount,
                 $tokoDiscount,
                 $arangDiscount,
+            ]);
+            $this->csvRow($out, [
+                'PPN Dipungut (termasuk di omzet)',
+                $data['summary']['tax'],
+                $data['summary']['tax'],
+                '-',
             ]);
             $this->csvRow($out, [
                 'Volume Arang Terjual (kg)',

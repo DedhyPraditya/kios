@@ -65,7 +65,17 @@ const form = useForm({
     stock: 0,
     low_stock: 10,
     is_active: true,
+    units: [],             // [{ id?, name, isi, price, barcode }]
+    wholesale_prices: [],  // [{ min_qty, price }]
 });
+
+function addUnit() {
+    form.units.push({ id: null, name: "dus", isi: 12, price: 0, barcode: "" });
+}
+function addTier() {
+    const last = form.wholesale_prices.at(-1);
+    form.wholesale_prices.push({ min_qty: last ? last.min_qty * 2 : 12, price: form.price });
+}
 
 function openCreate() {
     editing.value = null;
@@ -85,6 +95,8 @@ function openEdit(p) {
         stock: p.stock,
         low_stock: p.low_stock,
         is_active: p.is_active,
+        units: (p.units ?? []).map((u) => ({ ...u, barcode: u.barcode ?? "" })),
+        wholesale_prices: (p.wholesale_prices ?? []).map((w) => ({ min_qty: w.min_qty, price: w.price })),
     });
     showModal.value = true;
 }
@@ -344,6 +356,56 @@ const showingTrashed = computed(() => props.filters.status === "terhapus");
                             class="field num mt-1 py-2 text-sm"
                         />
                     </div>
+                    <!-- Satuan tambahan (mis. dus) -->
+                    <div class="col-span-2 rounded-card border border-line p-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-ink">Satuan lain</p>
+                                <p class="text-2xs text-ink-soft">Mis. dus isi 40 — stok tetap dihitung per pcs.</p>
+                            </div>
+                            <button type="button" class="link text-xs" @click="addUnit">+ Satuan</button>
+                        </div>
+                        <div v-for="(u, i) in form.units" :key="i" class="mt-2 grid grid-cols-[1fr_4.5rem_1fr_auto] items-start gap-2">
+                            <input v-model="u.name" class="field py-1.5 text-sm" placeholder="dus" aria-label="Nama satuan" />
+                            <input v-model.number="u.isi" type="number" min="2" class="field num py-1.5 text-sm" aria-label="Isi (pcs)" title="Isi (pcs)" />
+                            <input v-model.number="u.price" type="number" min="0" class="field num py-1.5 text-sm" aria-label="Harga per satuan" title="Harga per satuan" />
+                            <button type="button" class="px-1 text-ink-faint hover:text-danger" aria-label="Hapus satuan" @click="form.units.splice(i, 1)">✕</button>
+                            <input v-model="u.barcode" class="field num col-span-3 py-1.5 text-xs" placeholder="Barcode satuan (opsional)" aria-label="Barcode satuan" />
+                            <p
+                                v-for="k in ['name', 'isi', 'price', 'barcode', 'id']"
+                                v-show="form.errors[`units.${i}.${k}`]"
+                                :key="k"
+                                class="col-span-4 text-xs text-danger"
+                            >
+                                {{ form.errors[`units.${i}.${k}`] }}
+                            </p>
+                        </div>
+                        <p v-if="form.units.length" class="mt-1 text-2xs text-ink-faint">Nama · isi (pcs) · harga per satuan</p>
+                    </div>
+
+                    <!-- Harga grosir bertingkat -->
+                    <div class="col-span-2 rounded-card border border-line p-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-ink">Harga grosir</p>
+                                <p class="text-2xs text-ink-soft">Harga per pcs turun otomatis di kasir bila beli sebanyak ini.</p>
+                            </div>
+                            <button type="button" class="link text-xs" @click="addTier">+ Tingkat</button>
+                        </div>
+                        <div v-for="(w, i) in form.wholesale_prices" :key="i" class="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+                            <span>Beli ≥</span>
+                            <input v-model.number="w.min_qty" type="number" min="2" class="field num w-20 py-1.5 text-sm" aria-label="Minimal beli" />
+                            <span>pcs, harga</span>
+                            <input v-model.number="w.price" type="number" min="0" class="field num min-w-0 flex-1 py-1.5 text-sm" aria-label="Harga grosir per pcs" />
+                            <button type="button" class="px-1 text-ink-faint hover:text-danger" aria-label="Hapus tingkat" @click="form.wholesale_prices.splice(i, 1)">✕</button>
+                        </div>
+                        <template v-for="(w, i) in form.wholesale_prices" :key="`e${i}`">
+                            <p v-if="form.errors[`wholesale_prices.${i}.price`] || form.errors[`wholesale_prices.${i}.min_qty`]" class="mt-1 text-xs text-danger">
+                                {{ form.errors[`wholesale_prices.${i}.price`] || form.errors[`wholesale_prices.${i}.min_qty`] }}
+                            </p>
+                        </template>
+                    </div>
+
                     <label
                         class="col-span-2 flex items-center gap-2 text-sm text-ink-soft"
                     >

@@ -214,14 +214,19 @@ export function strukEscPos(sale, store) {
     p.garis();
     for (const it of sale.items ?? []) {
         for (const b of bungkus(it.name)) p.baris(b);
-        p.baris(
-            duaKolom(`  ${it.qty} x ${rupiah(it.price)}`, rupiah(it.subtotal)),
-        );
+        const satuan = it.unit_name ? ` ${it.unit_name}` : "";
+        const kotor = it.price * it.qty;
+        p.baris(duaKolom(`  ${it.qty}${satuan} x ${rupiah(it.price)}`, rupiah(kotor)));
+        if (it.discount) p.baris(duaKolom("  Diskon", "-" + rupiah(it.discount)));
     }
 
     p.garis();
     p.baris(duaKolom("Subtotal", rupiah(sale.subtotal)));
-    if (sale.discount) p.baris(duaKolom("Diskon", "-" + rupiah(sale.discount)));
+    if (sale.discount) {
+        const persen = sale.discount_percent ? ` ${Number(sale.discount_percent)}%` : "";
+        p.baris(duaKolom(`Diskon${persen}`, "-" + rupiah(sale.discount)));
+    }
+    if (sale.tax) p.baris(duaKolom(`PPN ${Number(sale.tax_rate)}%`, rupiah(sale.tax)));
 
     p.tebal(true)
         .baris(duaKolom("TOTAL", rupiah(sale.total)))

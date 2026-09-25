@@ -175,8 +175,8 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
             v-if="kategoriAktif"
             class="mt-3 rounded-control border border-amber/40 bg-amber-wash px-4 py-2.5 text-body-sm text-amber-ink"
         >
-            Filter kategori aktif: angka hanya dari barang toko pada kategori ini, dihitung dari harga barang sebelum
-            diskon nota. Penjualan arang tidak ikut dihitung.
+            Filter kategori aktif: angka hanya dari barang toko pada kategori ini, dihitung dari harga barang setelah
+            diskon per barang, sebelum diskon nota dan PPN. Penjualan arang tidak ikut dihitung.
         </p>
 
         <!-- 4 Kartu Metrik Gabungan -->
@@ -204,6 +204,11 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
                 <div class="mt-1 text-2xs text-ink-soft">Potongan harga promosi</div>
             </div>
         </div>
+        <p v-if="summary.tax > 0" class="mt-2 text-body-sm text-ink-soft">
+            Omzet sudah termasuk PPN yang dipungut sebesar
+            <span class="num font-semibold text-ink">{{ rupiah(summary.tax) }}</span> — uang ini disetor ke negara,
+            bukan keuntungan toko.
+        </p>
 
         <!-- Rincian Pembanding (Toko Eceran vs Arang Kiloan) -->
         <div v-if="breakdown" class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">

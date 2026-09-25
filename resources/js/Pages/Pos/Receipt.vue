@@ -125,7 +125,11 @@ const buatEscPos = () => strukEscPos(props.sale, props.store);
                             <td class="py-1.5">
                                 {{ it.name }}<br /><span
                                     class="num text-ink-faint"
-                                    >{{ it.qty }} × {{ rupiah(it.price) }}</span
+                                    >{{ it.qty }}{{ it.unit_name ? ` ${it.unit_name}` : "" }} × {{ rupiah(it.price) }}</span
+                                ><template v-if="it.discount"
+                                    ><br /><span class="num text-ink-faint"
+                                        >Diskon −{{ rupiah(it.discount) }}</span
+                                    ></template
                                 >
                             </td>
                             <td class="num py-1.5 text-right">
@@ -144,8 +148,15 @@ const buatEscPos = () => strukEscPos(props.sale, props.store);
                         v-if="sale.discount"
                         class="flex justify-between text-ink-soft"
                     >
-                        <span>Diskon</span
+                        <span>Diskon{{ sale.discount_percent ? ` ${Number(sale.discount_percent)}%` : "" }}</span
                         ><span class="num">−{{ rupiah(sale.discount) }}</span>
+                    </div>
+                    <div
+                        v-if="sale.tax"
+                        class="flex justify-between text-ink-soft"
+                    >
+                        <span>PPN {{ Number(sale.tax_rate) }}%</span
+                        ><span class="num">{{ rupiah(sale.tax) }}</span>
                     </div>
                     <div class="flex justify-between text-sm font-bold">
                         <span>Total</span

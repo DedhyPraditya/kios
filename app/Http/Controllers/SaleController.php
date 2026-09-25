@@ -193,7 +193,7 @@ class SaleController extends Controller
                 $product = Product::withTrashed()->whereKey($item->product_id)->lockForUpdate()->first();
 
                 if ($product) {
-                    StockMovement::apply($product, $qty, 'batal', [
+                    StockMovement::apply($product, $item->baseQty($qty), 'batal', [
                         'user_id' => $request->user()->id,
                         'sale_id' => $sale->id,
                         'note' => 'Batal nota '.$sale->invoice_no,
@@ -264,13 +264,13 @@ class SaleController extends Controller
 
                 $anything = true;
                 $item->increment('returned_qty', $qty);
-                $refundValue += $item->price * $qty;
+                $refundValue += $item->netUnitPrice() * $qty;
 
                 if ($item->product_id) {
                     $product = Product::withTrashed()->whereKey($item->product_id)->lockForUpdate()->first();
 
                     if ($product) {
-                        StockMovement::apply($product, $qty, 'retur', [
+                        StockMovement::apply($product, $item->baseQty($qty), 'retur', [
                             'user_id' => $request->user()->id,
                             'sale_id' => $sale->id,
                             'note' => 'Retur nota '.$sale->invoice_no,
@@ -283,10 +283,10 @@ class SaleController extends Controller
                 throw ValidationException::withMessages(['items' => 'Tidak ada barang yang diretur.']);
             }
 
-            // Diskon nota ikut dipotong proporsional supaya nilai retur adil.
-            if ($sale->subtotal > 0 && $sale->discount > 0) {
-                $refundValue = (int) round($refundValue * ($sale->total / $sale->subtotal));
-            }
+            // Diskon nota dan PPN ikut dihitung proporsional supaya nilai retur adil.
+            $refundValue = $sale->subtotal > 0
+                ? (int) round($refundValue * ($sale->total / $sale->subtotal))
+                : (int) round($refundValue);
 
             $refundValue = min($refundValue, $sale->total - $sale->refunded);
             $sale->increment('refunded', $refundValue);

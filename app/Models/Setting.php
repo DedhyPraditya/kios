@@ -18,6 +18,8 @@ class Setting extends Model
         'store_phone' => '',
         'receipt_footer' => 'Terima kasih telah berbelanja.',
         'receipt_code' => 'none', // none | qr | barcode: kode nomor nota di struk
+        'tax_enabled' => '0',     // PPN ditambahkan di atas total nota
+        'tax_rate' => '11',       // persen
         'qris_image' => null,
     ];
 

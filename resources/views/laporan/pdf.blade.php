@@ -45,12 +45,15 @@
         <tr><td class="label">Laba kotor (perkiraan)</td><td class="r">{{ $rp($summary['profit']) }}</td><td class="r">{{ $rp($breakdown['toko']['profit']) }}</td><td class="r">{{ $rp($breakdown['arang']['profit']) }}</td></tr>
         <tr><td class="label">Jumlah transaksi</td><td class="r">{{ $summary['count'] }}</td><td class="r">{{ $breakdown['toko']['count'] }}</td><td class="r">{{ $breakdown['arang']['count'] }}</td></tr>
         <tr><td class="label">Diskon diberikan</td><td class="r">{{ $rp($summary['discount']) }}</td><td class="r">{{ $rp($breakdown['toko']['discount']) }}</td><td class="r">{{ $rp($breakdown['arang']['discount']) }}</td></tr>
+        @if ($summary['tax'] > 0)
+            <tr><td class="label">PPN dipungut (termasuk di omzet)</td><td class="r">{{ $rp($summary['tax']) }}</td><td class="r">{{ $rp($summary['tax']) }}</td><td class="r">-</td></tr>
+        @endif
         <tr><td class="label">Retur barang</td><td class="r">{{ $rp($summary['refunded']) }}</td><td class="r">{{ $rp($summary['refunded']) }}</td><td class="r">-</td></tr>
         <tr><td class="label">Arang terjual / beli stok arang</td><td class="r">-</td><td class="r">-</td><td class="r">{{ $breakdown['arang']['berat_kg'] }} kg / {{ $rp($breakdown['arang']['beli_stok']) }}</td></tr>
         <tr><td class="label">Sisa piutang saat ini (semua)</td><td class="r">{{ $rp($piutang['total']) }}</td><td class="r">{{ $rp($piutang['toko']) }}</td><td class="r">{{ $rp($piutang['arang']) }}</td></tr>
     </table>
     @if ($kategoriAktif)
-        <p class="note">Filter kategori: angka hanya dari barang toko pada kategori ini, dihitung dari harga barang sebelum diskon nota. Penjualan arang tidak ikut dihitung.</p>
+        <p class="note">Filter kategori: angka hanya dari barang toko pada kategori ini, dihitung dari harga barang setelah diskon per barang, sebelum diskon nota dan PPN. Penjualan arang tidak ikut dihitung.</p>
     @endif
 
     <h2>Omzet Harian</h2>

@@ -38,6 +38,8 @@ class SettingController extends Controller
             'store_phone' => ['nullable', 'string', 'max:30'],
             'receipt_footer' => ['nullable', 'string', 'max:255'],
             'receipt_code' => ['nullable', 'in:none,qr,barcode'],
+            'tax_enabled' => ['nullable', 'boolean'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_qris' => ['nullable', 'boolean'],
         ]);
@@ -58,6 +60,13 @@ class SettingController extends Controller
         }
 
         unset($data['qris_image'], $data['remove_qris']);
+        // Disimpan sebagai teks di tabel pengaturan.
+        if (array_key_exists('tax_enabled', $data)) {
+            $data['tax_enabled'] = $data['tax_enabled'] ? '1' : '0';
+        }
+        if (array_key_exists('tax_rate', $data) && $data['tax_rate'] !== null) {
+            $data['tax_rate'] = (string) round((float) $data['tax_rate'], 2);
+        }
         Setting::put($data);
 
         \App\Models\ActivityLog::record('setting.update', "Memperbarui pengaturan dan identitas toko", null, $data);
