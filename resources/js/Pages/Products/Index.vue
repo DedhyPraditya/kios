@@ -6,6 +6,8 @@ import Pagination from "@/Components/Pagination.vue";
 import StockBadge from "@/Components/StockBadge.vue";
 import Modal from "@/Components/Modal.vue";
 import Icon from "@/Components/Icon.vue";
+import CameraScanner from "@/Components/CameraScanner.vue";
+import { beep } from "@/lib/beep";
 import { Head, router, useForm } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
@@ -41,6 +43,18 @@ watch(q, () => {
 
 const showModal = ref(false);
 const editing = ref(null);
+
+// Isi barcode dari kamera HP; kamera mati sendiri setelah satu scan.
+const barcodeCamera = ref(false);
+function onBarcodeScanned(code) {
+    form.barcode = code;
+    form.clearErrors("barcode");
+    barcodeCamera.value = false;
+    beep(true);
+}
+watch(showModal, (open) => {
+    if (!open) barcodeCamera.value = false;
+});
 
 const form = useForm({
     name: "",
@@ -247,12 +261,27 @@ function destroy(p) {
                             </option>
                         </select>
                     </div>
-                    <div>
+                    <div :class="{ 'col-span-2': barcodeCamera }">
                         <label for="prod-barcode" class="label">Barcode</label>
-                        <input id="prod-barcode"
-                            v-model="form.barcode"
-                            class="field num mt-1 py-2 text-sm"
-                        />
+                        <div class="mt-1 flex gap-2">
+                            <input id="prod-barcode"
+                                v-model="form.barcode"
+                                class="field num min-w-0 flex-1 py-2 text-sm"
+                            />
+                            <button
+                                type="button"
+                                class="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-3 text-xs font-semibold text-brand-ink hover:border-brand"
+                                :class="{ 'bg-brand-wash': barcodeCamera }"
+                                title="Scan barcode pakai kamera HP"
+                                @click="barcodeCamera = !barcodeCamera"
+                            >
+                                <Icon name="camera" :size="16" />
+                                {{ barcodeCamera ? "Tutup" : "Kamera" }}
+                            </button>
+                        </div>
+                        <div v-if="barcodeCamera && showModal" class="mt-2">
+                            <CameraScanner @detected="onBarcodeScanned" />
+                        </div>
                         <p
                             v-if="form.errors.barcode"
                             class="mt-1 text-xs text-danger"

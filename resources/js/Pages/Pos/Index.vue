@@ -5,6 +5,8 @@ import Icon from "@/Components/Icon.vue";
 import Modal from "@/Components/Modal.vue";
 import StockBadge from "@/Components/StockBadge.vue";
 import QrisCode from "@/Components/QrisCode.vue";
+import CameraScanner from "@/Components/CameraScanner.vue";
+import { beep } from "@/lib/beep";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
@@ -89,7 +91,7 @@ function stockLeft(product) {
 function addToCart(product) {
     if (stockLeft(product) <= 0) {
         errorMsg.value = `Stok ${product.name} habis.`;
-        return;
+        return false;
     }
     errorMsg.value = "";
     const row = cart.value.find((i) => i.id === product.id);
@@ -102,6 +104,7 @@ function addToCart(product) {
             stock: product.stock,
             qty: 1,
         });
+    return true;
 }
 function inc(row) {
     const product = props.products.find((p) => p.id === row.id);
@@ -136,27 +139,37 @@ function onSearchInput() {
 function findByBarcode(code) {
     return props.products.find((p) => p.barcode && p.barcode === code);
 }
-function beepError() {
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "square";
-        osc.frequency.value = 220;
-        gain.gain.value = 0.08;
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.25);
-        osc.onended = () => ctx.close();
-    } catch {
-        // Browser tanpa Web Audio: cukup pesan di layar.
-    }
-}
 function reportMissing(code) {
     scanMissing.value = code;
     search.value = "";
-    beepError();
+    beep(false);
     nextTick(() => searchBox.value?.focus());
+}
+
+// Scan lewat kamera HP (cadangan saat scanner USB / PC kasir tidak bisa dipakai).
+const cameraOpen = ref(false);
+const cameraFeedback = ref(null);
+function onCameraScan(code) {
+    const hit = findByBarcode(code);
+    if (!hit) {
+        scanMissing.value = code;
+        cameraFeedback.value = { ok: false, text: `Barcode ${code} tidak ditemukan` };
+        beep(false);
+        return;
+    }
+    scanMissing.value = "";
+    if (!addToCart(hit)) {
+        cameraFeedback.value = { ok: false, text: errorMsg.value };
+        beep(false);
+        return;
+    }
+    const qty = cart.value.find((i) => i.id === hit.id)?.qty ?? 1;
+    cameraFeedback.value = { ok: true, text: `✓ ${hit.name} — ${qty}×` };
+    beep(true);
+}
+function openCamera() {
+    cameraFeedback.value = null;
+    cameraOpen.value = true;
 }
 
 watch(search, (val) => {
@@ -278,9 +291,18 @@ const quickAmounts = computed(() => {
                         type="text"
                         inputmode="search"
                         placeholder="Scan barcode atau ketik nama produk"
-                        class="field rounded-xl py-3 pl-11 text-base"
+                        class="field rounded-xl py-3 pl-11 pr-28 text-base"
                         autofocus
                     />
+                    <button
+                        type="button"
+                        class="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1.5 rounded-lg bg-brand-wash px-3 py-2 text-xs font-semibold text-brand-ink hover:bg-brand hover:text-white"
+                        title="Scan barcode pakai kamera HP"
+                        @click="openCamera"
+                    >
+                        <Icon name="camera" :size="16" />
+                        Kamera
+                    </button>
                 </div>
 
                 <div
@@ -720,6 +742,32 @@ const quickAmounts = computed(() => {
         </div>
 
         <!-- Modal Tampilkan QRIS ke Pembeli -->
+        <Modal :show="cameraOpen" max-width="md" @close="cameraOpen = false">
+            <div class="p-4 sm:p-5">
+                <div class="mb-3 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-headline-sm font-bold text-ink">Scan pakai Kamera</h3>
+                        <p class="text-2xs text-ink-soft">
+                            Kamera tetap menyala — scan barang satu per satu.
+                        </p>
+                    </div>
+                    <span class="num text-xs text-ink-soft">{{ itemCount }} item</span>
+                </div>
+                <CameraScanner
+                    v-if="cameraOpen"
+                    continuous
+                    :feedback="cameraFeedback"
+                    @detected="onCameraScan"
+                />
+                <div class="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
+                    <span class="num text-sm font-bold text-ink">{{ rupiah(total) }}</span>
+                    <button type="button" class="btn-primary" @click="cameraOpen = false">
+                        Selesai scan
+                    </button>
+                </div>
+            </div>
+        </Modal>
+
         <Modal :show="showQrisModal" max-width="md" @close="showQrisModal = false">
             <div class="p-6 text-center">
                 <div class="flex items-center justify-between pb-3 border-b border-line">
