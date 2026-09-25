@@ -328,6 +328,7 @@ class ReportController extends Controller
             $this->keteranganFilter($kasirId, $categoryId)
         );
 
+        $this->catatEkspor('Excel', $from, $to, $kasirId, $categoryId);
         $filename = 'Laporan-'.Str::slug($data['storeName']).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.xlsx';
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 
@@ -362,6 +363,7 @@ class ReportController extends Controller
             'arangJuals' => (clone $data['arangJualInRange'])->with(['user:id,name', 'customer:id,name', 'arangJenis:id,nama'])->oldest()->get(),
         ])->setPaper('a4');
 
+        $this->catatEkspor('PDF', $from, $to, $kasirId, $categoryId);
         $filename = 'Laporan-'.Str::slug($data['storeName']).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
@@ -373,6 +375,7 @@ class ReportController extends Controller
         $data = $this->gatherReportData($from, $to, $kasirId, $categoryId);
         $storeName = $data['storeName'];
         $keteranganFilter = $this->keteranganFilter($kasirId, $categoryId);
+        $this->catatEkspor('CSV', $from, $to, $kasirId, $categoryId);
 
         $filename = 'Laporan-'.Str::slug($storeName).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.csv';
 
@@ -565,6 +568,15 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function catatEkspor(string $format, Carbon $from, Carbon $to, ?int $kasirId, ?int $categoryId): void
+    {
+        $filter = $this->keteranganFilter($kasirId, $categoryId);
+        \App\Models\ActivityLog::record(
+            'report.export',
+            "Mengunduh laporan {$format} periode {$from->format('d/m/Y')} s/d {$to->format('d/m/Y')}".($filter ? " ({$filter})" : '')
+        );
     }
 
     /** Keterangan filter untuk kop ekspor, mis. "Kasir: Budi, Kategori: Minuman". */

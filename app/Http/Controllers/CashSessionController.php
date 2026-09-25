@@ -98,12 +98,13 @@ class CashSessionController extends Controller
             ]);
         }
 
-        CashSession::create([
+        $shift = CashSession::create([
             'user_id' => $request->user()->id,
             'opening_cash' => $data['opening_cash'],
             'opened_at' => now(),
             'note' => $data['note'] ?? null,
         ]);
+        \App\Models\ActivityLog::record('shift.open', 'Membuka shift dengan modal Rp'.number_format($data['opening_cash'], 0, ',', '.'), $shift);
 
         return back()->with('success', 'Shift dibuka.');
     }
@@ -130,6 +131,11 @@ class CashSessionController extends Controller
             'user_id' => $request->user()->id,
             ...$data,
         ]);
+        \App\Models\ActivityLog::record(
+            'shift.cash',
+            "Kas {$data['direction']} Rp".number_format($data['amount'], 0, ',', '.')." ({$data['note']})",
+            $session
+        );
 
         return back()->with('success', 'Kas dicatat.');
     }
@@ -165,6 +171,14 @@ class CashSessionController extends Controller
                 'note' => $data['note'] ?? $session->note,
             ]);
         });
+
+        $session->refresh();
+        \App\Models\ActivityLog::record(
+            'shift.close',
+            'Menutup shift: uang dihitung Rp'.number_format($session->counted_cash, 0, ',', '.').', selisih Rp'.number_format($session->difference, 0, ',', '.'),
+            $session,
+            ['counted_cash' => $session->counted_cash, 'expected_cash' => $session->expected_cash, 'difference' => $session->difference]
+        );
 
         return back()->with('success', 'Shift ditutup.');
     }

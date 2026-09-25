@@ -271,6 +271,18 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
     Rute tandai-dibaca khusus admin. Panel tetap terbuka saat mencentang
     (tanpa banner hijau), tidak terpotong di layar HP, dan tautan "Lihat Semua
     Produk Menipis" kini benar-benar memfilter produk menipis.
+- **Tab Aktivitas (25 Sep 2026)**: lonceng kini juga menampilkan 15 entri
+  Log Aktivitas terbaru. Hitungan "baru" = aktivitas pengguna lain + kejadian
+  keamanan sejak tab terakhir dibuka (`users.activity_seen_at`; belum pernah =
+  24 jam terakhir); kegiatan admin sendiri tidak dihitung. Kejadian keamanan
+  (`auth.failed`, `auth.lockout`, `auth.forbidden`) ditandai merah beserta IP.
+  Lonceng memuat ulang isinya tiap 60 detik (`router.reload({ only: ['alerts'] })`).
+- Yang kini tercatat di Log Aktivitas: penjualan kasir, jual & beli arang,
+  jenis arang, kategori, pelanggan, buka/tutup shift & kas laci, profil, ganti
+  kata sandi, unduh laporan, masuk/keluar, login gagal (email tak terdaftar /
+  kata sandi salah, tanpa `user_id`), login dikunci, dan kasir membuka halaman
+  khusus admin (middleware `admin`). Pendengar kejadian login ada di
+  `AppServiceProvider::catatKejadianMasuk()`.
 
 ### Log Aplikasi & Riwayat Pembaruan Sistem (`/app-logs`) — admin
 
@@ -563,7 +575,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
       biasa tetap tersedia.
 - [x] Opsi QR / barcode nomor nota di struk (Pengaturan → "Kode nomor nota di struk"; struk web + ESC/POS Bluetooth; scan di Riwayat Transaksi langsung membuka nota). Perintah QR/barcode ESC/POS belum diuji di printer RPP02N fisik.
 - [x] Soft delete produk: hapus = arsip (filter "Produk terhapus" + tombol Pulihkan), riwayat stok & nota tetap utuh, barcode arsip bisa dipakai produk baru.
-- [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar).
+- [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar) — kini mencakup semua transaksi, login, dan percobaan masuk gagal, tampil juga di lonceng.
 - [x] Backup & restore database (satu-klik .sql.gz via PDO + verifikasi password).
 
 ### Tampilan

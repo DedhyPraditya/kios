@@ -26,7 +26,8 @@ class ArangJenisController extends Controller
 
         $validated['aktif'] = true;
 
-        ArangJenis::create($validated);
+        $jenis = ArangJenis::create($validated);
+        \App\Models\ActivityLog::record('arang_jenis.create', "Menambahkan jenis arang '{$jenis->nama}'", $jenis, $validated);
 
         return back()->with('success', 'Jenis arang berhasil ditambahkan.');
     }
@@ -42,6 +43,7 @@ class ArangJenisController extends Controller
         ]);
 
         $jeni->update($validated);
+        \App\Models\ActivityLog::record('arang_jenis.update', "Memperbarui jenis arang '{$jeni->nama}'", $jeni, $jeni->getChanges());
 
         return back()->with('success', 'Data jenis arang berhasil diperbarui.');
     }
@@ -50,10 +52,13 @@ class ArangJenisController extends Controller
     {
         if ($jeni->pembelian()->exists() || $jeni->penjualan()->exists()) {
             $jeni->update(['aktif' => false]);
+            \App\Models\ActivityLog::record('arang_jenis.update', "Menonaktifkan jenis arang '{$jeni->nama}'", $jeni);
+
             return back()->with('success', 'Jenis arang sudah memiliki transaksi, status diubah menjadi nonaktif.');
         }
 
         $jeni->delete();
+        \App\Models\ActivityLog::record('arang_jenis.delete', "Menghapus jenis arang '{$jeni->nama}'", null, ['id' => $jeni->id]);
 
         return back()->with('success', 'Jenis arang berhasil dihapus.');
     }

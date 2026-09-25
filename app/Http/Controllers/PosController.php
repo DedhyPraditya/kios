@@ -236,6 +236,13 @@ class PosController extends Controller
             return $sale;
         });
 
+        \App\Models\ActivityLog::record(
+            'sale.create',
+            "Penjualan nota {$sale->invoice_no} ".strtoupper($sale->payment_type).' Rp'.number_format($sale->total, 0, ',', '.'),
+            $sale,
+            ['total' => $sale->total, 'payment_type' => $sale->payment_type, 'items' => count($data['items'])]
+        );
+
         return redirect()->route('pos.receipt', $sale);
     }
 

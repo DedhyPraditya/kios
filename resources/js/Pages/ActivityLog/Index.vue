@@ -71,7 +71,20 @@ function getActionBadge(action) {
         user: "bg-emerald-100 text-emerald-900 border-emerald-200",
         setting: "bg-slate-100 text-slate-800 border-slate-200",
         backup: "bg-brand-wash text-brand-ink border-brand/30",
+        auth: "bg-slate-100 text-slate-800 border-slate-200",
+        arang: "bg-orange-100 text-orange-900 border-orange-200",
+        arang_jenis: "bg-orange-50 text-orange-900 border-orange-200",
+        category: "bg-blue-50 text-blue-900 border-blue-200",
+        customer: "bg-purple-50 text-purple-900 border-purple-200",
+        shift: "bg-amber-50 text-amber-900 border-amber-200",
+        report: "bg-paper text-ink-soft border-line",
+        profile: "bg-emerald-50 text-emerald-900 border-emerald-200",
     };
+
+    // Kejadian keamanan selalu merah.
+    if (["auth.failed", "auth.lockout", "auth.forbidden"].includes(action)) {
+        return "bg-danger text-white border-danger";
+    }
 
     return styles[prefix] || "bg-paper text-ink-soft border-line";
 }
@@ -95,6 +108,30 @@ function getActionLabel(action) {
         "backup.create": "Buat Cadangan",
         "backup.restore": "Pulihkan Cadangan",
         "backup.delete": "Hapus Cadangan",
+        "backup.download": "Unduh Cadangan",
+        "sale.create": "Penjualan",
+        "arang.jual": "Jual Arang",
+        "arang.beli": "Beli Arang",
+        "arang_jenis.create": "Tambah Jenis Arang",
+        "arang_jenis.update": "Ubah Jenis Arang",
+        "arang_jenis.delete": "Hapus Jenis Arang",
+        "category.create": "Tambah Kategori",
+        "category.update": "Ubah Kategori",
+        "category.delete": "Hapus Kategori",
+        "customer.create": "Tambah Pelanggan",
+        "customer.update": "Ubah Pelanggan",
+        "customer.delete": "Hapus Pelanggan",
+        "shift.open": "Buka Shift",
+        "shift.cash": "Kas Masuk/Keluar",
+        "shift.close": "Tutup Shift",
+        "report.export": "Unduh Laporan",
+        "profile.update": "Ubah Profil",
+        "auth.login": "Masuk",
+        "auth.logout": "Keluar",
+        "auth.password": "Ganti Kata Sandi",
+        "auth.failed": "Login Gagal",
+        "auth.lockout": "Login Dikunci",
+        "auth.forbidden": "Akses Ditolak",
     };
 
     return labels[action] || action;

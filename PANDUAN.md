@@ -462,6 +462,26 @@ Menu **Laporan** (khusus admin):
 5. Di bawahnya: grafik **Omzet harian**, **Produk terlaris**, dan **Transaksi
    terakhir** (tautan **Riwayat lengkap** untuk daftar penuh).
 
+### Lonceng pemberitahuan (khusus admin)
+
+Ikon lonceng di pojok kanan atas punya tiga tab:
+
+- **Aktivitas** — semua kegiatan di aplikasi: penjualan, jual/beli arang,
+  perubahan produk, kategori, pelanggan, buka/tutup shift, unduh laporan,
+  siapa yang masuk dan keluar. Angka merah = kegiatan pegawai lain yang belum
+  Anda lihat. Kegiatan Anda sendiri tetap tampil tapi tidak dihitung.
+- **Stok** — barang yang menipis.
+- **Kasbon** — hutang yang mendekati atau lewat jatuh tempo.
+
+Baris **merah** adalah kejadian keamanan: seseorang salah memasukkan kata
+sandi, mencoba masuk dengan email yang tidak terdaftar, login dikunci karena
+terlalu sering salah, atau kasir mencoba membuka halaman khusus admin. Alamat
+IP-nya ikut ditampilkan. Kalau muncul berulang dan bukan dari pegawai Anda,
+segera ganti kata sandi admin.
+
+Isi lonceng diperbarui sendiri tiap menit. Riwayat lengkap ada di menu
+**Log Aktivitas** (tautan di bawah tab Aktivitas).
+
 ---
 
 ## I. Kalau aplikasi bermasalah

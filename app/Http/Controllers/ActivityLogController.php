@@ -73,6 +73,14 @@ class ActivityLogController extends Controller
                 'user' => 'Pengguna',
                 'setting' => 'Pengaturan Toko',
                 'backup' => 'Cadangan Database',
+                'auth' => 'Login & Keamanan',
+                'arang' => 'Arang (jual / beli)',
+                'arang_jenis' => 'Jenis Arang',
+                'category' => 'Kategori',
+                'customer' => 'Pelanggan',
+                'shift' => 'Shift & Kas Laci',
+                'report' => 'Unduh Laporan',
+                'profile' => 'Profil',
             ],
         ]);
     }

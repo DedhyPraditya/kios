@@ -33,6 +33,9 @@ class ActivityLog extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** Isi `$userId` dengan ini untuk kejadian tanpa pelaku yang pasti (mis. login gagal). */
+    public const TANPA_PENGGUNA = 0;
+
     /**
      * Catat log aktivitas sistem ke basis data secara aman.
      */
@@ -44,7 +47,7 @@ class ActivityLog extends Model
         ?int $userId = null
     ): self {
         return static::create([
-            'user_id' => $userId ?? auth()->id(),
+            'user_id' => $userId === self::TANPA_PENGGUNA ? null : ($userId ?? auth()->id()),
             'action' => $action,
             'subject_type' => $subject ? get_class($subject) : null,
             'subject_id' => $subject?->getKey(),

@@ -54,6 +54,8 @@ class HandleInertiaRequests extends Middleware
 
                 $lowStockCount = (clone $lowStockQuery)->count();
                 $dueDebtsCount = (clone $dueDebtsQuery)->count();
+                $activityCount = Peringatan::aktivitasBaru($user)->count();
+                $securityCount = Peringatan::aktivitasBaru($user)->whereIn('action', Peringatan::AKSI_KEAMANAN)->count();
 
                 return [
                     'lowStockCount' => $lowStockCount,
@@ -79,7 +81,10 @@ class HandleInertiaRequests extends Middleware
                                 'is_overdue' => (bool) $sale->due_date?->lt(today()),
                             ];
                         }),
-                    'total' => $lowStockCount + $dueDebtsCount,
+                    'activityCount' => $activityCount,
+                    'securityCount' => $securityCount,
+                    'activityItems' => Peringatan::aktivitasTerbaru($user),
+                    'total' => $lowStockCount + $dueDebtsCount + $activityCount,
                     'lowStock' => $lowStockCount,
                 ];
             },

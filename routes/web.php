@@ -63,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
     // Notifikasi lonceng (hanya admin yang menerimanya)
     Route::post('/alerts/dismiss', [\App\Http\Controllers\AlertController::class, 'dismiss'])
         ->middleware('admin')->name('alerts.dismiss');
+    Route::post('/alerts/aktivitas-dibaca', [\App\Http\Controllers\AlertController::class, 'seenActivity'])
+        ->middleware('admin')->name('alerts.activity.seen');
 
     // Admin only
     Route::middleware('admin')->group(function () {

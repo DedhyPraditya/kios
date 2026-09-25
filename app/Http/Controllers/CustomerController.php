@@ -79,7 +79,8 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
-        Customer::create($this->validated($request));
+        $customer = Customer::create($this->validated($request));
+        \App\Models\ActivityLog::record('customer.create', "Menambahkan pelanggan '{$customer->name}'", $customer);
 
         return back()->with('success', 'Pelanggan ditambahkan.');
     }
@@ -87,6 +88,7 @@ class CustomerController extends Controller
     public function update(Request $request, Customer $customer)
     {
         $customer->update($this->validated($request));
+        \App\Models\ActivityLog::record('customer.update', "Memperbarui pelanggan '{$customer->name}'", $customer, $customer->getChanges());
 
         return back()->with('success', 'Pelanggan diperbarui.');
     }
@@ -102,6 +104,7 @@ class CustomerController extends Controller
         }
 
         $customer->delete();
+        \App\Models\ActivityLog::record('customer.delete', "Menghapus pelanggan '{$customer->name}'", null, ['id' => $customer->id]);
 
         return back()->with('success', 'Pelanggan dihapus.');
     }

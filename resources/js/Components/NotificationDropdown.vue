@@ -13,23 +13,48 @@ const lowStockItems = computed(() => alerts.value.lowStockItems ?? []);
 const dueDebtsCount = computed(() => alerts.value.dueDebtsCount ?? 0);
 const dueDebtsItems = computed(() => alerts.value.dueDebtsItems ?? []);
 
+const activityCount = computed(() => alerts.value.activityCount ?? 0);
+const securityCount = computed(() => alerts.value.securityCount ?? 0);
+const activityItems = computed(() => alerts.value.activityItems ?? []);
+
 const totalCount = computed(() => alerts.value.total ?? (lowStockCount.value + dueDebtsCount.value));
 
 const open = ref(false);
-const activeTab = ref("stock"); // 'stock' | 'debts'
+const activeTab = ref("activity"); // 'activity' | 'stock' | 'debts'
+// Tab Aktivitas sempat dilihat selama panel terbuka → tandai dibaca saat ditutup,
+// supaya penanda "baru" masih terlihat selama panel dibuka.
+let activityViewed = false;
 
 function toggle() {
-    open.value = !open.value;
-    // Buka langsung di tab yang ada isinya.
-    if (open.value && lowStockCount.value === 0 && dueDebtsCount.value > 0) {
-        activeTab.value = "debts";
-    } else if (open.value && dueDebtsCount.value === 0) {
-        activeTab.value = "stock";
-    }
+    if (open.value) return close();
+    open.value = true;
+    // Buka langsung di tab yang ada isinya; kejadian keamanan didahulukan.
+    if (securityCount.value > 0 || activityCount.value > 0) activeTab.value = "activity";
+    else if (lowStockCount.value > 0) activeTab.value = "stock";
+    else if (dueDebtsCount.value > 0) activeTab.value = "debts";
+    else activeTab.value = "activity";
+    activityViewed = activeTab.value === "activity";
 }
 
 function close() {
     open.value = false;
+    if (activityViewed && activityCount.value > 0) {
+        router.post(route("alerts.activity.seen"), {}, { preserveScroll: true, preserveState: true });
+    }
+    activityViewed = false;
+}
+
+function showTab(tab) {
+    activeTab.value = tab;
+    if (tab === "activity") activityViewed = true;
+}
+
+// Muat ulang isi lonceng tiap menit, supaya aktivitas baru (penjualan, login
+// gagal, dll.) muncul tanpa harus pindah halaman.
+let poll = null;
+function refresh() {
+    if (document.hidden || open.value) return;
+    router.reload({ only: ["alerts"], preserveScroll: true, preserveState: true });
 }
 
 function closeOnEscape(e) {
@@ -49,8 +74,14 @@ function dismissAll() {
     router.post(route("alerts.dismiss"), { dismiss_all: true }, keepOpen);
 }
 
-onMounted(() => document.addEventListener("keydown", closeOnEscape));
-onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
+onMounted(() => {
+    document.addEventListener("keydown", closeOnEscape);
+    poll = setInterval(refresh, 60_000);
+});
+onUnmounted(() => {
+    document.removeEventListener("keydown", closeOnEscape);
+    clearInterval(poll);
+});
 </script>
 
 <template>
@@ -125,7 +156,26 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                 </div>
 
                 <!-- Tabs -->
-                <div class="grid grid-cols-2 border-b border-line text-xs font-semibold">
+                <div class="grid grid-cols-3 border-b border-line text-xs font-semibold">
+                    <button
+                        type="button"
+                        class="flex items-center justify-center gap-1.5 py-2.5 transition-colors"
+                        :class="
+                            activeTab === 'activity'
+                                ? 'border-b-2 border-brand bg-surface text-brand'
+                                : 'bg-paper/40 text-ink-soft hover:bg-paper hover:text-ink'
+                        "
+                        @click="showTab('activity')"
+                    >
+                        <span>Aktivitas</span>
+                        <span
+                            v-if="activityCount > 0"
+                            class="rounded-full px-1.5 py-0.2 text-[10px]"
+                            :class="securityCount > 0 ? 'bg-danger text-white' : activeTab === 'activity' ? 'bg-brand/10 text-brand' : 'bg-line text-ink-soft'"
+                        >
+                            {{ activityCount > 99 ? '99+' : activityCount }}
+                        </span>
+                    </button>
                     <button
                         type="button"
                         class="flex items-center justify-center gap-1.5 py-2.5 transition-colors"
@@ -134,9 +184,9 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                                 ? 'border-b-2 border-brand bg-surface text-brand'
                                 : 'bg-paper/40 text-ink-soft hover:bg-paper hover:text-ink'
                         "
-                        @click="activeTab = 'stock'"
+                        @click="showTab('stock')"
                     >
-                        <span>Stok Menipis</span>
+                        <span>Stok</span>
                         <span
                             v-if="lowStockCount > 0"
                             class="rounded-full px-1.5 py-0.2 text-[10px]"
@@ -153,9 +203,9 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                                 ? 'border-b-2 border-brand bg-surface text-brand'
                                 : 'bg-paper/40 text-ink-soft hover:bg-paper hover:text-ink'
                         "
-                        @click="activeTab = 'debts'"
+                        @click="showTab('debts')"
                     >
-                        <span>Kasbon Jatuh Tempo</span>
+                        <span>Kasbon</span>
                         <span
                             v-if="dueDebtsCount > 0"
                             class="rounded-full px-1.5 py-0.2 text-[10px]"
@@ -166,8 +216,44 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                     </button>
                 </div>
 
+                <!-- Tab Content: Aktivitas -->
+                <div v-if="activeTab === 'activity'" class="max-h-80 overflow-y-auto divide-y divide-line">
+                    <div
+                        v-if="securityCount > 0"
+                        class="bg-danger-wash px-4 py-2 text-2xs font-semibold text-danger"
+                    >
+                        ⚠ {{ securityCount }} kejadian keamanan baru — periksa percobaan masuk yang gagal.
+                    </div>
+                    <div
+                        v-if="activityItems.length === 0"
+                        class="px-4 py-8 text-center text-body-md text-ink-faint"
+                    >
+                        Belum ada aktivitas.
+                    </div>
+                    <div
+                        v-for="log in activityItems"
+                        :key="log.id"
+                        class="flex gap-3 px-4 py-2.5"
+                        :class="log.security ? 'bg-danger-wash/60' : log.new ? 'bg-brand-wash/40' : ''"
+                    >
+                        <span
+                            class="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                            :class="log.security ? 'bg-danger' : log.new ? 'bg-brand' : 'bg-line'"
+                            aria-hidden="true"
+                        />
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs leading-snug" :class="log.security ? 'font-semibold text-danger' : 'text-ink'">
+                                {{ log.description }}
+                            </p>
+                            <p class="mt-0.5 text-2xs text-ink-faint">
+                                {{ log.user ?? (log.security ? "Tak dikenal" : "Sistem") }} · {{ log.time }}<template v-if="log.security && log.ip"> · IP {{ log.ip }}</template>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab Content: Stok Menipis -->
-                <div v-if="activeTab === 'stock'" class="max-h-80 overflow-y-auto divide-y divide-line">
+                <div v-else-if="activeTab === 'stock'" class="max-h-80 overflow-y-auto divide-y divide-line">
                     <div
                         v-if="lowStockItems.length === 0"
                         class="px-4 py-8 text-center text-body-md text-ink-faint"
@@ -266,7 +352,15 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                 <!-- Panel Footer Links -->
                 <div class="border-t border-line bg-paper/60 p-2.5 text-center">
                     <Link
-                        v-if="activeTab === 'stock'"
+                        v-if="activeTab === 'activity'"
+                        :href="route('audit-logs.index')"
+                        class="text-xs font-semibold text-brand hover:underline"
+                        @click="close"
+                    >
+                        Buka Log Aktivitas lengkap &rarr;
+                    </Link>
+                    <Link
+                        v-else-if="activeTab === 'stock'"
                         :href="route('products.index', { status: 'menipis' })"
                         class="text-xs font-semibold text-brand hover:underline"
                         @click="close"

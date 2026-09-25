@@ -37,7 +37,9 @@ class ProfileController extends Controller
             $request->user()->email_verified_at = null;
         }
 
+        $berubah = array_keys($request->user()->getDirty());
         $request->user()->save();
+        \App\Models\ActivityLog::record('profile.update', 'Memperbarui profil ('.implode(', ', $berubah).')', $request->user());
 
         return Redirect::route('profile.edit');
     }

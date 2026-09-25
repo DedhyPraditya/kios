@@ -23,6 +23,7 @@ class PasswordController extends Controller
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
+        \App\Models\ActivityLog::record('auth.password', 'Mengganti kata sandi akun sendiri', $request->user());
 
         return back();
     }

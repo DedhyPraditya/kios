@@ -123,6 +123,13 @@ class ArangPenjualanController extends Controller
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
+        \App\Models\ActivityLog::record(
+            'arang.jual',
+            "Jual arang {$penjualan->no_nota} {$berat} kg ".strtoupper($paymentType).' Rp'.number_format($grandTotal, 0, ',', '.'),
+            $penjualan,
+            ['berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'diskon' => $diskon, 'total' => $grandTotal]
+        );
+
         return redirect()->route('arang.penjualan.receipt', $penjualan->id)
             ->with('success', "Penjualan arang ({$penjualan->no_nota}) sebanyak {$berat} kg berhasil dicatat.");
     }

@@ -49,6 +49,13 @@ class ArangPembelianController extends Controller
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
+        \App\Models\ActivityLog::record(
+            'arang.beli',
+            "Beli arang {$pembelian->no_nota} {$berat} kg dari {$pembelian->nama_pemasok} Rp".number_format($totalHarga, 0, ',', '.'),
+            $pembelian,
+            ['berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'total' => $totalHarga]
+        );
+
         return redirect()->route('arang.pembelian.receipt', $pembelian->id)
             ->with('success', 'Pembelian arang sebanyak ' . $berat . ' kg berhasil dicatat.');
     }

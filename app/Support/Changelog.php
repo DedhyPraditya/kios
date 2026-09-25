@@ -14,6 +14,35 @@ class Changelog
     {
         return [
             [
+                'version' => '1.7.1',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'Semua Aktivitas Toko Terpantau dari Lonceng',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Lonceng pemberitahuan kini punya tab Aktivitas: setiap penjualan, pembelian arang, perubahan barang, pegawai yang masuk atau keluar, hingga percobaan masuk yang gagal langsung terlihat — tanpa harus membuka menu lain.',
+                'changes' => [
+                    [
+                        'category' => '🔔 Tab Aktivitas',
+                        'type' => 'feat',
+                        'title' => 'Pantau Kegiatan Pegawai dari Lonceng',
+                        'description' => 'Lihat siapa menjual apa, siapa mengubah harga atau menambah barang, dan kapan shift dibuka atau ditutup. Angka merah di lonceng menunjukkan kegiatan pegawai yang belum Anda lihat, dan isinya diperbarui sendiri setiap menit.',
+                    ],
+                    [
+                        'category' => '🛡️ Keamanan',
+                        'type' => 'sec',
+                        'title' => 'Percobaan Masuk Tanpa Izin Langsung Ketahuan',
+                        'description' => 'Kata sandi salah, email tak terdaftar, login yang dikunci karena terlalu sering salah, dan pegawai yang mencoba membuka halaman khusus admin ditandai merah di lonceng lengkap dengan alamat IP-nya.',
+                    ],
+                    [
+                        'category' => '📝 Log Aktivitas',
+                        'type' => 'feat',
+                        'title' => 'Catatan Lebih Lengkap',
+                        'description' => 'Log Aktivitas kini juga mencatat penjualan kasir, jual dan beli arang, jenis arang, kategori, pelanggan, shift dan kas laci, perubahan profil dan kata sandi, unduhan laporan, serta setiap masuk dan keluar aplikasi.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.7.0',
                 'date' => '2026-09-25',
                 'date_human' => '25 September 2026',
