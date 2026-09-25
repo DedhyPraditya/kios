@@ -104,8 +104,8 @@ function cetak() {
                 <!-- Info Pembelian -->
                 <div class="tape-rule mt-3 space-y-1 pt-3 text-xs text-ink-soft">
                     <div class="flex justify-between">
-                        <span>No. Bukti</span>
-                        <span class="num font-semibold text-ink">BELI-ARNG-{{ String(pembelian.id).padStart(4, '0') }}</span>
+                        <span>No. Nota</span>
+                        <span class="num font-semibold text-ink">{{ pembelian.no_nota }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span>Waktu</span>

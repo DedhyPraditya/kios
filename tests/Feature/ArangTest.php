@@ -259,6 +259,52 @@ class ArangTest extends TestCase
         $responseJual->assertOk();
     }
 
+    public function test_pembelian_arang_mendapat_nomor_nota_berurutan(): void
+    {
+        $data = [
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'nama_pemasok' => 'Pak Slamet',
+            'berat_kg' => 5,
+            'harga_beli_per_kg' => 3000,
+            'total_harga' => 15000,
+            'user_id' => $this->kasir->id,
+        ];
+
+        $pertama = ArangPembelian::create($data);
+        $kedua = ArangPembelian::create($data);
+
+        $prefix = 'BELI-ARNG-' . now()->format('Ymd') . '-';
+        $this->assertSame($prefix . '0001', $pertama->no_nota);
+        $this->assertSame($prefix . '0002', $kedua->no_nota);
+    }
+
+    public function test_riwayat_arang_bisa_dicari_dengan_nomor_nota_atau_nama(): void
+    {
+        $base = [
+            'tanggal' => now()->toDateString(),
+            'arang_jenis_id' => $this->jenisBatok->id,
+            'berat_kg' => 5,
+            'harga_beli_per_kg' => 3000,
+            'total_harga' => 15000,
+            'user_id' => $this->kasir->id,
+        ];
+        $slamet = ArangPembelian::create($base + ['nama_pemasok' => 'Pak Slamet']);
+        ArangPembelian::create($base + ['nama_pemasok' => 'Mas Joko']);
+
+        $byNota = $this->actingAs($this->admin)
+            ->get(route('arang.riwayat', ['search' => $slamet->no_nota]))
+            ->viewData('page')['props']['transactions'];
+        $this->assertCount(1, $byNota);
+        $this->assertSame($slamet->no_nota, $byNota[0]['no_nota']);
+
+        $byNama = $this->actingAs($this->admin)
+            ->get(route('arang.riwayat', ['search' => 'joko']))
+            ->viewData('page')['props']['transactions'];
+        $this->assertCount(1, $byNama);
+        $this->assertSame('Mas Joko', $byNama[0]['pihak']);
+    }
+
     public function test_halaman_struk_pembelian_dan_penjualan_bisa_diakses(): void
     {
         $pembelian = ArangPembelian::create([

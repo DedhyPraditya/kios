@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { onBeforeUnmount, ref, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Icon from "@/Components/Icon.vue";
@@ -17,6 +17,7 @@ const activeTab = ref(props.filters.tab || "semua");
 const selectedJenisId = ref(props.filters.jenis_id || "");
 const startDate = ref(props.filters.start_date || "");
 const endDate = ref(props.filters.end_date || "");
+const search = ref(props.filters.search || "");
 
 function applyFilter(tab = activeTab.value) {
     activeTab.value = tab;
@@ -27,16 +28,25 @@ function applyFilter(tab = activeTab.value) {
             jenis_id: selectedJenisId.value || undefined,
             start_date: startDate.value || undefined,
             end_date: endDate.value || undefined,
+            search: search.value.trim() || undefined,
         },
-        { preserveState: true }
+        { preserveState: true, replace: true }
     );
 }
+
+let searchTimer = null;
+watch(search, () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => applyFilter(), 300);
+});
+onBeforeUnmount(() => clearTimeout(searchTimer));
 
 function resetFilter() {
     activeTab.value = "semua";
     selectedJenisId.value = "";
     startDate.value = "";
     endDate.value = "";
+    search.value = "";
     router.get(route("arang.riwayat"));
 }
 </script>
@@ -110,6 +120,24 @@ function resetFilter() {
 
             <!-- Baris Filter Form -->
             <div class="card-slate p-4 flex flex-wrap items-end gap-3">
+                <div class="min-w-56 flex-1">
+                    <label class="label mb-1 block text-2xs" for="cari-riwayat">Cari No. Nota / Nama</label>
+                    <div class="relative">
+                        <Icon
+                            name="search"
+                            :size="14"
+                            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-faint"
+                        />
+                        <input
+                            id="cari-riwayat"
+                            v-model="search"
+                            type="search"
+                            placeholder="Mis. BELI-ARNG-20260925-0001 atau Pak Slamet"
+                            class="field w-full pl-8 text-xs"
+                        />
+                    </div>
+                </div>
+
                 <div class="w-48">
                     <label class="label mb-1 block text-2xs">Jenis Arang</label>
                     <select

@@ -31,6 +31,7 @@ class ArangController extends Controller
                 'id' => 'beli-' . $p->id,
                 'raw_id' => $p->id,
                 'type' => 'beli',
+                'no_nota' => $p->no_nota,
                 'tanggal' => $p->tanggal->format('Y-m-d'),
                 'jenis' => $p->arangJenis?->nama ?? '-',
                 'pihak' => $p->nama_pemasok,
@@ -89,6 +90,7 @@ class ArangController extends Controller
         $jenisId = $request->query('jenis_id');
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $search = trim((string) $request->query('search', ''));
 
         $jenisList = ArangJenis::orderBy('nama')->get();
 
@@ -110,6 +112,18 @@ class ArangController extends Controller
             $jualQuery->whereDate('tanggal', '<=', $endDate);
         }
 
+        // Cari berdasarkan nomor nota atau nama pemasok / pembeli.
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $beliQuery->where(fn ($q) => $q
+                ->where('no_nota', 'like', $like)
+                ->orWhere('nama_pemasok', 'like', $like));
+            $jualQuery->where(fn ($q) => $q
+                ->where('no_nota', 'like', $like)
+                ->orWhere('nama_pembeli', 'like', $like)
+                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', $like)));
+        }
+
         $items = collect();
 
         if ($tab === 'semua' || $tab === 'beli') {
@@ -117,7 +131,7 @@ class ArangController extends Controller
                 'id' => 'beli-' . $p->id,
                 'raw_id' => $p->id,
                 'type' => 'beli',
-                'no_nota' => '-',
+                'no_nota' => $p->no_nota ?? '-',
                 'tanggal' => $p->tanggal->format('Y-m-d'),
                 'jenis' => $p->arangJenis?->nama ?? '-',
                 'pihak' => $p->nama_pemasok,
@@ -164,6 +178,7 @@ class ArangController extends Controller
                 'jenis_id' => $jenisId ? (int) $jenisId : null,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'search' => $search,
             ],
             'totals' => [
                 'total_kg' => round($sortedItems->sum('berat_kg'), 2),

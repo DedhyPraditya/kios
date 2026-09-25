@@ -330,12 +330,7 @@ export function notaPembelianArangEscPos(pembelian, store) {
 
     p.kiri();
     p.garis();
-    p.baris(
-        duaKolom(
-            "No. Bukti",
-            "BELI-ARNG-" + String(pembelian.id).padStart(4, "0"),
-        ),
-    );
+    p.baris(duaKolom("No. Nota", pembelian.no_nota));
     p.baris(duaKolom("Waktu", tanggal(pembelian.created_at)));
     p.baris(duaKolom("Pemasok", pembelian.nama_pemasok));
     p.baris(duaKolom("Penerima", pembelian.user?.name ?? "-"));
