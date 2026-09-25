@@ -14,6 +14,71 @@ class Changelog
     {
         return [
             [
+                'version' => '1.7.0',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'Jual per Dus, Harga Grosir, Diskon Fleksibel & PPN',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Pembaruan besar untuk kasir dan laporan. Barang kini bisa dijual per pcs maupun per dus dengan harga grosir otomatis, diskon bisa diberikan per barang atau dalam persen, PPN bisa diaktifkan bila toko Anda PKP, dan laporan bisa disaring per kasir atau kategori lalu diunduh sebagai PDF.',
+                'changes' => [
+                    [
+                        'category' => '📦 Satuan Ganda',
+                        'type' => 'feat',
+                        'title' => 'Jual per Pcs atau per Dus',
+                        'description' => 'Di menu Produk, tambahkan satuan lain seperti dus, pak, atau renteng lengkap dengan isi, harga, dan barcode sendiri. Di kasir tinggal pilih satuannya atau scan barcode dus — stok tetap dihitung per pcs secara otomatis.',
+                    ],
+                    [
+                        'category' => '🏷️ Harga Grosir',
+                        'type' => 'feat',
+                        'title' => 'Harga Turun Otomatis untuk Pembelian Banyak',
+                        'description' => 'Atur harga grosir bertingkat, misalnya beli 10 pcs ke atas jadi Rp3.300. Begitu jumlahnya tercapai di kasir, harga langsung menyesuaikan dan diberi tanda "Harga grosir".',
+                    ],
+                    [
+                        'category' => '✂️ Diskon Fleksibel',
+                        'type' => 'feat',
+                        'title' => 'Diskon per Barang dan Diskon Persen',
+                        'description' => 'Beri potongan untuk satu barang saja lewat "+ Diskon barang", atau untuk seluruh nota. Keduanya bisa dalam rupiah atau persen — cukup tekan tombol Rp / %.',
+                    ],
+                    [
+                        'category' => '🧾 PPN Opsional',
+                        'type' => 'feat',
+                        'title' => 'Tarik PPN di Kasir',
+                        'description' => 'Untuk toko PKP: aktifkan PPN di Pengaturan dan tentukan tarifnya. PPN otomatis dihitung, tercetak di struk, dan dilaporkan terpisah di halaman Laporan.',
+                    ],
+                    [
+                        'category' => '📊 Laporan',
+                        'type' => 'feat',
+                        'title' => 'Saring per Kasir & Kategori, Unduh PDF',
+                        'description' => 'Lihat hasil jualan satu kasir atau satu kategori barang saja. Laporan juga bisa diunduh sebagai PDF A4 yang rapi, siap dicetak atau dikirim — mengikuti saringan yang sedang dipakai.',
+                    ],
+                    [
+                        'category' => '🔎 Kode di Struk',
+                        'type' => 'feat',
+                        'title' => 'QR / Barcode Nomor Nota di Struk',
+                        'description' => 'Pilih di Pengaturan agar nomor nota tercetak sebagai QR code atau barcode. Saat pembeli datang untuk retur, scan struknya di menu Riwayat dan notanya langsung terbuka.',
+                    ],
+                    [
+                        'category' => '🖨️ Cetak dari PC',
+                        'type' => 'feat',
+                        'title' => 'Cetak Langsung ke Printer USB / COM',
+                        'description' => 'Selain Bluetooth, halaman struk di Chrome/Edge PC kini punya tombol "Printer USB / COM" untuk mencetak langsung tanpa kotak dialog cetak.',
+                    ],
+                    [
+                        'category' => '🗃️ Arsip Produk',
+                        'type' => 'fix',
+                        'title' => 'Produk Dihapus Bisa Dipulihkan',
+                        'description' => 'Menghapus produk kini hanya mengarsipkannya — riwayat nota dan stoknya tetap utuh. Buka saringan "Produk terhapus" untuk memulihkannya kapan saja.',
+                    ],
+                    [
+                        'category' => '🛠️ Lebih Andal',
+                        'type' => 'fix',
+                        'title' => 'Perhitungan Uang Lebih Kokoh',
+                        'description' => 'Penyimpanan angka uang di database diperkuat sehingga perhitungan laba dan hutang tidak lagi bisa gagal saat hasilnya minus. Tombol-tombol di halaman arang juga kembali tampil rapi.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.6.2',
                 'date' => '2026-09-25',
                 'date_human' => '25 September 2026',
