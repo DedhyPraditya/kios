@@ -263,6 +263,14 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
   - Tombol centang per baris untuk menyembunyikan notifikasi produk tertentu atau nota kasbon tertentu.
   - Tombol "Tandai Semua Dibaca" di header dropdown untuk membersihkan semua notifikasi seketika.
   - **Smart re-alerting**: Tersimpan di tabel `dismissed_alerts`. Jika admin membaca/menandai notifikasi saat stok 3, notifikasi hilang. Namun bila terjadi penjualan baru yang membuat stok berkurang lagi (misal menjadi 2 atau 1), notifikasi otomatis muncul kembali tanpa mengganggu ketenangan admin saat stok tidak berubah.
+  - Perbaikan 25 Sep 2026: logika dipusatkan di `App\Support\Peringatan`.
+    Stok yang diisi ulang di atas ambang menghapus tanda dibaca (event
+    `Product::updated`), jadi menipis berikutnya diingatkan lagi. Kasbon yang
+    ditandai sebelum tempo muncul lagi setelah lewat tempo. Produk nonaktif
+    tidak dihitung. Angka pembanding diambil dari server, bukan browser.
+    Rute tandai-dibaca khusus admin. Panel tetap terbuka saat mencentang
+    (tanpa banner hijau), tidak terpotong di layar HP, dan tautan "Lihat Semua
+    Produk Menipis" kini benar-benar memfilter produk menipis.
 
 ### Log Aplikasi & Riwayat Pembaruan Sistem (`/app-logs`) — admin
 
@@ -549,8 +557,8 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
       — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi
       tombol yang sama bisa dipakai di sana setelah diuji dengan printer.
 - [ ] Opsi QR / barcode nomor nota di struk.
-- [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar).
 - [ ] Soft delete produk (sekarang hard delete).
+- [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar).
 - [x] Backup & restore database (satu-klik .sql.gz via PDO + verifikasi password).
 
 ### Tampilan

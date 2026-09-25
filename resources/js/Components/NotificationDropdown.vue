@@ -6,7 +6,6 @@ import { rupiah } from "@/lib/format";
 
 const page = usePage();
 const alerts = computed(() => page.props.alerts || {});
-const isAdmin = computed(() => page.props.auth.isAdmin);
 
 const lowStockCount = computed(() => alerts.value.lowStockCount ?? alerts.value.lowStock ?? 0);
 const lowStockItems = computed(() => alerts.value.lowStockItems ?? []);
@@ -21,6 +20,12 @@ const activeTab = ref("stock"); // 'stock' | 'debts'
 
 function toggle() {
     open.value = !open.value;
+    // Buka langsung di tab yang ada isinya.
+    if (open.value && lowStockCount.value === 0 && dueDebtsCount.value > 0) {
+        activeTab.value = "debts";
+    } else if (open.value && dueDebtsCount.value === 0) {
+        activeTab.value = "stock";
+    }
 }
 
 function close() {
@@ -33,20 +38,15 @@ function closeOnEscape(e) {
     }
 }
 
-function dismissAlert(type, id, value = null) {
-    router.post(
-        route("alerts.dismiss"),
-        { type, id, value },
-        { preserveScroll: true }
-    );
+// preserveState: panel tetap terbuka setelah satu notifikasi dicentang.
+const keepOpen = { preserveScroll: true, preserveState: true };
+
+function dismissAlert(type, id) {
+    router.post(route("alerts.dismiss"), { type, id }, keepOpen);
 }
 
 function dismissAll() {
-    router.post(
-        route("alerts.dismiss"),
-        { dismiss_all: true },
-        { preserveScroll: true }
-    );
+    router.post(route("alerts.dismiss"), { dismiss_all: true }, keepOpen);
 }
 
 onMounted(() => document.addEventListener("keydown", closeOnEscape));
@@ -91,7 +91,7 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
         >
             <div
                 v-show="open"
-                class="absolute end-0 z-50 mt-2 w-80 sm:w-96 rounded-card border border-line bg-surface shadow-sheet overflow-hidden"
+                class="fixed inset-x-3 top-[calc(env(safe-area-inset-top,0px)+76px)] z-50 rounded-card md:absolute md:inset-x-auto md:top-auto md:end-0 md:mt-2 md:w-96 border border-line bg-surface shadow-sheet overflow-hidden"
             >
                 <!-- Panel Header -->
                 <div class="flex items-center justify-between border-b border-line bg-paper/60 px-4 py-3">
@@ -206,7 +206,7 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                                 type="button"
                                 class="grid h-7 w-7 place-items-center rounded-full text-ink-faint hover:bg-brand-wash hover:text-brand transition-colors"
                                 title="Tandai sudah dibaca"
-                                @click.stop="dismissAlert('product_stock', item.id, item.stock)"
+                                @click.stop="dismissAlert('product_stock', item.id)"
                             >
                                 <Icon name="check" :size="15" />
                             </button>
@@ -267,7 +267,7 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                 <div class="border-t border-line bg-paper/60 p-2.5 text-center">
                     <Link
                         v-if="activeTab === 'stock'"
-                        :href="isAdmin ? route('products.index', { low: 1 }) : route('dashboard')"
+                        :href="route('products.index', { status: 'menipis' })"
                         class="text-xs font-semibold text-brand hover:underline"
                         @click="close"
                     >
@@ -275,7 +275,7 @@ onUnmounted(() => document.removeEventListener("keydown", closeOnEscape));
                     </Link>
                     <Link
                         v-else
-                        :href="isAdmin ? route('piutang.index') : route('dashboard')"
+                        :href="route('piutang.index')"
                         class="text-xs font-semibold text-brand hover:underline"
                         @click="close"
                     >

@@ -24,6 +24,19 @@ class Product extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Stok sudah diisi ulang di atas ambang: hapus tanda "sudah dibaca"
+        // supaya bila nanti menipis lagi, lonceng mengingatkan kembali.
+        static::updated(function (Product $product) {
+            if ($product->wasChanged(['stock', 'low_stock']) && $product->stock > $product->low_stock) {
+                DismissedAlert::where('type', 'product_stock')
+                    ->where('alertable_id', $product->id)
+                    ->delete();
+            }
+        });
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

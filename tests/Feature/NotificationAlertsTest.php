@@ -209,5 +209,75 @@ class NotificationAlertsTest extends TestCase
                 ->where('alerts.total', 0)
             );
     }
-}
 
+    public function test_notifikasi_stok_muncul_lagi_setelah_diisi_ulang_lalu_menipis(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $product = $this->produk(['stock' => 3, 'low_stock' => 5]);
+
+        $this->actingAs($admin)->post(route('alerts.dismiss'), ['type' => 'product_stock', 'id' => $product->id]);
+        $this->assertSame(0, $this->alerts($admin)['lowStockCount']);
+
+        // Diisi ulang di atas ambang, lalu terjual sampai menipis di angka yang sama.
+        $product->update(['stock' => 20]);
+        $product->update(['stock' => 3]);
+
+        $this->assertSame(1, $this->alerts($admin)['lowStockCount']);
+    }
+
+    public function test_kasbon_yang_ditandai_sebelum_tempo_muncul_lagi_setelah_lewat_tempo(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $sale = Sale::create([
+            'invoice_no' => 'INV-TEST-010', 'user_id' => $admin->id,
+            'customer_id' => Customer::create(['name' => 'Bu Rina'])->id,
+            'payment_type' => 'kasbon', 'status' => 'belum_lunas', 'subtotal' => 20000, 'discount' => 0,
+            'total' => 20000, 'paid' => 0, 'change' => 0, 'due_date' => now()->addDays(2)->toDateString(),
+        ]);
+
+        $this->actingAs($admin)->post(route('alerts.dismiss'), ['type' => 'sale_due', 'id' => $sale->id]);
+        $this->assertSame(0, $this->alerts($admin)['dueDebtsCount']);
+
+        $this->travel(3)->days();
+        $this->assertSame(1, $this->alerts($admin)['dueDebtsCount']);
+
+        // Ditandai lagi saat sudah lewat tempo → tetap tersembunyi.
+        $this->actingAs($admin)->post(route('alerts.dismiss'), ['type' => 'sale_due', 'id' => $sale->id]);
+        $this->assertSame(0, $this->alerts($admin)['dueDebtsCount']);
+    }
+
+    public function test_produk_nonaktif_tidak_masuk_notifikasi_stok(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->produk(['stock' => 0, 'low_stock' => 5, 'is_active' => false]);
+
+        $this->assertSame(0, $this->alerts($admin)['lowStockCount']);
+    }
+
+    public function test_kasir_tidak_bisa_menandai_notifikasi(): void
+    {
+        $kasir = User::factory()->create(['role' => 'kasir']);
+
+        $this->actingAs($kasir)->post(route('alerts.dismiss'), ['dismiss_all' => true])->assertForbidden();
+    }
+
+    private function produk(array $attrs): Product
+    {
+        return Product::create([
+            'category_id' => Category::create(['name' => 'Umum'])->id,
+            'name' => 'Beras 5kg', 'price' => 70000, 'cost' => 60000,
+            ...$attrs,
+        ]);
+    }
+
+    private function alerts(User $admin): array
+    {
+        $alerts = null;
+        $this->actingAs($admin)->get(route('dashboard'))
+            ->assertInertia(function (Assert $page) use (&$alerts) {
+                $alerts = $page->toArray()['props']['alerts'];
+            });
+
+        return $alerts;
+    }
+}

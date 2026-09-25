@@ -60,8 +60,9 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Notifikasi sistem
-    Route::post('/alerts/dismiss', [\App\Http\Controllers\AlertController::class, 'dismiss'])->name('alerts.dismiss');
+    // Notifikasi lonceng (hanya admin yang menerimanya)
+    Route::post('/alerts/dismiss', [\App\Http\Controllers\AlertController::class, 'dismiss'])
+        ->middleware('admin')->name('alerts.dismiss');
 
     // Admin only
     Route::middleware('admin')->group(function () {

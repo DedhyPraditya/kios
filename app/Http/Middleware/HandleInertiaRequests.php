@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Product;
 use App\Models\Setting;
+use App\Support\Peringatan;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,30 +49,8 @@ class HandleInertiaRequests extends Middleware
                     return null;
                 }
 
-                $userId = $user->id;
-
-                // Query produk stok menipis (abaikan yang sudah ditandai dibaca kecuali stok turun lebih parah)
-                $lowStockQuery = Product::whereColumn('stock', '<=', 'low_stock')
-                    ->whereNotExists(function ($query) use ($userId) {
-                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
-                            ->from('dismissed_alerts')
-                            ->where('dismissed_alerts.user_id', $userId)
-                            ->where('dismissed_alerts.type', 'product_stock')
-                            ->whereColumn('dismissed_alerts.alertable_id', 'products.id')
-                            ->whereColumn('dismissed_alerts.last_value', '<=', 'products.stock');
-                    });
-
-                // Query kasbon jatuh tempo (abaikan yang sudah ditandai dibaca)
-                $dueDebtsQuery = \App\Models\Sale::unpaid()
-                    ->whereNotNull('due_date')
-                    ->where('due_date', '<=', now()->addDays(3)->toDateString())
-                    ->whereNotExists(function ($query) use ($userId) {
-                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
-                            ->from('dismissed_alerts')
-                            ->where('dismissed_alerts.user_id', $userId)
-                            ->where('dismissed_alerts.type', 'sale_due')
-                            ->whereColumn('dismissed_alerts.alertable_id', 'sales.id');
-                    });
+                $lowStockQuery = Peringatan::stokMenipis($user->id);
+                $dueDebtsQuery = Peringatan::kasbonJatuhTempo($user->id);
 
                 $lowStockCount = (clone $lowStockQuery)->count();
                 $dueDebtsCount = (clone $dueDebtsQuery)->count();
@@ -97,7 +76,7 @@ class HandleInertiaRequests extends Middleware
                                 'customer_id' => $sale->customer_id,
                                 'due_date' => $sale->due_date?->format('d/m/Y'),
                                 'outstanding' => $sale->outstanding(),
-                                'is_overdue' => $sale->due_date?->isPast() && ! $sale->due_date?->isToday(),
+                                'is_overdue' => (bool) $sale->due_date?->lt(today()),
                             ];
                         }),
                     'total' => $lowStockCount + $dueDebtsCount,
