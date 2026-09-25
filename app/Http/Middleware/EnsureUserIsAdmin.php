@@ -15,7 +15,7 @@ class EnsureUserIsAdmin
                 'auth.forbidden',
                 "Mencoba membuka halaman khusus admin: {$request->method()} /{$request->path()}",
                 null,
-                ['user_agent' => substr((string) $request->userAgent(), 0, 200)]
+                ['path' => $request->path(), 'user_agent' => substr((string) $request->userAgent(), 0, 200)]
             );
             abort(403, 'Khusus admin.');
         }

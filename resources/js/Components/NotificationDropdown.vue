@@ -230,26 +230,47 @@ onUnmounted(() => {
                     >
                         Belum ada aktivitas.
                     </div>
-                    <div
+                    <component
+                        :is="log.url ? Link : 'div'"
                         v-for="log in activityItems"
                         :key="log.id"
+                        :href="log.url ?? undefined"
                         class="flex gap-3 px-4 py-2.5"
-                        :class="log.security ? 'bg-danger-wash/60' : log.new ? 'bg-brand-wash/40' : ''"
+                        :class="[
+                            log.security ? 'bg-danger-wash/60' : log.new ? 'bg-brand-wash/40' : '',
+                            log.url ? 'transition-colors hover:bg-paper' : '',
+                        ]"
+                        @click="log.url && close()"
                     >
                         <span
-                            class="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-                            :class="log.security ? 'bg-danger' : log.new ? 'bg-brand' : 'bg-line'"
+                            class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full"
+                            :class="log.security ? 'bg-danger text-white' : log.new ? 'bg-brand-wash text-brand-ink' : 'bg-paper text-ink-faint'"
                             aria-hidden="true"
-                        />
+                        >
+                            <Icon :name="log.icon" :size="14" />
+                        </span>
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs leading-snug" :class="log.security ? 'font-semibold text-danger' : 'text-ink'">
-                                {{ log.description }}
+                            <div class="flex items-baseline justify-between gap-2">
+                                <p class="text-xs font-semibold" :class="log.security ? 'text-danger' : 'text-ink'">
+                                    {{ log.title }}
+                                    <span v-if="log.new && !log.security" class="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" />
+                                </p>
+                                <span
+                                    v-if="log.amount !== null"
+                                    class="num shrink-0 text-xs font-semibold"
+                                    :class="log.flow === 'in' ? 'text-success' : log.flow === 'out' ? 'text-danger' : 'text-ink'"
+                                >
+                                    {{ log.flow === "out" ? "−" : log.flow === "in" ? "+" : "" }}{{ rupiah(log.amount) }}
+                                </span>
+                            </div>
+                            <p v-if="log.detail" class="mt-0.5 line-clamp-2 text-2xs leading-snug text-ink-soft">
+                                {{ log.detail }}
                             </p>
                             <p class="mt-0.5 text-2xs text-ink-faint">
-                                {{ log.user ?? (log.security ? "Tak dikenal" : "Sistem") }} · {{ log.time }}<template v-if="log.security && log.ip"> · IP {{ log.ip }}</template>
+                                {{ log.who ?? (log.security ? "Tak dikenal" : "Sistem") }} · {{ log.time }}<template v-if="log.security && log.ip"> · IP {{ log.ip }}</template>
                             </p>
                         </div>
-                    </div>
+                    </component>
                 </div>
 
                 <!-- Tab Content: Stok Menipis -->

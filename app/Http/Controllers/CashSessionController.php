@@ -104,7 +104,7 @@ class CashSessionController extends Controller
             'opened_at' => now(),
             'note' => $data['note'] ?? null,
         ]);
-        \App\Models\ActivityLog::record('shift.open', 'Membuka shift dengan modal Rp'.number_format($data['opening_cash'], 0, ',', '.'), $shift);
+        \App\Models\ActivityLog::record('shift.open', 'Membuka shift dengan modal Rp'.number_format($data['opening_cash'], 0, ',', '.'), $shift, ['opening_cash' => $data['opening_cash']]);
 
         return back()->with('success', 'Shift dibuka.');
     }
@@ -134,7 +134,8 @@ class CashSessionController extends Controller
         \App\Models\ActivityLog::record(
             'shift.cash',
             "Kas {$data['direction']} Rp".number_format($data['amount'], 0, ',', '.')." ({$data['note']})",
-            $session
+            $session,
+            $data
         );
 
         return back()->with('success', 'Kas dicatat.');

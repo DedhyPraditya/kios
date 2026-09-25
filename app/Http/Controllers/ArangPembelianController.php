@@ -53,7 +53,7 @@ class ArangPembelianController extends Controller
             'arang.beli',
             "Beli arang {$pembelian->no_nota} {$berat} kg dari {$pembelian->nama_pemasok} Rp".number_format($totalHarga, 0, ',', '.'),
             $pembelian,
-            ['berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'total' => $totalHarga]
+            ['no_nota' => $pembelian->no_nota, 'jenis' => $pembelian->arangJenis?->nama, 'pemasok' => $pembelian->nama_pemasok, 'berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'total' => $totalHarga]
         );
 
         // Tanpa banner: halaman struk sudah punya baris status, sama seperti struk kasir.

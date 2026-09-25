@@ -277,6 +277,11 @@ Seeder: 2 akun contoh, 3 pelanggan contoh, 11 produk dalam 4 kategori.
   24 jam terakhir); kegiatan admin sendiri tidak dihitung. Kejadian keamanan
   (`auth.failed`, `auth.lockout`, `auth.forbidden`) ditandai merah beserta IP.
   Lonceng memuat ulang isinya tiap 60 detik (`router.reload({ only: ['alerts'] })`).
+  Pesan tiap baris diringkas oleh `App\Support\RingkasAktivitas`: judul singkat
+  (mis. "Penjualan", "Salah kata sandi", "Akses ditolak"), rincian penting
+  (nomor nota, cara bayar, nama produk & perubahan harga, nama halaman), nominal
+  berwarna (+ hijau uang masuk, − merah uang keluar), siapa & kapan, dan bisa
+  diklik ke nota / produk / shift terkait.
 - Yang kini tercatat di Log Aktivitas: penjualan kasir, jual & beli arang,
   jenis arang, kategori, pelanggan, buka/tutup shift & kas laci, profil, ganti
   kata sandi, unduh laporan, masuk/keluar, login gagal (email tak terdaftar /

@@ -128,4 +128,34 @@ class AktivitasLoncengTest extends TestCase
             $this->assertDatabaseHas('activity_logs', ['action' => $aksi]);
         }
     }
+
+    public function test_pesan_lonceng_diringkas_supaya_mudah_dibaca(): void
+    {
+        $produk = Product::create([
+            'category_id' => Category::create(['name' => 'Umum'])->id,
+            'name' => 'Teh', 'price' => 5000, 'cost' => 3000, 'stock' => 10, 'low_stock' => 1,
+        ]);
+        $this->actingAs($this->kasir)->post(route('pos.store'), [
+            'items' => [['id' => $produk->id, 'qty' => 2]], 'paid' => 10000,
+        ]);
+        $this->actingAs($this->kasir)->get(route('reports.index'));
+        $this->post('/logout');
+        $this->post('/login', ['email' => 'budi@kios.test', 'password' => 'salah']);
+        $this->post('/login', ['email' => 'maling@luar.test', 'password' => 'x']);
+
+        $items = collect($this->lonceng()['activityItems'])->keyBy('action');
+
+        $jual = $items['sale.create'];
+        $this->assertSame('Penjualan', $jual['title']);
+        $this->assertSame(10000, $jual['amount']);
+        $this->assertSame('in', $jual['flow']);
+        $this->assertStringContainsString('Tunai', $jual['detail']);
+        $this->assertStringContainsString('/sales/', $jual['url']);
+
+        $this->assertSame('Akses ditolak', $items['auth.forbidden']['title']);
+        $this->assertSame('mencoba membuka halaman Laporan', $items['auth.forbidden']['detail']);
+
+        $gagal = collect($this->lonceng()['activityItems'])->where('action', 'auth.failed')->pluck('title')->all();
+        $this->assertEqualsCanonicalizing(['Salah kata sandi', 'Email tak terdaftar'], $gagal);
+    }
 }

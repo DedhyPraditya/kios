@@ -56,12 +56,15 @@ class Peringatan
             ->limit($jumlah)
             ->get()
             ->map(fn (ActivityLog $log) => [
+                ...RingkasAktivitas::dari($log),
                 'id' => $log->id,
                 'action' => $log->action,
                 'description' => $log->description,
                 'user' => $log->user?->name,
                 'ip' => $log->ip_address,
-                'time' => $log->created_at?->locale('id')->diffForHumans(),
+                'time' => $log->created_at?->diffInSeconds(now()) < 60
+                    ? 'baru saja'
+                    : $log->created_at?->locale('id')->diffForHumans(),
                 'security' => in_array($log->action, self::AKSI_KEAMANAN, true),
                 'new' => $log->created_at > $batasBaru && ($log->user_id !== $admin->id
                     || in_array($log->action, self::AKSI_KEAMANAN, true)),

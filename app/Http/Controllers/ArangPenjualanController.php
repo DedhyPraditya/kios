@@ -127,7 +127,7 @@ class ArangPenjualanController extends Controller
             'arang.jual',
             "Jual arang {$penjualan->no_nota} {$berat} kg ".strtoupper($paymentType).' Rp'.number_format($grandTotal, 0, ',', '.'),
             $penjualan,
-            ['berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'diskon' => $diskon, 'total' => $grandTotal]
+            ['no_nota' => $penjualan->no_nota, 'jenis' => $penjualan->arangJenis?->nama, 'berat_kg' => $berat, 'harga_per_kg' => $hargaPerKg, 'diskon' => $diskon, 'total' => $grandTotal, 'payment_type' => $paymentType]
         );
 
         // Tanpa banner: halaman struk sudah punya baris status, sama seperti struk kasir.
