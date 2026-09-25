@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
+import NotaCode from "@/Components/NotaCode.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { ref } from "vue";
 import { rupiah, tanggal } from "@/lib/format";
@@ -222,6 +223,7 @@ async function cetakBluetooth() {
                 <p v-if="sale.note" class="mt-3 text-xs text-ink-faint">
                     Catatan: {{ sale.note }}
                 </p>
+                <NotaCode :value="sale.invoice_no" :type="store.receipt_code" />
                 <p
                     v-if="store.receipt_footer"
                     class="mt-4 text-center text-xs text-ink-soft"

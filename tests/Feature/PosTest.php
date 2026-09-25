@@ -121,4 +121,29 @@ class PosTest extends TestCase
         $this->actingAs($this->kasir)->get(route('pos.receipt', $sale))->assertOk();
         $this->actingAs($this->admin)->get(route('pos.receipt', $sale))->assertOk();
     }
+
+    public function test_scan_nomor_nota_di_riwayat_langsung_membuka_nota(): void
+    {
+        $this->actingAs($this->kasir)->post(route('pos.store'), [
+            'items' => [['id' => $this->product->id, 'qty' => 1]],
+            'paid' => 5000,
+        ]);
+        $sale = Sale::firstOrFail();
+
+        $this->actingAs($this->admin)->get(route('sales.index', ['q' => $sale->invoice_no]))
+            ->assertRedirect(route('sales.show', $sale));
+        $this->actingAs($this->admin)->get(route('sales.index', ['q' => 'INV']))->assertOk();
+    }
+
+    public function test_pengaturan_kode_nota_di_struk(): void
+    {
+        $this->actingAs($this->admin)->post(route('settings.update'), [
+            'store_name' => 'Kios', 'receipt_code' => 'qr',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('qr', \App\Models\Setting::values()['receipt_code']);
+
+        $this->actingAs($this->admin)->post(route('settings.update'), [
+            'store_name' => 'Kios', 'receipt_code' => 'lain',
+        ])->assertSessionHasErrors('receipt_code');
+    }
 }

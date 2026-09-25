@@ -17,6 +17,7 @@ class Setting extends Model
         'store_address' => '',
         'store_phone' => '',
         'receipt_footer' => 'Terima kasih telah berbelanja.',
+        'receipt_code' => 'none', // none | qr | barcode: kode nomor nota di struk
         'qris_image' => null,
     ];
 

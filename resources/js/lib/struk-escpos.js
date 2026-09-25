@@ -5,6 +5,8 @@ import { rupiah, tanggal } from "@/lib/format";
    ponsel — di sana tak ada dialog cetak, jadi tata letaknya disusun sendiri
    sebagai teks, bukan diserahkan ke mesin cetak peramban. */
 const LEBAR = 32;
+/* Lebar bidang cetak dalam titik (48 mm pada 8 titik/mm). */
+const TITIK = 384;
 
 const ESC = 0x1b;
 const GS = 0x1d;
@@ -114,6 +116,59 @@ class Pita {
         return this.baris("-".repeat(LEBAR));
     }
 
+    /* QR bawaan printer (GS ( k, model 2, koreksi M). */
+    qr(data) {
+        const isi = [...ascii(data)].map((c) => c.charCodeAt(0));
+        const n = isi.length + 3;
+        return this.perintah(GS, 0x28, 0x6b, 4, 0, 0x31, 0x41, 0x32, 0x00)
+            .perintah(GS, 0x28, 0x6b, 3, 0, 0x31, 0x43, 6)
+            .perintah(GS, 0x28, 0x6b, 3, 0, 0x31, 0x45, 0x31)
+            .perintah(GS, 0x28, 0x6b, n & 0xff, n >> 8, 0x31, 0x50, 0x30, ...isi)
+            .perintah(GS, 0x28, 0x6b, 3, 0, 0x31, 0x51, 0x30)
+            .perintah(LF);
+    }
+
+    /* Barcode CODE128 bawaan printer (GS k 73). Deret angka genap >= 4 dikemas
+       set C (dua angka per simbol) supaya nomor nota muat di kertas 58 mm;
+       modul dipersempit bila tetap kepanjangan. */
+    barcode(data) {
+        const isi = [];
+        let simbol = 2; // start + check
+        let set = null;
+        const teks = ascii(data);
+        for (let i = 0; i < teks.length; ) {
+            const angka = /^\d+/.exec(teks.slice(i))?.[0] ?? "";
+            const panjangC = angka.length - (angka.length % 2);
+            if (panjangC >= 4) {
+                if (set !== "C") isi.push(0x7b, 0x43), (set = "C"), simbol++;
+                for (let j = 0; j < panjangC; j += 2) isi.push(Number(angka.slice(j, j + 2))), simbol++;
+                i += panjangC;
+            } else {
+                if (set !== "B") isi.push(0x7b, 0x42), (set = "B"), simbol++;
+                const c = teks.charCodeAt(i);
+                isi.push(...(c === 0x7b ? [0x7b, 0x7b] : [c])), simbol++;
+                i++;
+            }
+        }
+        simbol--; // simbol start sudah dihitung di awal
+        const modul = simbol * 11 + 13;
+        const lebarModul = modul * 2 <= TITIK ? 2 : 1;
+
+        return this.perintah(GS, 0x68, 60) // tinggi 60 titik
+            .perintah(GS, 0x77, lebarModul)
+            .perintah(GS, 0x48, 0) // teks nomor dicetak terpisah
+            .perintah(GS, 0x6b, 73, isi.length, ...isi)
+            .perintah(LF);
+    }
+
+    /* Kode nomor nota sesuai Pengaturan (none | qr | barcode). */
+    kodeNota(jenis, nomor) {
+        if (jenis !== "qr" && jenis !== "barcode") return this;
+        this.tengah().baris();
+        jenis === "qr" ? this.qr(nomor) : this.barcode(nomor);
+        return this.baris(nomor).kiri();
+    }
+
     selesai() {
         return new Uint8Array(this.isi);
     }
@@ -194,6 +249,8 @@ export function strukEscPos(sale, store) {
         p.baris();
         for (const b of bungkus("Catatan: " + sale.note)) p.baris(b);
     }
+
+    p.kodeNota(store.receipt_code, sale.invoice_no);
 
     p.tengah();
 
@@ -298,6 +355,8 @@ export function strukPenjualanArangEscPos(penjualan, store) {
         p.baris();
         for (const b of bungkus("Catatan: " + penjualan.catatan)) p.baris(b);
     }
+
+    p.kodeNota(store.receipt_code, penjualan.no_nota);
 
     p.tengah();
     p.baris();

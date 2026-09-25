@@ -557,7 +557,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Cetak langsung ESC/POS **di PC** (kini baru di ponsel lewat Web Bluetooth
       — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi
       tombol yang sama bisa dipakai di sana setelah diuji dengan printer.
-- [ ] Opsi QR / barcode nomor nota di struk.
+- [x] Opsi QR / barcode nomor nota di struk (Pengaturan → "Kode nomor nota di struk"; struk web + ESC/POS Bluetooth; scan di Riwayat Transaksi langsung membuka nota). Perintah QR/barcode ESC/POS belum diuji di printer RPP02N fisik.
 - [x] Soft delete produk: hapus = arsip (filter "Produk terhapus" + tombol Pulihkan), riwayat stok & nota tetap utuh, barcode arsip bisa dipakai produk baru.
 - [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar).
 - [x] Backup & restore database (satu-klik .sql.gz via PDO + verifikasi password).

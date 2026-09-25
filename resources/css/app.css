@@ -208,6 +208,16 @@
         border-top: 1px dashed #000;
     }
 
+    /* Kode nota: ukuran tetap supaya terbaca scanner. */
+    .nota-code-qr {
+        width: 24mm !important;
+        height: 24mm !important;
+    }
+    .nota-code-bar {
+        width: 44mm !important;
+        height: 11mm !important;
+    }
+
     /* Satu barang tak boleh terpotong ke lembar berikutnya. */
     #struk tr {
         break-inside: avoid;

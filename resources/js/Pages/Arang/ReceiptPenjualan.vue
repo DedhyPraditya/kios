@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
+import NotaCode from "@/Components/NotaCode.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { ref } from "vue";
 import { rupiah, tanggal } from "@/lib/format";
@@ -201,6 +202,8 @@ function cetak() {
                 <div v-if="penjualan.catatan" class="tape-rule mt-3 pt-2 text-2xs text-ink-soft italic">
                     Catatan: {{ penjualan.catatan }}
                 </div>
+
+                <NotaCode :value="penjualan.no_nota" :type="store.receipt_code" />
 
                 <!-- Footer Struk -->
                 <div class="tape-rule mt-4 pt-3 text-center text-2xs text-ink-soft">

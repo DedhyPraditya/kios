@@ -199,8 +199,9 @@ class SaleCorrectionTest extends TestCase
     {
         $sale = $this->sell();
 
+        // Sebagian nomor → daftar; nomor lengkap langsung membuka nota (lihat PosTest).
         $this->actingAs($this->admin)
-            ->get(route('sales.index', ['q' => $sale->invoice_no]))
+            ->get(route('sales.index', ['q' => substr($sale->invoice_no, -6)]))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Sales/Index')

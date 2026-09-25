@@ -29,6 +29,11 @@ class SaleController extends Controller
             'status' => $request->input('status', 'semua'),
         ];
 
+        // Hasil scan QR/barcode di struk = nomor nota persis → langsung buka notanya.
+        if ($filters['q'] !== '' && $exact = Sale::where('invoice_no', $filters['q'])->value('id')) {
+            return redirect()->route('sales.show', $exact);
+        }
+
         // Saringan dipakai dua kali: sekali untuk daftar, sekali untuk ringkasan.
         // Query ringkasan sengaja dibangun bersih tanpa `with`/`withCount` — MySQL
         // (`only_full_group_by`) menolak kolom biasa yang dicampur agregat.

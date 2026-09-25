@@ -1,9 +1,10 @@
 <script setup>
-import { reactive, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Pagination from "@/Components/Pagination.vue";
 import Icon from "@/Components/Icon.vue";
+import CameraScanner from "@/Components/CameraScanner.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
@@ -21,6 +22,13 @@ const q = reactive({
     user_id: props.filters.user_id ?? "",
     status: props.filters.status ?? "semua",
 });
+
+// Scan QR/barcode nomor nota di struk; nomor yang cocok persis langsung membuka notanya.
+const kamera = ref(false);
+function onScan(kode) {
+    kamera.value = false;
+    q.q = kode;
+}
 
 let timer = null;
 watch(q, () => {
@@ -108,10 +116,23 @@ const badgeLabel = {
                 <input
                     v-model="q.q"
                     type="search"
-                    placeholder="No nota, pelanggan, catatan…"
+                    placeholder="No nota, pelanggan, catatan… atau scan struk"
                     class="field py-2.5 pl-9 pr-3 text-sm"
                 />
             </label>
+            <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2.5 text-xs font-semibold text-brand-ink hover:border-brand"
+                :class="{ 'bg-brand-wash': kamera }"
+                title="Scan QR / barcode nomor nota di struk"
+                @click="kamera = !kamera"
+            >
+                <Icon name="camera" :size="16" />
+                {{ kamera ? "Tutup" : "Kamera" }}
+            </button>
+            <div v-if="kamera" class="w-full">
+                <CameraScanner @detected="onScan" />
+            </div>
             <div
                 class="flex w-full items-stretch overflow-hidden rounded-control border border-line bg-surface focus-within:border-brand sm:w-auto"
             >

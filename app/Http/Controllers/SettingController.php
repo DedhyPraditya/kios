@@ -37,6 +37,7 @@ class SettingController extends Controller
             'store_address' => ['nullable', 'string', 'max:255'],
             'store_phone' => ['nullable', 'string', 'max:30'],
             'receipt_footer' => ['nullable', 'string', 'max:255'],
+            'receipt_code' => ['nullable', 'in:none,qr,barcode'],
             'qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_qris' => ['nullable', 'boolean'],
         ]);

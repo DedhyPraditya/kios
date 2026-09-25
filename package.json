@@ -25,5 +25,8 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "jsbarcode": "^3.12.3"
     }
 }

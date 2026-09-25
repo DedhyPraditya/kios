@@ -3,6 +3,7 @@ import { onBeforeUnmount, ref, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Icon from "@/Components/Icon.vue";
+import CameraScanner from "@/Components/CameraScanner.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { rupiah } from "@/lib/format";
 
@@ -32,6 +33,13 @@ function applyFilter(tab = activeTab.value) {
         },
         { preserveState: true, replace: true }
     );
+}
+
+// Scan QR/barcode nomor nota di struk arang.
+const kamera = ref(false);
+function onScan(kode) {
+    kamera.value = false;
+    search.value = kode;
 }
 
 let searchTimer = null;
@@ -133,8 +141,20 @@ function resetFilter() {
                             v-model="search"
                             type="search"
                             placeholder="Mis. BELI-ARNG-20260925-0001 atau Pak Slamet"
-                            class="field w-full pl-8 text-xs"
+                            class="field w-full pl-8 pr-20 text-xs"
                         />
+                        <button
+                            type="button"
+                            class="absolute right-1 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-control px-2 py-1 text-2xs font-semibold text-brand-ink hover:bg-brand-wash"
+                            title="Scan QR / barcode nomor nota di struk"
+                            @click="kamera = !kamera"
+                        >
+                            <Icon name="camera" :size="14" />
+                            {{ kamera ? "Tutup" : "Kamera" }}
+                        </button>
+                    </div>
+                    <div v-if="kamera" class="mt-2">
+                        <CameraScanner @detected="onScan" />
                     </div>
                 </div>
 

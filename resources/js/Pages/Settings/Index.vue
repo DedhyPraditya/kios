@@ -2,6 +2,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Icon from "@/Components/Icon.vue";
+import NotaCode from "@/Components/NotaCode.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
 import { qrisMerchantName, readQrisFromImage } from "@/lib/qris";
@@ -15,6 +16,7 @@ const form = useForm({
     store_address: props.store.store_address ?? "",
     store_phone: props.store.store_phone ?? "",
     receipt_footer: props.store.receipt_footer ?? "",
+    receipt_code: props.store.receipt_code ?? "none",
     qris_image: null,
     remove_qris: false,
 });
@@ -157,6 +159,21 @@ function submit() {
                                 class="field px-3 py-2.5"
                                 placeholder="mis. Terima kasih telah berbelanja."
                             />
+                        </div>
+
+                        <div>
+                            <label class="label mb-1.5 block" for="receipt-code">
+                                Kode nomor nota di struk
+                            </label>
+                            <select id="receipt-code" v-model="form.receipt_code" class="field px-3 py-2.5">
+                                <option value="none">Tidak ada</option>
+                                <option value="qr">QR code</option>
+                                <option value="barcode">Barcode</option>
+                            </select>
+                            <p class="mt-1 text-2xs text-ink-soft">
+                                Nota bisa dicari dengan scan kode ini di Riwayat Transaksi atau Riwayat Arang.
+                                Pilih Barcode bila scanner toko hanya membaca barcode garis.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -341,6 +358,7 @@ function submit() {
                         </p>
                         <div class="tape-rule my-3" />
                         <p class="num text-2xs text-ink-faint">INV20260903-0001</p>
+                        <NotaCode value="INV20260903-0001" :type="form.receipt_code" />
                         <div class="tape-rule my-3" />
                         <p class="text-2xs text-ink-soft">
                             {{ form.receipt_footer }}
