@@ -14,6 +14,35 @@ class Changelog
     {
         return [
             [
+                'version' => '1.5.3',
+                'date' => '2026-09-25',
+                'date_human' => '25 September 2026',
+                'title' => 'Kasir Kilat: Cukup Scan, Barang Langsung Masuk Keranjang',
+                'type' => 'feature',
+                'author' => 'Tim Kios BERKAH',
+                'description' => 'Antrean pelanggan di kasir kini makin cepat! Cukup arahkan scanner ke barcode produk dan barang langsung masuk ke keranjang belanja — tanpa perlu tekan Enter, tanpa klik apa pun. Belanjaan sebanyak apa pun bisa dilayani beruntun dalam hitungan detik. Jika ada barcode yang belum terdaftar, kasir langsung diberi tahu lewat bunyi dan pesan yang jelas.',
+                'changes' => [
+                    [
+                        'category' => '⚡ Scan Kilat',
+                        'type' => 'feat',
+                        'title' => 'Scan Barcode Langsung Masuk Keranjang Tanpa Tekan Enter',
+                        'description' => 'Begitu barcode di-scan, produk otomatis masuk ke keranjang dan kotak cari langsung siap untuk scan berikutnya. Scan barang yang sama berkali-kali? Jumlahnya otomatis bertambah. Tangan kasir bebas fokus ke barang, bukan ke keyboard.',
+                    ],
+                    [
+                        'category' => '🔔 Peringatan Barcode',
+                        'type' => 'feat',
+                        'title' => 'Barcode Tak Dikenal? Langsung Ketahuan Penyebabnya',
+                        'description' => 'Jika barcode yang di-scan belum terdaftar, terdengar bunyi peringatan dan muncul pesan berisi kode hasil scan beserta kemungkinan penyebabnya — produk belum didaftarkan, barcode di data produk berbeda dengan di kemasan, atau scan kurang sempurna. Tersedia tautan untuk membuka menu Produk di tab baru, jadi isi keranjang tetap aman.',
+                    ],
+                    [
+                        'category' => '🛡️ Lebih Akurat',
+                        'type' => 'fix',
+                        'title' => 'Tidak Ada Lagi Barang Salah Masuk Keranjang',
+                        'description' => 'Hasil scan kini hanya diterima jika barcode-nya cocok persis. Barcode yang mirip sebagian tidak akan lagi memasukkan produk lain ke keranjang, sehingga total belanja pelanggan selalu tepat.',
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.5.2',
                 'date' => '2026-09-11',
                 'date_human' => '11 September 2026',
