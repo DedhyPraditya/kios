@@ -29,6 +29,8 @@ const metrics = computed(() => [
         value: rupiah(props.stats.today_omzet),
         icon: "kasir",
         tone: "card-brand",
+        // Angka Rupiah panjang: lebar penuh di ponsel, dua kolom di desktop.
+        span: "col-span-2 sm:col-span-1 lg:col-span-2",
     },
     {
         label: "Transaksi hari ini",
@@ -48,6 +50,8 @@ const metrics = computed(() => [
         icon: "kategori",
         tone: "card-amber",
         alert: props.stats.low_stock > 0,
+        // Ikut lebar di ponsel agar tidak tersisa satu kartu setengah baris.
+        span: "col-span-2 sm:col-span-1",
     },
 ]);
 
@@ -67,12 +71,15 @@ const sku = (p) => p?.sku || (typeof p?.id === 'string' ? p.id : "PRD-" + String
         </PageHeader>
 
         <!-- Metrics -->
-        <div class="mt-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
+        <div class="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-5">
             <div
                 v-for="m in metrics"
                 :key="m.label"
-                class="flex flex-col p-6"
-                :class="m.alert ? 'card-danger' : m.tone"
+                class="flex min-w-0 flex-col p-5 sm:p-6"
+                :class="[
+                    m.alert ? 'card-danger' : m.tone,
+                    m.span ?? '',
+                ]"
             >
                 <div class="flex items-start justify-between">
                     <span class="label" :class="m.alert ? 'text-danger' : ''">{{
@@ -85,7 +92,7 @@ const sku = (p) => p?.sku || (typeof p?.id === 'string' ? p.id : "PRD-" + String
                     />
                 </div>
                 <div
-                    class="num mt-6 text-headline-md md:text-display-lg"
+                    class="num mt-6 text-headline-md [overflow-wrap:anywhere] md:text-display-lg lg:text-headline-md xl:text-display-lg"
                     :class="m.alert ? 'text-danger' : 'text-ink'"
                 >
                     {{ m.value }}
