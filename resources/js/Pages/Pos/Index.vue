@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Icon from "@/Components/Icon.vue";
 import Modal from "@/Components/Modal.vue";
@@ -113,14 +113,87 @@ function dec(row) {
 function removeRow(row) {
     cart.value = cart.value.filter((i) => i.id !== row.id);
 }
+// Scan tanpa Enter: begitu isi kotak cari sama persis dengan barcode produk,
+// tunggu sebentar (scanner mengetik sangat cepat) lalu masukkan ke keranjang.
+// Jeda mencegah barcode pendek yang jadi awalan barcode lain ikut tertangkap.
+const SCAN_IDLE_MS = 120;
+// Ketikan scanner berjarak < 50 ms per karakter; manusia jauh lebih lambat.
+// Dipakai untuk membedakan "hasil scan tak dikenal" dari orang yang sedang mengetik.
+const SCAN_KEY_GAP_MS = 50;
+const SCAN_MIN_LENGTH = 4;
+let scanTimer = null;
+let lastInputAt = 0;
+let fastRun = 0;
+
+const scanMissing = ref(""); // barcode hasil scan yang tidak terdaftar
+
+function onSearchInput() {
+    const now = performance.now();
+    fastRun = now - lastInputAt < SCAN_KEY_GAP_MS ? fastRun + 1 : 1;
+    lastInputAt = now;
+}
+function findByBarcode(code) {
+    return props.products.find((p) => p.barcode && p.barcode === code);
+}
+function beepError() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.value = 220;
+        gain.gain.value = 0.08;
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+        osc.onended = () => ctx.close();
+    } catch {
+        // Browser tanpa Web Audio: cukup pesan di layar.
+    }
+}
+function reportMissing(code) {
+    scanMissing.value = code;
+    search.value = "";
+    beepError();
+    nextTick(() => searchBox.value?.focus());
+}
+
+watch(search, (val) => {
+    clearTimeout(scanTimer);
+    const q = val.trim();
+    if (!q) return;
+    scanTimer = setTimeout(() => {
+        if (search.value.trim() !== q) return;
+        const hit = findByBarcode(q);
+        if (hit) {
+            scanMissing.value = "";
+            addToCart(hit);
+            search.value = "";
+            nextTick(() => searchBox.value?.focus());
+        } else if (fastRun >= SCAN_MIN_LENGTH) {
+            reportMissing(q);
+        }
+    }, SCAN_IDLE_MS);
+});
+onBeforeUnmount(() => clearTimeout(scanTimer));
+
 function onSearchEnter() {
+    clearTimeout(scanTimer);
     const q = search.value.trim();
     if (!q) return;
-    const hit = props.products.find((p) => p.barcode && p.barcode === q);
+    const hit = findByBarcode(q);
+    // Hasil scan hanya boleh cocok persis; jangan jatuh ke pencocokan sebagian
+    // yang bisa memasukkan produk lain ke keranjang.
+    const scanned = fastRun >= SCAN_MIN_LENGTH;
     if (hit) {
+        scanMissing.value = "";
         addToCart(hit);
         search.value = "";
+    } else if (scanned) {
+        reportMissing(q);
+        return;
     } else if (filtered.value.length === 1) {
+        scanMissing.value = "";
         addToCart(filtered.value[0]);
         search.value = "";
     }
@@ -199,13 +272,50 @@ const quickAmounts = computed(() => {
                     <input
                         ref="searchBox"
                         v-model="search"
+                        @input="onSearchInput"
                         @keyup.enter="onSearchEnter"
                         type="text"
                         inputmode="search"
-                        placeholder="Scan barcode atau ketik nama produk, lalu Enter"
+                        placeholder="Scan barcode atau ketik nama produk"
                         class="field rounded-xl py-3 pl-11 text-base"
                         autofocus
                     />
+                </div>
+
+                <div
+                    v-if="scanMissing"
+                    role="alert"
+                    class="mt-3 flex items-start gap-3 rounded-xl border border-danger/30 bg-danger-wash px-4 py-3 text-sm"
+                >
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold text-danger">
+                            Barcode tidak ditemukan
+                        </p>
+                        <p class="mt-0.5 text-ink-soft">
+                            Hasil scan:
+                            <span class="num font-semibold text-ink break-all">{{ scanMissing }}</span>
+                        </p>
+                        <ul class="mt-1.5 list-disc pl-5 text-ink-soft space-y-0.5">
+                            <li>Produk belum didaftarkan, atau kolom barcode-nya belum diisi.</li>
+                            <li>Barcode di data produk berbeda dengan yang tercetak di kemasan.</li>
+                            <li>Scan kurang sempurna — coba scan ulang.</li>
+                        </ul>
+                        <a
+                            :href="route('products.index')"
+                            target="_blank"
+                            class="mt-2 inline-block text-xs font-semibold text-brand-ink underline hover:text-brand"
+                        >
+                            Buka menu Produk di tab baru
+                        </a>
+                    </div>
+                    <button
+                        type="button"
+                        @click="scanMissing = ''; searchBox?.focus()"
+                        class="text-ink-faint hover:text-ink"
+                        aria-label="Tutup"
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2">
