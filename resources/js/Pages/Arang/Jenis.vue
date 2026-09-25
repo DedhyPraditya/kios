@@ -72,7 +72,7 @@ function destroy(item) {
             title="Kelola Jenis Arang"
             subtitle="Atur daftar varian arang, standar harga beli dari pembuat, dan harga jual ke pembeli."
         >
-            <template #actions>
+            <template #action>
                 <div class="flex items-center gap-2">
                     <Link :href="route('arang.index')" class="btn-secondary flex items-center gap-1.5">
                         <Icon name="chevron" :size="16" class="rotate-90" />

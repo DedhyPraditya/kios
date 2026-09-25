@@ -24,7 +24,7 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
             title="Arang"
             subtitle="Pusat pengelolaan pembelian arang kiloan dari pembuat dan penjualan ke pelanggan."
         >
-            <template #actions>
+            <template #action>
                 <div class="flex flex-wrap items-center gap-2">
                     <Link
                         v-if="isAdmin"

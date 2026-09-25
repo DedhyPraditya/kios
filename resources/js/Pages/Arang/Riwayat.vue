@@ -49,7 +49,7 @@ function resetFilter() {
             title="Riwayat Transaksi Arang"
             subtitle="Rekap data pembelian arang dari pembuat dan penjualan ke pembeli."
         >
-            <template #actions>
+            <template #action>
                 <div class="flex items-center gap-2">
                     <Link :href="route('arang.index')" class="btn-secondary flex items-center gap-1.5">
                         <Icon name="chevron" :size="16" class="rotate-90" />

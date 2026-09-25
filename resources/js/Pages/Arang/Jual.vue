@@ -109,7 +109,7 @@ function submit() {
             title="Formulir Penjualan Arang"
             subtitle="Transaksi penjualan arang kiloan dengan opsi pembayaran Tunai, QRIS, atau Kasbon."
         >
-            <template #actions>
+            <template #action>
                 <Link :href="route('arang.index')" class="btn-secondary flex items-center gap-1.5">
                     <Icon name="chevron" :size="16" class="rotate-90" />
                     <span>Kembali ke Arang</span>
