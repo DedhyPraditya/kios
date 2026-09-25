@@ -2,7 +2,7 @@
 
 Catatan teknis aplikasi kasir untuk toko/kios milik tante: keputusan yang
 diambil, apa yang sudah jalan, dan apa yang belum.
-Terakhir diperbarui: 11 September 2026.
+Terakhir diperbarui: 25 September 2026.
 
 > Nama tampilan aplikasi: **Kios BERKAH**. Nama folder / repo tetap `kios-nizam`.
 
@@ -513,11 +513,43 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 
 ## 10. Belum dikerjakan
 
-> Satu-satunya daftar pekerjaan proyek ini. `list.md` sudah dilebur ke sini
-> supaya tak ada dua daftar yang saling menyalip.
+> Satu-satunya daftar pekerjaan proyek ini. Butir yang sudah selesai dihapus
+> dari sini; riwayatnya ada di git log dan menu **Pembaruan Aplikasi**
+> (`app/Support/Changelog.php`).
+
+### Ringkasan 25 Sep 2026 (rilis v1.6.1 – v1.7.1)
+
+- **Keamanan:** batas login tak bisa diakali lewat `X-Forwarded-For`, ekspor
+  Excel/CSV aman dari formula injection, struk hanya untuk admin/pembuatnya,
+  pesan galat backup tak lagi membocorkan detail teknis.
+- **Nota:** nomor nota dari tabel penghitung `nomor_urut` (aman untuk dua kasir
+  bersamaan); kode QR/barcode nomor nota di struk; scan struk di Riwayat
+  langsung membuka nota.
+- **Arang:** hanya tunai/QRIS (tanpa kasbon); harga & diskon hanya admin.
+- **Kasir:** satuan ganda (dus), harga grosir bertingkat, diskon per barang &
+  diskon persen, PPN opsional; tombol struk seragam (`StrukAksi`,
+  `StrukStatus`); cetak langsung USB/COM (Web Serial) selain Bluetooth.
+- **Produk:** hapus = arsip, bisa dipulihkan.
+- **Laporan:** filter kasir & kategori, unduh PDF A4.
+- **Database:** kolom uang jadi bilangan bertanda (tanpa `CAST ... SIGNED`).
+- **Lonceng:** tab Aktivitas berisi semua kegiatan + login gagal/akses
+  ditolak (merah, dengan IP), pesan diringkas `RingkasAktivitas`, diperbarui
+  tiap menit. Log Aktivitas kini mencatat penjualan, arang, shift, login, dll.
+- Bug lama diperbaiki: kelas `btn-secondary` belum pernah didefinisikan.
+- Tes: 175 lulus, diuji juga di MySQL 8.0.30.
+
+### Perlu dicoba pemilik (tidak bisa diuji tanpa perangkat)
+
+- [ ] Cetak QR/barcode nota lewat printer Bluetooth RPP02N (perintah `GS ( k`
+      dan `GS k` di `struk-escpos.js`).
+- [ ] Tombol **Printer USB / COM** di PC dengan printer thermal sungguhan.
+- [ ] Coba alur kasir baru di HP/tablet asli: satuan dus, harga grosir,
+      diskon, PPN.
 
 ### Perlu diputuskan pemilik
 
+- [ ] **Diskon di kasir toko** masih boleh diberikan kasir (di Jual Arang
+      sudah khusus admin). Samakan atau biarkan?
 - [ ] **Nasib fitur shift / Tutup kasir.** Sekarang opsional dan tak mengunci
       apa pun. Kalau ternyata tak pernah dipakai, menu beserta tabel
       `cash_sessions` / `cash_movements` bisa dibuang agar aplikasi lebih ringkas.
@@ -526,66 +558,8 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] **Pasang Task Scheduler** (`php artisan schedule:run` tiap menit) — hanya
       perlu kalau fitur shift dipakai. Perintahnya ada di bagian 6.
 
-### Temuan review keamanan & bug (25 Sep 2026) — selesai
-
-> Hasil review kode. Perbaikan pertama di commit `b540315` (celah batas login
-> lewat `X-Forwarded-For`, formula injection ekspor Excel/CSV, admin terakhir,
-> produk nonaktif, stok arang bersamaan, validasi Jual Arang). Sisanya
-> diputuskan pemilik dan dikerjakan sesudahnya.
-
-- [x] 🔴 **Kasbon arang tidak masuk piutang.** *Keputusan pemilik:* arang
-      memang tidak dijual kasbon. Pilihan Kasbon dibuang dari form Jual Arang
-      dan server hanya menerima `tunai`/`qris`. Nota arang kasbon lama (bila
-      ada) tetap tampil apa adanya di riwayat & laporan.
-- [x] 🟠 **`APP_DEBUG=true` / `APP_ENV=local` di `.env`.** Sudah diubah pemilik
-      di server produksi.
-- [x] 🟠 **HTTPS untuk scan kamera HP.** Sudah dites pemilik dan berjalan.
-- [x] 🟡 **Nomor nota bisa bentrok bila dua transaksi bersamaan.** Diganti
-      tabel penghitung `nomor_urut` (satu baris per awalan, dikunci
-      `lockForUpdate` sampai transaksi selesai) lewat `App\Support\NomorNota`.
-      Dipakai nota kasir (`INV…`), jual arang (`ARNG-…`), beli arang
-      (`BELI-ARNG-…`). Saat baris awalan belum ada, penghitung mulai dari nomor
-      terbesar yang sudah tersimpan, jadi aman dipasang di tengah hari.
-- [x] 🟡 **Harga & diskon Jual Arang bebas diisi kasir.** *Keputusan pemilik:*
-      harga & diskon hanya urusan admin. Kasir otomatis memakai
-      `harga_jual_default` jenis arang tanpa diskon (isian form diabaikan di
-      server); kolom harga terkunci dan kolom diskon disembunyikan untuk kasir.
-      Admin tetap bisa mengubah keduanya saat menjual.
-- [x] ⚪ **Pesan galat backup menampilkan teks exception.** Galat yang sudah
-      dirumuskan untuk pengguna (`App\Exceptions\BackupException`, mis. "berkas
-      tidak ditemukan") tetap ditampilkan; galat teknis lain diganti pesan umum
-      dan detailnya dicatat ke `storage/logs`.
-- [x] ⚪ **Struk bisa dibuka siapa pun yang login lewat ID.** Struk kasir,
-      jual arang, dan beli arang kini hanya untuk admin atau pegawai pembuatnya
-      (`User::canViewReceiptOf`, selain itu 403). Tombol Struk di daftar arang
-      disembunyikan untuk nota milik pegawai lain.
-
-### Fitur toko
-
-- [x] Ubah kolom uang jadi bilangan bertanda (`bigInteger`, bukan
-      `unsignedBigInteger`) supaya pengurangan tak perlu dicor satu per satu.
-      Migrasi `2026_09_26_100002` (diuji di MySQL 8.0.30: naik, turun, dan
-      data lama tetap); `CAST(... AS SIGNED)` di laporan & piutang dihapus.
-- [x] Diskon per item + diskon persen: tiap baris kasir punya "+ Diskon barang" (Rp/%), diskon nota bisa Rp atau % (`sales.discount_percent`, dihitung ulang di server). Kolom `sale_items.discount`; `subtotal` baris = harga x qty - diskon baris. Laba & retur memakai harga bersih baris.
-- [x] Multi-metode bayar QRIS (unggah QRIS di Pengaturan, scan kasir dengan modal perbesar, cetak struk web/Bluetooth, rekap shift non-tunai).
-- [x] Pajak / PPN opsional: Pengaturan → "Tarik PPN di kasir" + tarif (`tax_enabled`, `tax_rate`). PPN ditambahkan di atas total setelah diskon, disimpan per nota (`sales.tax_rate`, `sales.tax`), tampil di struk & laporan ("PPN dipungut"); retur ikut mengembalikan PPN secara proporsional.
-- [x] Satuan ganda (pcs / dus) & harga grosir: tabel `product_units` (nama, isi, harga, barcode sendiri) dan `product_wholesale_prices` (bertingkat, per pcs). Stok tetap per pcs; `sale_items.unit_name/unit_isi` untuk konversi stok saat jual, batal, retur. Kasir memilih satuan per baris atau scan barcode dus; harga grosir otomatis. *Belum dicoba di layar oleh pemilik.*
-- [x] Ekspor laporan Excel (.xlsx) & CSV + tombolnya di halaman Laporan (v1.5.1–v1.5.2).
-- [x] Ekspor laporan PDF A4 (`barryvdh/laravel-dompdf`, view `laporan/pdf.blade.php`, ikut filter kasir/kategori).
-- [x] Filter tambahan di Laporan: per kasir, per kategori (ikut ke ekspor Excel/CSV; kategori = barang toko saja, sebelum diskon nota).
-- [x] Cetak langsung ESC/POS **di PC**: komponen `CetakLangsung.vue` —
-      tombol **Printer Bluetooth** (Web Bluetooth, ponsel & PC) dan **Printer
-      USB / COM** (Web Serial, 9600 baud) di struk kasir, jual & beli arang.
-      *Belum diuji dengan printer fisik di PC* — bila gagal, dialog cetak
-      biasa tetap tersedia.
-- [x] Opsi QR / barcode nomor nota di struk (Pengaturan → "Kode nomor nota di struk"; struk web + ESC/POS Bluetooth; scan di Riwayat Transaksi langsung membuka nota). Perintah QR/barcode ESC/POS belum diuji di printer RPP02N fisik.
-- [x] Soft delete produk: hapus = arsip (filter "Produk terhapus" + tombol Pulihkan), riwayat stok & nota tetap utuh, barcode arsip bisa dipakai produk baru.
-- [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar) — kini mencakup semua transaksi, login, dan percobaan masuk gagal, tampil juga di lonceng.
-- [x] Backup & restore database (satu-klik .sql.gz via PDO + verifikasi password).
-
 ### Tampilan
 
-- [x] Panel notifikasi pada lonceng (dropdown interaktif stok menipis & kasbon tempo).
 - [ ] Unggah logo sendiri lewat Pengaturan (lambang bawaan sudah terpasang).
 - [ ] Grafik interaktif (Chart.js) menggantikan bar CSS.
 - [ ] Upload foto produk; impor produk massal (CSV); cetak label barcode.
@@ -595,13 +569,14 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Aksesibilitas: `aria-label` tombol ikon, perangkap fokus modal, urutan tab.
 - [ ] Loading state / skeleton antar halaman.
 - [ ] Kasir: parkir transaksi (hold bill), pintasan keyboard, mode offline.
+- [ ] Emoji di judul kartu Laporan ("Toko Eceran", "Arang Kiloan") tampil
+      sebagai kotak di sebagian peramban; ganti dengan komponen `Icon`.
 
 ### Rilis / operasional
 
 - [ ] Ganti password akun contoh; bersihkan data seeder demo & nota uji coba.
-- [ ] Feature test untuk `ProductController` / `CategoryController` /
-      `UserController` / `ReportController`.
+- [ ] Feature test untuk `CategoryController` / `UserController`.
 - [ ] Alur reset password (butuh SMTP) atau matikan; rapikan email verification.
 - [ ] Rate limiting endpoint sensitif selain throttle login bawaan.
-- [ ] **Uji di tablet / HP fisik** — tampilan sudah diperiksa lewat Edge pada
-      lebar 1440 / 820 / 390 px, tapi belum disentuh di perangkat asli.
+- [ ] **Uji di tablet / HP fisik** — tampilan sudah diperiksa lewat Edge/Chrome
+      pada lebar 1440 / 820 / 390 px, tapi belum disentuh di perangkat asli.
