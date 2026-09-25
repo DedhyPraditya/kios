@@ -23,41 +23,7 @@ const isAdmin = computed(() => page.props.auth?.user?.role === "admin");
         <PageHeader
             title="Arang"
             subtitle="Pusat pengelolaan pembelian arang kiloan dari pembuat dan penjualan ke pelanggan."
-        >
-            <template #action>
-                <div class="flex flex-wrap items-center gap-2">
-                    <Link
-                        v-if="isAdmin"
-                        :href="route('arang.jenis.index')"
-                        class="btn-secondary flex items-center gap-1.5"
-                    >
-                        <Icon name="gear" :size="16" />
-                        <span>Kelola Jenis</span>
-                    </Link>
-                    <Link
-                        :href="route('arang.riwayat')"
-                        class="btn-secondary flex items-center gap-1.5"
-                    >
-                        <Icon name="riwayat" :size="16" />
-                        <span>Riwayat</span>
-                    </Link>
-                    <Link
-                        :href="route('arang.beli.create')"
-                        class="btn-secondary flex items-center gap-1.5 bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
-                    >
-                        <Icon name="plus" :size="16" />
-                        <span>Beli Arang</span>
-                    </Link>
-                    <Link
-                        :href="route('arang.jual.create')"
-                        class="btn-primary flex items-center gap-1.5"
-                    >
-                        <Icon name="fire" :size="16" />
-                        <span>Jual Arang</span>
-                    </Link>
-                </div>
-            </template>
-        </PageHeader>
+        />
 
         <!-- Ringkasan Bulan Ini -->
         <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">

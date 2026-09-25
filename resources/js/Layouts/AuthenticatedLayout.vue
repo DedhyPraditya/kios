@@ -44,11 +44,21 @@ const navGroups = computed(() => {
         icon: "shift",
     });
 
-    groups[0].items.push({
-        name: "arang.index",
+    // Semua rute arang berawalan "arang.", jadi tiap menu memakai `match`
+    // sendiri supaya tidak menyala bersamaan.
+    const arang = {
         label: "Arang",
-        icon: "fire",
-    });
+        items: [
+            { name: "arang.index", label: "Ringkasan Arang", icon: "fire", match: ["arang.index"] },
+            { name: "arang.jual.create", label: "Jual Arang", icon: "kasir", match: ["arang.jual.*", "arang.penjualan.*"] },
+            { name: "arang.beli.create", label: "Beli Arang", icon: "download", match: ["arang.beli.*", "arang.pembelian.*"] },
+            { name: "arang.riwayat", label: "Riwayat Arang", icon: "riwayat", match: ["arang.riwayat"] },
+        ],
+    };
+    if (isAdmin.value) {
+        arang.items.push({ name: "arang.jenis.index", label: "Jenis Arang", icon: "gear", match: ["arang.jenis.*"] });
+    }
+    groups.push(arang);
 
     if (isAdmin.value) {
         groups.push(
@@ -101,14 +111,13 @@ const initials = computed(() =>
 );
 
 // Label menu sidebar yang sedang aktif — dipakai di top bar.
-function isCurrent(name) {
-    return (
-        route().current(name) || route().current(name.split(".")[0] + ".*")
-    );
+function isCurrent(item) {
+    const patterns = item.match ?? [item.name, item.name.split(".")[0] + ".*"];
+    return patterns.some((p) => route().current(p));
 }
 const activeLabel = computed(() => {
     if (route().current("profile.edit")) return "Profil";
-    return nav.value.find((i) => isCurrent(i.name))?.label ?? storeName.value;
+    return nav.value.find((i) => isCurrent(i))?.label ?? storeName.value;
 });
 </script>
 
@@ -159,7 +168,7 @@ const activeLabel = computed(() => {
                         :href="route(item.name)"
                         class="flex items-center justify-center gap-3 rounded-card px-3 py-2.5 text-body-md font-medium transition-colors lg:justify-start"
                         :class="
-                            isCurrent(item.name)
+                            isCurrent(item)
                                 ? 'bg-brand text-white'
                                 : 'text-ink-soft hover:bg-paper hover:text-ink'
                         "
@@ -312,7 +321,7 @@ const activeLabel = computed(() => {
                 :href="route(item.name)"
                 class="flex flex-col items-center gap-1.5 rounded-control px-2 py-3 text-2xs font-medium transition-colors"
                 :class="
-                    isCurrent(item.name)
+                    isCurrent(item)
                         ? 'bg-brand text-white'
                         : 'text-ink-soft hover:bg-paper'
                 "
