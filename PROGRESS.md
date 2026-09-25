@@ -552,7 +552,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
 - [ ] Pajak / PPN opsional.
 - [ ] Satuan ganda (pcs / dus) & harga grosir.
 - [x] Ekspor laporan Excel (.xlsx) & CSV + tombolnya di halaman Laporan (v1.5.1–v1.5.2).
-- [ ] Ekspor laporan PDF.
+- [x] Ekspor laporan PDF A4 (`barryvdh/laravel-dompdf`, view `laporan/pdf.blade.php`, ikut filter kasir/kategori).
 - [x] Filter tambahan di Laporan: per kasir, per kategori (ikut ke ekspor Excel/CSV; kategori = barang toko saja, sebelum diskon nota).
 - [ ] Cetak langsung ESC/POS **di PC** (kini baru di ponsel lewat Web Bluetooth
       — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi

@@ -73,6 +73,15 @@ const maxDaily = () => Math.max(1, ...props.daily.map((d) => Number(d.omzet)));
                         <span>Unduh Excel (.xlsx)</span>
                     </a>
                     <a
+                        :href="route('reports.export.pdf', params)"
+                        class="btn-secondary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
+                        download
+                        title="Unduh laporan PDF ukuran A4, siap dicetak atau dikirim"
+                    >
+                        <Icon name="print" :size="18" />
+                        <span>Unduh PDF</span>
+                    </a>
+                    <a
                         :href="route('reports.export.csv', params)"
                         class="btn-ghost inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium"
                         download

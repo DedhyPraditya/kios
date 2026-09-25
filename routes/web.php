@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
         Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
         Route::get('/reports/export-csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
+        Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
 
         // Riwayat transaksi + koreksi nota (ubah keterangan, batal, retur).
         Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');

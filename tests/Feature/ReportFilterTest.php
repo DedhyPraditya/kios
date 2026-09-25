@@ -108,4 +108,17 @@ class ReportFilterTest extends TestCase
             ->get(route('reports.export.excel', ['kategori' => $this->minuman->id]))
             ->assertOk();
     }
+
+    public function test_ekspor_pdf_berisi_laporan(): void
+    {
+        $res = $this->actingAs($this->admin)->get(route('reports.export.pdf', ['kasir' => $this->sari->id]));
+
+        $res->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $res->getContent());
+    }
+
+    public function test_kasir_tidak_bisa_ekspor_pdf(): void
+    {
+        $this->actingAs($this->budi)->get(route('reports.export.pdf'))->assertForbidden();
+    }
 }

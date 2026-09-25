@@ -12,6 +12,7 @@ use App\Models\SaleItem;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\ReportExcelExportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -324,6 +325,34 @@ class ReportController extends Controller
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Cache-Control' => 'max-age=0',
         ]);
+    }
+
+    /** Laporan siap cetak / arsip dalam PDF A4, isinya sama dengan halaman Laporan. */
+    public function exportPdf(Request $request)
+    {
+        [$from, $to, $kasirId, $categoryId] = $this->filters($request);
+
+        $data = $this->gatherReportData($from, $to, $kasirId, $categoryId);
+
+        $pdf = Pdf::loadView('laporan.pdf', [
+            'store' => Setting::values(),
+            'storeName' => $data['storeName'],
+            'from' => $from,
+            'to' => $to,
+            'filterNote' => $this->keteranganFilter($kasirId, $categoryId),
+            'kategoriAktif' => (bool) $categoryId,
+            'summary' => $data['summary'],
+            'breakdown' => $data['breakdown'],
+            'daily' => $data['daily'],
+            'topProducts' => $data['topProducts'],
+            'piutang' => $data['piutang'],
+            'sales' => (clone $data['salesInRange'])->with(['user:id,name', 'customer:id,name'])->oldest()->get(),
+            'arangJuals' => (clone $data['arangJualInRange'])->with(['user:id,name', 'customer:id,name', 'arangJenis:id,nama'])->oldest()->get(),
+        ])->setPaper('a4');
+
+        $filename = 'Laporan-'.Str::slug($data['storeName']).'-'.$from->format('Ymd').'-sd-'.$to->format('Ymd').'.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function exportCsv(Request $request): StreamedResponse
