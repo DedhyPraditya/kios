@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import PageHeader from "@/Components/PageHeader.vue";
 import Pagination from "@/Components/Pagination.vue";
@@ -98,10 +98,14 @@ function submit() {
         : form.post(route("products.store"), opts);
 }
 function destroy(p) {
-    if (confirm(`Hapus produk "${p.name}"?`)) {
+    if (confirm(`Arsipkan produk "${p.name}"? Produk tidak tampil lagi di kasir, tapi riwayatnya tetap tersimpan dan bisa dipulihkan.`)) {
         router.delete(route("products.destroy", p.id), { preserveScroll: true });
     }
 }
+function restore(p) {
+    router.post(route("products.restore", p.id), {}, { preserveScroll: true });
+}
+const showingTrashed = computed(() => props.filters.status === "terhapus");
 </script>
 
 <template>
@@ -146,6 +150,7 @@ function destroy(p) {
                     <option value="semua">Semua stok</option>
                     <option value="menipis">Stok menipis</option>
                     <option value="habis">Stok habis</option>
+                    <option value="terhapus">Produk terhapus</option>
                 </select>
                 <select v-model="q.sort" class="filter-pill">
                     <option value="nama">Urut: Nama</option>
@@ -201,15 +206,24 @@ function destroy(p) {
                                 />
                             </td>
                             <td class="td whitespace-nowrap text-right">
-                                <button @click="openEdit(p)" class="link">
-                                    Ubah
-                                </button>
                                 <button
-                                    @click="destroy(p)"
-                                    class="ms-3 font-medium text-danger hover:underline"
+                                    v-if="showingTrashed"
+                                    @click="restore(p)"
+                                    class="link"
                                 >
-                                    Hapus
+                                    Pulihkan
                                 </button>
+                                <template v-else>
+                                    <button @click="openEdit(p)" class="link">
+                                        Ubah
+                                    </button>
+                                    <button
+                                        @click="destroy(p)"
+                                        class="ms-3 font-medium text-danger hover:underline"
+                                    >
+                                        Hapus
+                                    </button>
+                                </template>
                             </td>
                         </tr>
                         <tr v-if="!products.data.length">
@@ -217,7 +231,7 @@ function destroy(p) {
                                 colspan="5"
                                 class="td py-12 text-center text-ink-faint"
                             >
-                                Tidak ada produk yang cocok.
+                                {{ showingTrashed ? "Tidak ada produk yang diarsipkan." : "Tidak ada produk yang cocok." }}
                             </td>
                         </tr>
                     </tbody>

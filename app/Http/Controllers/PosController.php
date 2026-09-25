@@ -74,7 +74,13 @@ class PosController extends Controller
             $lines = [];
 
             foreach ($qtyById as $id => $qty) {
-                $product = $products[$id];
+                $product = $products[$id] ?? null;
+
+                if (! $product) {
+                    throw ValidationException::withMessages([
+                        'items' => 'Ada produk di keranjang yang sudah dihapus. Muat ulang halaman kasir.',
+                    ]);
+                }
 
                 if (! $product->is_active) {
                     throw ValidationException::withMessages([

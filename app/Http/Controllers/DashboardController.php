@@ -29,7 +29,7 @@ class DashboardController extends Controller
         $todayTrx = $tokoTodayTrx + $arangTodayTrx;
 
         // 2. Stok Menipis (Produk Toko + Varian Arang <= 10 kg)
-        $lowProducts = Product::whereColumn('stock', '<=', 'low_stock')
+        $lowProducts = Product::active()->whereColumn('stock', '<=', 'low_stock')
             ->orderBy('stock')
             ->limit(10)
             ->get(['id', 'name', 'stock', 'low_stock'])
@@ -56,7 +56,7 @@ class DashboardController extends Controller
                 'type' => 'arang',
             ]);
 
-        $totalLowStock = Product::whereColumn('stock', '<=', 'low_stock')->count() + $lowArang->count();
+        $totalLowStock = Product::active()->whereColumn('stock', '<=', 'low_stock')->count() + $lowArang->count();
         $lowStockList = $lowProducts->concat($lowArang)->sortBy('stock')->take(10)->values();
 
         // 3. Transaksi Terakhir (Toko / Arang)

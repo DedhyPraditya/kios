@@ -67,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
     // Admin only
     Route::middleware('admin')->group(function () {
         Route::resource('products', ProductController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('/products/{id}/pulihkan', [ProductController::class, 'restore'])->name('products.restore');
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('customers', CustomerController::class)->only(['index', 'show', 'store', 'update', 'destroy']);

@@ -80,7 +80,8 @@ function getActionLabel(action) {
     const labels = {
         "product.create": "Tambah Produk",
         "product.update": "Ubah Produk",
-        "product.delete": "Hapus Produk",
+        "product.delete": "Arsipkan Produk",
+        "product.restore": "Pulihkan Produk",
         "stock.in": "Barang Masuk",
         "stock.adjustment": "Penyesuaian Stok",
         "sale.void": "Batal Nota",

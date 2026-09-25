@@ -14,10 +14,11 @@ class ProductController extends Controller
     {
         $search = $request->string('search')->trim()->toString();
         $categoryId = $request->integer('category') ?: null;
-        $status = $request->string('status')->toString() ?: 'semua'; // semua | menipis | habis
+        $status = $request->string('status')->toString() ?: 'semua'; // semua | menipis | habis | terhapus
         $sort = $request->string('sort')->toString() ?: 'nama';       // nama | harga_asc | harga_desc | stok
 
         $products = Product::query()
+            ->when($status === 'terhapus', fn ($q) => $q->onlyTrashed())
             ->with('category:id,name')
             ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('name', 'like', "%{$search}%")
@@ -49,6 +50,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
+        $this->lepasBarcodeArsip($data['barcode'] ?? null);
         $product = Product::create($data);
 
         \App\Models\ActivityLog::record('product.create', "Menambahkan produk '{$product->name}'", $product, $data);
@@ -60,6 +62,7 @@ class ProductController extends Controller
     {
         $oldData = $product->only(['name', 'price', 'cost', 'stock', 'low_stock', 'is_active']);
         $data = $this->validated($request, $product);
+        $this->lepasBarcodeArsip($data['barcode'] ?? null, $product->id);
         $product->update($data);
 
         $changes = [];
@@ -79,15 +82,54 @@ class ProductController extends Controller
         return back()->with('success', 'Produk diperbarui.');
     }
 
+    /**
+     * Produk tidak dihapus permanen, hanya diarsipkan: nota dan riwayat stok
+     * yang memakainya tetap utuh, dan produk bisa dipulihkan.
+     */
     public function destroy(Product $product)
     {
-        $name = $product->name;
-        $id = $product->id;
         $product->delete();
 
-        \App\Models\ActivityLog::record('product.delete', "Menghapus produk '{$name}'", null, ['id' => $id, 'name' => $name]);
+        \App\Models\ActivityLog::record('product.delete', "Mengarsipkan produk '{$product->name}'", $product, [
+            'id' => $product->id,
+            'name' => $product->name,
+            'barcode' => $product->barcode,
+        ]);
 
-        return back()->with('success', 'Produk dihapus.');
+        return back()->with('success', "Produk '{$product->name}' diarsipkan. Bisa dipulihkan lewat filter \"Produk terhapus\".");
+    }
+
+    public function restore(int $id)
+    {
+        $product = Product::onlyTrashed()->findOrFail($id);
+
+        // Barcode sudah dipakai produk lain selama diarsipkan → pulihkan tanpa barcode.
+        $barcodeDipakai = $product->barcode
+            && Product::where('barcode', $product->barcode)->exists();
+        if ($barcodeDipakai) {
+            $product->barcode = null;
+        }
+
+        $product->restore();
+
+        \App\Models\ActivityLog::record('product.restore', "Memulihkan produk '{$product->name}'", $product);
+
+        return back()->with('success', $barcodeDipakai
+            ? "Produk '{$product->name}' dipulihkan tanpa barcode, karena barcodenya sudah dipakai produk lain."
+            : "Produk '{$product->name}' dipulihkan.");
+    }
+
+    /** Barcode milik produk arsip dilepas bila dipakai produk aktif. */
+    private function lepasBarcodeArsip(?string $barcode, ?int $kecualiId = null): void
+    {
+        if (! $barcode) {
+            return;
+        }
+
+        Product::onlyTrashed()
+            ->where('barcode', $barcode)
+            ->when($kecualiId, fn ($q) => $q->whereKeyNot($kecualiId))
+            ->update(['barcode' => null]);
     }
 
     private function validated(Request $request, ?Product $product = null): array
@@ -97,7 +139,7 @@ class ProductController extends Controller
             'category_id' => ['nullable', 'exists:categories,id'],
             'barcode' => [
                 'nullable', 'string', 'max:64',
-                Rule::unique('products', 'barcode')->ignore($product?->id),
+                Rule::unique('products', 'barcode')->ignore($product?->id)->withoutTrashed(),
             ],
             'price' => ['required', 'integer', 'min:0'],
             'cost' => ['required', 'integer', 'min:0'],

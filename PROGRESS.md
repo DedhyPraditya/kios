@@ -558,7 +558,7 @@ Cara ini menemukan tiga hal yang lolos dari `php artisan test`:
       — lihat bagian 4). Chrome desktop juga mendukung Web Bluetooth, jadi
       tombol yang sama bisa dipakai di sana setelah diuji dengan printer.
 - [ ] Opsi QR / barcode nomor nota di struk.
-- [ ] Soft delete produk (sekarang hard delete).
+- [x] Soft delete produk: hapus = arsip (filter "Produk terhapus" + tombol Pulihkan), riwayat stok & nota tetap utuh, barcode arsip bisa dipakai produk baru.
 - [x] Log aktivitas / audit (siapa mengubah harga, stok, menghapus, batal, dan bayar).
 - [x] Backup & restore database (satu-klik .sql.gz via PDO + verifikasi password).
 

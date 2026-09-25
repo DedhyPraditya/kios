@@ -185,7 +185,7 @@ class SaleController extends Controller
                     continue;
                 }
 
-                $product = Product::whereKey($item->product_id)->lockForUpdate()->first();
+                $product = Product::withTrashed()->whereKey($item->product_id)->lockForUpdate()->first();
 
                 if ($product) {
                     StockMovement::apply($product, $qty, 'batal', [
@@ -262,7 +262,7 @@ class SaleController extends Controller
                 $refundValue += $item->price * $qty;
 
                 if ($item->product_id) {
-                    $product = Product::whereKey($item->product_id)->lockForUpdate()->first();
+                    $product = Product::withTrashed()->whereKey($item->product_id)->lockForUpdate()->first();
 
                     if ($product) {
                         StockMovement::apply($product, $qty, 'retur', [
