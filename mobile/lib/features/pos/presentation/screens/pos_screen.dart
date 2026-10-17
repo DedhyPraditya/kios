@@ -1729,6 +1729,325 @@ class PosScreenState extends State<PosScreen> {
     );
   }
 
+  void _showReceiptDialog(SaleModel sale, {int changeAmount = 0}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dCtx) {
+        bool isPrinting = false;
+        String? printStatus;
+        bool? printSuccess;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final printerName = BluetoothPrinterService.instance.connectedName;
+            final isPrinterConfigured = printerName != null && printerName.isNotEmpty;
+
+            Future<void> doPrint() async {
+              setDialogState(() {
+                isPrinting = true;
+                printStatus = 'Mengirim data ke printer thermal...';
+                printSuccess = null;
+              });
+
+              final success = await BluetoothPrinterService.instance.printSaleReceipt(
+                sale,
+                storeName: _storeInfo['store_name'] ?? 'KIOS BERKAH',
+              );
+
+              setDialogState(() {
+                isPrinting = false;
+                printSuccess = success;
+                printStatus = success
+                    ? 'Struk berhasil dicetak!'
+                    : 'Gagal mencetak. Pastikan printer hidup & terhubung di menu Setelan.';
+              });
+            }
+
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Lingkaran Sukses
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primarySurface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                          size: 38,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Pembayaran Selesai!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        sale.invoiceNumber.isNotEmpty ? sale.invoiceNumber : 'Nota #${sale.id}',
+                        style: AppTheme.dataMono(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Ringkasan Transaksi
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Metode', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: sale.paymentMethod == 'tunai'
+                                        ? AppColors.primarySurface
+                                        : (sale.paymentMethod == 'qris' ? AppColors.tealSurface : AppColors.amberSurface),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    sale.paymentMethod.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: sale.paymentMethod == 'tunai'
+                                          ? AppColors.primary
+                                          : (sale.paymentMethod == 'qris' ? AppColors.teal : AppColors.amberText),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Total Tagihan', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                Text(
+                                  CurrencyFormatter.format(sale.total),
+                                  style: AppTheme.dataMono(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (sale.paymentMethod == 'tunai' && changeAmount > 0) ...[
+                              const SizedBox(height: 6),
+                              const Divider(height: 1, color: AppColors.border),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Kembalian', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                                  Text(
+                                    CurrencyFormatter.format(changeAmount),
+                                    style: AppTheme.dataMono(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            if (sale.isKasbon) ...[
+                              const SizedBox(height: 6),
+                              const Divider(height: 1, color: AppColors.border),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Uang Muka (DP)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                  Text(
+                                    CurrencyFormatter.format(sale.paid),
+                                    style: AppTheme.dataMono(fontSize: 13, fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Sisa Piutang', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.amberText)),
+                                  Text(
+                                    CurrencyFormatter.format(sale.total - sale.paid),
+                                    style: AppTheme.dataMono(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.amberText),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Status Printer Bluetooth
+                      Row(
+                        children: [
+                          Icon(
+                            isPrinterConfigured ? Icons.print_rounded : Icons.print_disabled_rounded,
+                            size: 16,
+                            color: isPrinterConfigured ? AppColors.primary : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              isPrinterConfigured
+                                  ? 'Printer: $printerName'
+                                  : 'Printer belum diatur (Menu Setelan)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isPrinterConfigured ? FontWeight.w600 : FontWeight.w500,
+                                color: isPrinterConfigured ? AppColors.primary : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      if (printStatus != null) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: printSuccess == true
+                                ? AppColors.primarySurface
+                                : (printSuccess == false ? Colors.red.shade50 : AppColors.surfaceMuted),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: printSuccess == true
+                                  ? AppColors.primary.withValues(alpha: 0.3)
+                                  : (printSuccess == false ? Colors.red.shade200 : AppColors.border),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              if (isPrinting)
+                                const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                )
+                              else
+                                Icon(
+                                  printSuccess == true ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                                  size: 16,
+                                  color: printSuccess == true ? AppColors.primary : Colors.red,
+                                ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  printStatus!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: printSuccess == true
+                                        ? AppColors.primary
+                                        : (printSuccess == false ? Colors.red.shade800 : AppColors.textPrimary),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 18),
+
+                      // Pertanyaan & Tombol Aksi
+                      const Text(
+                        'Ingin mencetak struk untuk pelanggan?',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: const BorderSide(color: AppColors.border),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () => Navigator.pop(dCtx),
+                              child: const Text(
+                                'Tanpa Struk',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: isPrinting
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(Icons.print_rounded, size: 18),
+                              label: Text(
+                                isPrinting
+                                    ? 'Mencetak...'
+                                    : (printSuccess == true ? 'Cetak Ulang' : 'Cetak Struk'),
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                              ),
+                              onPressed: isPrinting ? null : doPrint,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _processTransaction(
     String method, {
     int? paid,
@@ -1765,21 +2084,49 @@ class PosScreenState extends State<PosScreen> {
       final response = await dio.post('$cleanBaseUrl/pos', data: payload);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        _showToast('Transaksi $method senilai ${CurrencyFormatter.format(total)} Berhasil!');
         fetchPosData(showIndicator: false);
 
+        SaleModel? createdSale;
         if (response.data['sale'] is Map) {
           try {
-            final createdSale = SaleModel.fromJson(response.data['sale']);
-            BluetoothPrinterService.instance.printSaleReceipt(createdSale);
-          } catch (_) {}
+            createdSale = SaleModel.fromJson(response.data['sale'] as Map<String, dynamic>);
+          } catch (e) {
+            debugPrint('Gagal parsing sale dari server: $e');
+          }
         }
+
+        createdSale ??= SaleModel(
+          id: DateTime.now().millisecondsSinceEpoch,
+          invoiceNumber: response.data['invoice_no'] as String? ?? 'INV-${DateTime.now().millisecondsSinceEpoch}',
+          cashierId: 1,
+          paymentMethod: method.toLowerCase(),
+          isPaid: method.toLowerCase() != 'kasbon' || (paid != null && paid >= total),
+          subtotal: total,
+          discount: discount ?? 0,
+          total: total,
+          paid: paid ?? total,
+          change: (paid != null && paid > total) ? paid - total : 0,
+          createdAt: DateTime.now(),
+          items: itemsPayload.map((it) {
+            return SaleItemModel(
+              id: it['id'] as int? ?? 0,
+              productName: it['product_name'] as String? ?? 'Barang',
+              price: it['price'] as int? ?? 0,
+              qty: it['qty'] as int? ?? 1,
+              subtotal: ((it['price'] as int? ?? 0) * (it['qty'] as int? ?? 1)),
+            );
+          }).toList(),
+        );
+
+        final changeAmount = (paid != null && paid > total) ? paid - total : 0;
+        _showReceiptDialog(createdSale, changeAmount: changeAmount);
       } else {
-        _showToast('Transaksi berhasil dicatat.');
+        final msg = response.data['message'] ?? 'Transaksi gagal diproses oleh server.';
+        _showToast(msg.toString(), isError: true);
       }
     } catch (e) {
       debugPrint('Checkout error: $e');
-      _showToast('Transaksi $method senilai ${CurrencyFormatter.format(total)} Berhasil!');
+      _showToast('Gagal memproses transaksi: $e', isError: true);
     }
   }
 
