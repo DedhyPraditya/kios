@@ -18,7 +18,8 @@ class SaleItemModel {
   factory SaleItemModel.fromJson(Map<String, dynamic> json) {
     return SaleItemModel(
       id: json['id'] as int? ?? 0,
-      productName: json['product_name'] as String? ?? (json['product'] is Map ? json['product']['name'] : 'Barang'),
+      productName: json['name'] as String? ??
+          (json['product_name'] as String? ?? (json['product'] is Map ? json['product']['name'] : 'Barang')),
       price: json['price'] as int? ?? 0,
       qty: json['qty'] as int? ?? 0,
       returnedQty: json['returned_qty'] as int? ?? 0,
@@ -75,15 +76,20 @@ class SaleModel {
 
   factory SaleModel.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? [];
+    final inv = json['invoice_no'] as String? ??
+        (json['invoice_number'] as String? ??
+            (json['no_nota'] as String? ??
+                (json['id'] != null ? 'Nota #${json['id']}' : 'Nota')));
+
     return SaleModel(
       id: json['id'] as int? ?? 0,
-      invoiceNumber: json['invoice_number'] as String? ?? (json['no_nota'] as String? ?? ''),
+      invoiceNumber: inv,
       cashierId: json['user_id'] as int? ?? 0,
       cashierName: json['user'] is Map ? json['user']['name'] : null,
       customerId: json['customer_id'] as int?,
       customerName: json['customer'] is Map ? json['customer']['name'] : null,
-      paymentMethod: json['payment_method'] as String? ?? 'tunai',
-      isPaid: json['is_paid'] == 1 || json['is_paid'] == true,
+      paymentMethod: json['payment_type'] as String? ?? (json['payment_method'] as String? ?? 'tunai'),
+      isPaid: json['status'] == 'lunas' || json['status'] == 'paid' || json['is_paid'] == 1 || json['is_paid'] == true,
       subtotal: json['subtotal'] as int? ?? 0,
       discount: json['discount'] as int? ?? 0,
       total: json['total'] as int? ?? 0,
@@ -92,7 +98,7 @@ class SaleModel {
       dueDate: json['due_date'] != null ? DateTime.tryParse(json['due_date']) : null,
       voidedAt: json['voided_at'] != null ? DateTime.tryParse(json['voided_at']) : null,
       voidReason: json['void_reason'] as String?,
-      notes: json['notes'] as String?,
+      notes: json['notes'] ?? json['note'] as String?,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       items: rawItems.map((e) => SaleItemModel.fromJson(e as Map<String, dynamic>)).toList(),
     );

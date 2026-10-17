@@ -137,20 +137,20 @@ class PosApiController extends Controller
             $total = max(0, $subtotal - $discount);
             $paid = $data['paid'];
             $change = max(0, $paid - $total);
-            $isPaid = $data['payment_type'] !== 'kasbon' || $paid >= $total;
+            $isPaid = ($data['payment_type'] ?? 'tunai') !== 'kasbon' || $paid >= $total;
 
             $sale = Sale::create([
                 'user_id' => $cashierId,
                 'customer_id' => $data['customer_id'] ?? null,
-                'invoice_number' => 'INV' . date('YmdHis') . '-' . rand(100, 999),
+                'invoice_no' => Sale::makeInvoiceNo(),
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'discount_percent' => $data['discount_percent'] ?? null,
                 'total' => $total,
                 'paid' => $paid,
                 'change' => $change,
-                'payment_method' => $data['payment_type'] ?? 'tunai',
-                'is_paid' => $isPaid,
+                'payment_type' => $data['payment_type'] ?? 'tunai',
+                'status' => $isPaid ? 'lunas' : 'belum_lunas',
                 'due_date' => $data['due_date'] ?? null,
                 'note' => $data['note'] ?? null,
             ]);
@@ -172,7 +172,7 @@ class PosApiController extends Controller
                     'qty' => -($ins['qty'] * $factor),
                     'stock_before' => $product->stock + ($ins['qty'] * $factor),
                     'stock_after' => $product->stock,
-                    'description' => "Penjualan Nota #{$sale->invoice_number}",
+                    'description' => "Penjualan Nota #{$sale->invoice_no}",
                 ]);
             }
 

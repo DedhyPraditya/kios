@@ -26,6 +26,35 @@ class CategoryModel {
   }
 }
 
+class ProductUnitModel {
+  final int id;
+  final int productId;
+  final String name;
+  final int isi;
+  final int price;
+  final String? barcode;
+
+  ProductUnitModel({
+    required this.id,
+    required this.productId,
+    required this.name,
+    required this.isi,
+    required this.price,
+    this.barcode,
+  });
+
+  factory ProductUnitModel.fromJson(Map<String, dynamic> json) {
+    return ProductUnitModel(
+      id: json['id'] as int? ?? 0,
+      productId: json['product_id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      isi: json['isi'] as int? ?? 1,
+      price: json['price'] as int? ?? 0,
+      barcode: json['barcode'] as String?,
+    );
+  }
+}
+
 class ProductModel {
   final int id;
   final String? barcode;
@@ -37,6 +66,7 @@ class ProductModel {
   final bool isActive;
   final int? categoryId;
   final String? categoryName;
+  final List<ProductUnitModel> units;
 
   ProductModel({
     required this.id,
@@ -49,6 +79,7 @@ class ProductModel {
     this.isActive = true,
     this.categoryId,
     this.categoryName,
+    this.units = const [],
   });
 
   bool get isLowStock => stock <= minStock;
@@ -66,6 +97,10 @@ class ProductModel {
       isActive: json['is_active'] == null || json['is_active'] == 1 || json['is_active'] == true,
       categoryId: json['category_id'] as int?,
       categoryName: json['category'] is Map ? json['category']['name'] : (json['category_name'] as String?),
+      units: (json['units'] as List?)
+              ?.map((u) => ProductUnitModel.fromJson(u as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -83,3 +118,4 @@ class ProductModel {
     };
   }
 }
+

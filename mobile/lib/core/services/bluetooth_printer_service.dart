@@ -152,7 +152,7 @@ class BluetoothPrinterService {
 
     bytes += generator.row([
       PosColumn(text: 'No Nota:', width: 4),
-      PosColumn(text: sale.invoiceNumber, width: 8, styles: const PosStyles(align: PosAlign.right, bold: true)),
+      PosColumn(text: sale.invoiceNumber.isNotEmpty ? sale.invoiceNumber : 'Nota #${sale.id}', width: 8, styles: const PosStyles(align: PosAlign.right, bold: true)),
     ]);
     bytes += generator.row([
       PosColumn(text: 'Waktu:', width: 4),

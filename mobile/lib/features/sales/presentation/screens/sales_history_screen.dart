@@ -254,34 +254,71 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                                   children: [
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          sale.invoiceNumber,
-                                          style: AppTheme.dataMono(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.primaryBright,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primarySurface,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.receipt_long_rounded,
+                                                size: 18,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  sale.invoiceNumber.isNotEmpty ? sale.invoiceNumber : 'Nota #${sale.id}',
+                                                  style: AppTheme.dataMono(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  DateFormatter.formatWithTime(sale.createdAt),
+                                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: sale.isPaid ? AppColors.primarySurface : AppColors.amberSurface,
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: sale.isPaid
-                                                  ? AppColors.primary.withValues(alpha: 0.3)
-                                                  : AppColors.amber.withValues(alpha: 0.3),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            sale.paymentMethod.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w800,
-                                              color: sale.isPaid ? AppColors.primaryBright : AppColors.amberText,
-                                            ),
-                                          ),
+                                        Builder(
+                                          builder: (_) {
+                                            Color bg = AppColors.primarySurface;
+                                            Color fg = AppColors.primary;
+                                            final pm = sale.paymentMethod.toLowerCase();
+                                            if (pm == 'qris') {
+                                              bg = AppColors.tealSurface;
+                                              fg = AppColors.teal;
+                                            } else if (pm == 'kasbon') {
+                                              bg = AppColors.amberSurface;
+                                              fg = AppColors.amberText;
+                                            }
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: bg,
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: fg.withValues(alpha: 0.3)),
+                                              ),
+                                              child: Text(
+                                                sale.paymentMethod.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: fg,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
@@ -289,21 +326,21 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                                     if (sale.customerName != null) ...[
                                       Row(
                                         children: [
-                                          const Icon(Icons.person_outline, size: 15, color: AppColors.textSecondary),
+                                          const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
                                           const SizedBox(width: 5),
                                           Text(
                                             sale.customerName!,
-                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 4),
                                     ],
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          DateFormatter.formatWithTime(sale.createdAt),
+                                          'Total Pembayaran',
                                           style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                                         ),
                                         Text(
@@ -311,7 +348,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                                           style: AppTheme.dataMono(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w800,
-                                            color: AppColors.textPrimary,
+                                            color: AppColors.primary,
                                           ),
                                         ),
                                       ],
