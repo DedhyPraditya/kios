@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 
 class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -15,6 +15,7 @@ class AppTextField extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final int maxLines;
+  final double borderRadius;
 
   const AppTextField({
     super.key,
@@ -31,6 +32,7 @@ class AppTextField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.maxLines = 1,
+    this.borderRadius = 14,
   });
 
   @override
@@ -44,7 +46,7 @@ class AppTextField extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -60,13 +62,25 @@ class AppTextField extends StatelessWidget {
           onTap: onTap,
           maxLines: maxLines,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             color: AppColors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
           ),
         ),
       ],

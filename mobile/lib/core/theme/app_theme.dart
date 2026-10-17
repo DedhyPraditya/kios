@@ -1,76 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../constants/app_colors.dart';
+import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 
-/// Tema visual Kios BERKAH Mobile.
-/// Dirancang bersih, modern, dan profesional tanpa kesan AI generic / slop.
-/// Mengutamakan keterbacaan kasir yang cepat, kontras tinggi, dan tap target yang nyaman.
+/// Tema visual Vendra POS x Kios BERKAH.
+/// Tipografi: Outfit (UI geometris modern) + JetBrains Mono (nominal angka & struk).
+/// Nuansa: Sleek Dark Emerald yang bersih, premium, dan ramah mata kasir.
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
+  static ThemeData get darkTheme {
+    final baseTextTheme = GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme);
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.background,
-      colorScheme: const ColorScheme.light(
+      colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         onPrimary: AppColors.textOnPrimary,
         secondary: AppColors.amber,
         onSecondary: AppColors.textPrimary,
-        surface: AppColors.card,
+        surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
         error: AppColors.danger,
         onError: Colors.white,
       ),
 
-      // Tipografi
+      // Tipografi Outfit
       textTheme: baseTextTheme.copyWith(
-        displayLarge: GoogleFonts.plusJakartaSans(
+        displayLarge: GoogleFonts.outfit(
           fontSize: 28,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
           letterSpacing: -0.5,
         ),
-        titleLarge: GoogleFonts.plusJakartaSans(
+        titleLarge: GoogleFonts.outfit(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
           letterSpacing: -0.3,
         ),
-        titleMedium: GoogleFonts.plusJakartaSans(
+        titleMedium: GoogleFonts.outfit(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        bodyLarge: GoogleFonts.plusJakartaSans(
+        bodyLarge: GoogleFonts.outfit(
           fontSize: 15,
           fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: GoogleFonts.plusJakartaSans(
+        bodyMedium: GoogleFonts.outfit(
           fontSize: 13,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
         ),
-        labelLarge: GoogleFonts.plusJakartaSans(
+        labelLarge: GoogleFonts.outfit(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.2,
         ),
       ),
 
-      // AppBar
+      // AppBar Sleek
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.outfit(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -81,44 +81,44 @@ class AppTheme {
         ),
       ),
 
-      // Card
+      // Card Bergaya Vendra POS
       cardTheme: CardThemeData(
-        color: AppColors.card,
+        color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
 
-      // Input Decoration
+      // Input Decoration (Pill / Kapsul)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: GoogleFonts.plusJakartaSans(
+        fillColor: AppColors.surfaceElevated,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        hintStyle: GoogleFonts.outfit(
           fontSize: 14,
           color: AppColors.textMuted,
         ),
-        labelStyle: GoogleFonts.plusJakartaSans(
+        labelStyle: GoogleFonts.outfit(
           fontSize: 14,
           color: AppColors.textSecondary,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.danger),
         ),
       ),
@@ -127,15 +127,15 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.outfit(
             fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -147,30 +147,13 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.outfit(
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
         ),
-      ),
-
-      // Bottom Navigation Bar
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedLabelStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
       ),
 
       // Divider
@@ -182,7 +165,10 @@ class AppTheme {
     );
   }
 
-  /// Gaya font khusus angka (JetBrains Mono) untuk nominal uang, kuantitas stok, dan barcode
+  // Alias lightTheme mengarah ke darkTheme (default modern dark)
+  static ThemeData get lightTheme => darkTheme;
+
+  /// Gaya font khusus angka (JetBrains Mono) untuk nominal Rupiah, barcode, dan stok
   static TextStyle dataMono({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.w600,

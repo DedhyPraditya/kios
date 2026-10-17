@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 import 'package:kios_berkah_mobile/core/theme/app_theme.dart';
 
-/// Badge indikator stok produk.
-/// Mengikuti aturan baku kios:
-/// - Habis / <= ambang: Merah (AppColors.danger)
-/// - Menipis (<= 2x ambang): Amber (AppColors.amber)
-/// - Cukup: Hijau (AppColors.primary)
+/// Badge indikator stok produk bergaya minimalis Vendra POS.
 class StockBadge extends StatelessWidget {
   final int stock;
   final int threshold;
@@ -45,7 +41,8 @@ class StockBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: fg.withValues(alpha: 0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -62,7 +59,7 @@ class StockBadge extends StatelessWidget {
           Text(
             label,
             style: AppTheme.dataMono(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
               color: fg,
             ),

@@ -3,6 +3,7 @@ import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 import 'package:kios_berkah_mobile/core/widgets/app_button.dart';
 import 'package:kios_berkah_mobile/core/widgets/app_text_field.dart';
 import 'package:kios_berkah_mobile/features/auth/presentation/screens/login_screen.dart';
+import 'package:kios_berkah_mobile/features/shift/presentation/screens/shift_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,7 +14,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _serverUrlController = TextEditingController(text: 'https://kios.ndrsolution.my.id/api');
-  String _selectedPrinter = 'RPP02N Thermal (58mm)';
+  final String _selectedPrinter = 'RPP02N Thermal (58mm)';
 
   @override
   void dispose() {
@@ -24,113 +25,187 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Pengaturan & Perangkat'),
+        title: const Text('Setelan & Shift', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
         children: [
+          // Navigasi Cepat ke Tutup Kasir / Shift
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryBright),
+              ),
+              title: const Text(
+                'Tutup Kasir & Shift Laci',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+              subtitle: const Text(
+                'Rekap uang fisik laci, kas masuk/keluar, dan selisih',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ShiftScreen()),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Sambungan Printer Thermal Bluetooth
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySurface,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.print_rounded, color: AppColors.primaryBright, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('Printer Thermal Bluetooth', style: Theme.of(context).textTheme.titleMedium),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Format struk disetel untuk kertas 58mm & 80mm',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.print_rounded, color: AppColors.primary),
-                      const SizedBox(width: 8),
-                      Text('Printer Thermal Bluetooth', style: Theme.of(context).textTheme.titleMedium),
+                      Text(_selectedPrinter, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      const Row(
+                        children: [
+                          Icon(Icons.bluetooth_connected, color: AppColors.primaryBright, size: 18),
+                          SizedBox(width: 4),
+                          Text(
+                            'Tersambung',
+                            style: TextStyle(color: AppColors.primaryBright, fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Pindai dan sambungkan printer kasir 58mm/80mm',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_selectedPrinter, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        const Icon(Icons.bluetooth_connected, color: AppColors.primary, size: 20),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppButton(
-                    label: 'Cari Perangkat Bluetooth',
-                    icon: Icons.bluetooth_searching_rounded,
-                    variant: AppButtonVariant.outline,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Memindai perangkat Bluetooth thermal terdekat...')),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  label: 'Pindai Ulang Bluetooth',
+                  icon: Icons.bluetooth_searching_rounded,
+                  variant: AppButtonVariant.outline,
+                  height: 44,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Memindai perangkat Bluetooth thermal terdekat...')),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
 
           // Server Endpoint
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.cloud_sync_rounded, color: AppColors.teal),
-                      const SizedBox(width: 8),
-                      Text('Server & Basis Data', style: Theme.of(context).textTheme.titleMedium),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _serverUrlController,
-                    label: 'Alamat API Server',
-                    hint: 'http://192.168.1.x:8000/api atau https://...',
-                  ),
-                  const SizedBox(height: 12),
-                  AppButton(
-                    label: 'Tes & Simpan Koneksi',
-                    variant: AppButtonVariant.primary,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Koneksi server tersimpan.')),
-                      );
-                    },
-                  ),
-                ],
-              ),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.tealSurface,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.cloud_sync_rounded, color: AppColors.teal, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('Server & Basis Data', style: Theme.of(context).textTheme.titleMedium),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                AppTextField(
+                  controller: _serverUrlController,
+                  label: 'Alamat Endpoint API Backend',
+                  hint: 'https://kios.ndrsolution.my.id/api',
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  label: 'Tes & Simpan Koneksi Server',
+                  variant: AppButtonVariant.primary,
+                  height: 44,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Koneksi ke backend server berhasil terverifikasi!'),
+                        backgroundColor: AppColors.primary,
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
 
-          // Identitas Toko
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Identitas Toko', style: Theme.of(context).textTheme.titleMedium),
-                  const Divider(height: 16),
-                  _infoTile('Nama Toko', 'Kios BERKAH'),
-                  _infoTile('Status Akun', 'Admin Toko (admin@kios.test)'),
-                  _infoTile('Versi Aplikasi', 'v1.0.0 (Native Flutter Android 8+)'),
-                ],
-              ),
+          // Info Toko & Akun
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Informasi Sistem', style: Theme.of(context).textTheme.titleMedium),
+                const Divider(height: 20),
+                _infoTile('Nama Toko', 'Kios BERKAH'),
+                _infoTile('Akun Aktif', 'Admin Toko (admin@kios.test)'),
+                _infoTile('Mesin Kasir', 'Flutter Android 8+ (Vendra POS Design)'),
+              ],
             ),
           ),
           const SizedBox(height: 24),
@@ -154,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _infoTile(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

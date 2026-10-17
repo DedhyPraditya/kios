@@ -38,18 +38,38 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Modul Arang Kiloan'),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 3,
-          tabs: const [
-            Tab(text: 'Penjualan Arang', icon: Icon(Icons.sell_outlined, size: 20)),
-            Tab(text: 'Pembelian Arang', icon: Icon(Icons.shopping_bag_outlined, size: 20)),
-          ],
+        title: const Text('Modul Arang Kiloan', style: TextStyle(fontWeight: FontWeight.w800)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: AppColors.textOnPrimary,
+                unselectedLabelColor: AppColors.textSecondary,
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: 'Jual Arang'),
+                  Tab(text: 'Beli Arang'),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
       body: TabBarView(
@@ -57,67 +77,80 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
         children: [
           // Tab Jual Arang
           SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('Jual Arang ke Pelanggan', style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: _beratJualController,
-                          label: 'Berat Timbangan (Kg)',
-                          hint: 'Contoh: 12.5',
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const SizedBox(height: 12),
-                        AppTextField(
-                          controller: _hargaJualController,
-                          label: 'Harga per Kg',
-                          hint: '8000',
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const Divider(height: 28),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total Pembayaran', style: TextStyle(fontWeight: FontWeight.w600)),
-                            Builder(
-                              builder: (context) {
-                                final berat = double.tryParse(_beratJualController.text) ?? 0.0;
-                                final harga = int.tryParse(_hargaJualController.text) ?? 0;
-                                final total = (berat * harga).round();
-                                return Text(
-                                  CurrencyFormatter.format(total),
-                                  style: AppTheme.dataMono(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.primary,
-                                  ),
-                                );
-                              },
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Penjualan Arang ke Pembeli',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        controller: _beratJualController,
+                        label: 'Berat Timbangan (Kg)',
+                        hint: 'Contoh: 12.5',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 14),
+                      AppTextField(
+                        controller: _hargaJualController,
+                        label: 'Harga per Kg (Rp)',
+                        hint: '8000',
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const Divider(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Pembayaran',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final berat = double.tryParse(_beratJualController.text) ?? 0.0;
+                              final harga = int.tryParse(_hargaJualController.text) ?? 0;
+                              final total = (berat * harga).round();
+                              return Text(
+                                CurrencyFormatter.format(total),
+                                style: AppTheme.dataMono(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primaryBright,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      AppButton(
+                        label: 'Simpan & Cetak Struk Arang',
+                        icon: Icons.print_outlined,
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Penjualan arang tersimpan! Mencetak nota...'),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        AppButton(
-                          label: 'Simpan Penjualan & Cetak Struk',
-                          icon: Icons.print_outlined,
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Penjualan arang tersimpan & siap dicetak')),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -126,67 +159,79 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
 
           // Tab Beli Arang
           SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('Beli Arang dari Pemasok / Pengrajin', style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: _beratBeliController,
-                          label: 'Berat Masuk (Kg)',
-                          hint: 'Contoh: 50.0',
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const SizedBox(height: 12),
-                        AppTextField(
-                          controller: _hargaBeliController,
-                          label: 'Harga Beli per Kg',
-                          hint: '5000',
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const Divider(height: 28),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total Pembayaran ke Pemasok', style: TextStyle(fontWeight: FontWeight.w600)),
-                            Builder(
-                              builder: (context) {
-                                final berat = double.tryParse(_beratBeliController.text) ?? 0.0;
-                                final harga = int.tryParse(_hargaBeliController.text) ?? 0;
-                                final total = (berat * harga).round();
-                                return Text(
-                                  CurrencyFormatter.format(total),
-                                  style: AppTheme.dataMono(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.danger,
-                                  ),
-                                );
-                              },
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Pembelian Arang dari Pemasok',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        controller: _beratBeliController,
+                        label: 'Berat Masuk (Kg)',
+                        hint: 'Contoh: 50.0',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 14),
+                      AppTextField(
+                        controller: _hargaBeliController,
+                        label: 'Harga Beli per Kg (Rp)',
+                        hint: '5000',
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const Divider(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Dibayar ke Pemasok',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final berat = double.tryParse(_beratBeliController.text) ?? 0.0;
+                              final harga = int.tryParse(_hargaBeliController.text) ?? 0;
+                              final total = (berat * harga).round();
+                              return Text(
+                                CurrencyFormatter.format(total),
+                                style: AppTheme.dataMono(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.danger,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      AppButton(
+                        label: 'Catat Pembelian Arang',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Pembelian arang berhasil dicatat!'),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        AppButton(
-                          label: 'Catat Pembelian Arang',
-                          variant: AppButtonVariant.primary,
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Pembelian arang berhasil dicatat')),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],

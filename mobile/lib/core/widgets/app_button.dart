@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 
 enum AppButtonVariant { primary, secondary, danger, outline }
 
@@ -11,6 +11,7 @@ class AppButton extends StatelessWidget {
   final bool isLoading;
   final double? width;
   final double height;
+  final double borderRadius;
 
   const AppButton({
     super.key,
@@ -20,7 +21,8 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.width,
-    this.height = 48,
+    this.height = 50,
+    this.borderRadius = 14,
   });
 
   @override
@@ -32,12 +34,12 @@ class AppButton extends StatelessWidget {
     switch (variant) {
       case AppButtonVariant.primary:
         bg = AppColors.primary;
-        fg = Colors.white;
+        fg = AppColors.textOnPrimary;
         border = null;
         break;
       case AppButtonVariant.secondary:
         bg = AppColors.amber;
-        fg = Colors.white;
+        fg = Colors.black;
         border = null;
         break;
       case AppButtonVariant.danger:
@@ -46,9 +48,9 @@ class AppButton extends StatelessWidget {
         border = null;
         break;
       case AppButtonVariant.outline:
-        bg = Colors.white;
+        bg = AppColors.surfaceElevated;
         fg = AppColors.textPrimary;
-        border = const BorderSide(color: AppColors.border);
+        border = const BorderSide(color: AppColors.border, width: 1);
         break;
     }
 
@@ -57,23 +59,23 @@ class AppButton extends StatelessWidget {
       height: height,
       child: Material(
         color: onPressed == null ? AppColors.surfaceMuted : bg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: InkWell(
           onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(borderRadius),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(borderRadius),
               border: border != null ? Border.fromBorderSide(border) : null,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             alignment: Alignment.center,
             child: isLoading
                 ? SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                      strokeWidth: 2.2,
                       valueColor: AlwaysStoppedAnimation<Color>(fg),
                     ),
                   )
@@ -82,15 +84,16 @@ class AppButton extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (icon != null) ...[
-                        Icon(icon, size: 18, color: fg),
+                        Icon(icon, size: 20, color: fg),
                         const SizedBox(width: 8),
                       ],
                       Text(
                         label,
                         style: TextStyle(
                           color: fg,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],

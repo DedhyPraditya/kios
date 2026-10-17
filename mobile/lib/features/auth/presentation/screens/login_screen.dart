@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() {
     setState(() => _isLoading = true);
-    // Simulasi atau integrasi API
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -52,103 +51,113 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Brand Logo & Title
+                  // App Brand Logo Vendra style
                   Center(
                     child: Container(
-                      width: 64,
-                      height: 64,
+                      width: 72,
+                      height: 72,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primaryBright, AppColors.primary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
                       child: const Icon(
                         Icons.point_of_sale_rounded,
-                        color: Colors.white,
-                        size: 34,
+                        color: AppColors.textOnPrimary,
+                        size: 38,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                   Text(
                     'Kios BERKAH',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                          fontSize: 26,
+                          fontSize: 28,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
                         ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    'Sistem Kasir & Manajemen Toko',
+                  const Text(
+                    'Sistem Kasir Pintar & Manajemen Toko',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                   ),
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 40),
 
                   // Login Form Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Masuk Akun',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontSize: 18,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Silakan masukkan email dan kata sandi Anda',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 24),
-                          AppTextField(
-                            controller: _emailController,
-                            label: 'Email',
-                            hint: 'nama@kios.test',
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                          ),
-                          const SizedBox(height: 16),
-                          AppTextField(
-                            controller: _passwordController,
-                            label: 'Kata Sandi',
-                            hint: '••••••••',
-                            obscureText: _obscurePassword,
-                            prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                size: 20,
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Masuk Kasir',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
                               ),
-                              onPressed: () {
-                                setState(() => _obscurePassword = !_obscurePassword);
-                              },
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Masukkan akun kasir atau admin Anda',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 24),
+                        AppTextField(
+                          controller: _emailController,
+                          label: 'Email Pengguna',
+                          hint: 'admin@kios.test',
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20),
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _passwordController,
+                          label: 'Kata Sandi',
+                          hint: '••••••••',
+                          obscureText: _obscurePassword,
+                          prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              size: 20,
                             ),
+                            onPressed: () {
+                              setState(() => _obscurePassword = !_obscurePassword);
+                            },
                           ),
-                          const SizedBox(height: 24),
-                          AppButton(
-                            label: 'Masuk Kasir',
-                            isLoading: _isLoading,
-                            onPressed: _handleLogin,
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 24),
+                        AppButton(
+                          label: 'Masuk Sekarang',
+                          isLoading: _isLoading,
+                          icon: Icons.login_rounded,
+                          onPressed: _handleLogin,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 32),
                   Text(
-                    'Versi Mobile Android 8+ • Flutter Native',
+                    'Native Flutter Android 8+ • Clean & Fast POS',
                     textAlign: TextAlign.center,
                     style: AppTheme.dataMono(
                       fontSize: 11,
