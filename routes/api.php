@@ -12,3 +12,6 @@ Route::post('/pos', [PosApiController::class, 'store']);
 
 // Riwayat Penjualan
 Route::get('/sales', [PosApiController::class, 'sales']);
+
+// QRIS Toko
+Route::get('/qris-toko', [\App\Http\Controllers\SettingController::class, 'qris']);

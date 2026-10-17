@@ -20,6 +20,7 @@ const form = useForm({
     tax_enabled: props.store.tax_enabled === "1" || props.store.tax_enabled === true,
     tax_rate: Number(props.store.tax_rate ?? 11),
     qris_image: null,
+    qris_payload: props.store.qris_payload ?? "",
     remove_qris: false,
 });
 
@@ -42,6 +43,7 @@ async function checkQris(source) {
         payload = null;
     }
     if (id !== checkRun) return;
+    if (payload) form.qris_payload = payload;
     qrisCheck.value = { ok: !!payload, merchant: payload ? qrisMerchantName(payload) : "" };
 }
 if (props.store.qris_url) checkQris(props.store.qris_url);
@@ -69,6 +71,7 @@ function onFileChange(e) {
 
 function removeQris() {
     form.qris_image = null;
+    form.qris_payload = "";
     form.remove_qris = true;
     isNewImageSelected.value = false;
     qrisPreview.value = null;

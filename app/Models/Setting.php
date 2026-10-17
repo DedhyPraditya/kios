@@ -21,6 +21,7 @@ class Setting extends Model
         'tax_enabled' => '0',     // PPN ditambahkan di atas total nota
         'tax_rate' => '11',       // persen
         'qris_image' => null,
+        'qris_payload' => null,
     ];
 
     protected static function booted(): void

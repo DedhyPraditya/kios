@@ -41,6 +41,7 @@ class SettingController extends Controller
             'tax_enabled' => ['nullable', 'boolean'],
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'qris_payload' => ['nullable', 'string'],
             'remove_qris' => ['nullable', 'boolean'],
         ]);
 
@@ -50,7 +51,7 @@ class SettingController extends Controller
             if ($currentQris && Storage::disk('public')->exists($currentQris)) {
                 Storage::disk('public')->delete($currentQris);
             }
-            Setting::put(['qris_image' => '']);
+            Setting::put(['qris_image' => '', 'qris_payload' => '']);
         } elseif ($request->hasFile('qris_image')) {
             if ($currentQris && Storage::disk('public')->exists($currentQris)) {
                 Storage::disk('public')->delete($currentQris);

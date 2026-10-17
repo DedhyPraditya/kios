@@ -13,6 +13,8 @@ import 'package:kios_berkah_mobile/features/products/data/models/product_model.d
 import 'package:kios_berkah_mobile/features/scanner/presentation/screens/barcode_scanner_screen.dart';
 import 'package:kios_berkah_mobile/features/sales/data/models/sale_model.dart';
 import 'package:kios_berkah_mobile/core/services/bluetooth_printer_service.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:kios_berkah_mobile/core/utils/qris_helper.dart';
 
 class CustomerItem {
   final int id;
@@ -58,6 +60,7 @@ class PosScreenState extends State<PosScreen> {
 
   List<ProductModel> _products = [];
   List<CustomerItem> _customers = [];
+  Map<String, dynamic> _storeInfo = {};
   bool _isLoading = false;
   String? _fetchError;
   String _activeUrl = ApiEndpoints.defaultBaseUrl;
@@ -120,6 +123,9 @@ class PosScreenState extends State<PosScreen> {
             _products = loadedProducts;
             _categories = loadedCategories;
             _customers = loadedCustomers;
+            if (response.data['store'] is Map) {
+              _storeInfo = Map<String, dynamic>.from(response.data['store']);
+            }
             _isLoading = false;
             _fetchError = null;
           });
@@ -491,6 +497,177 @@ class PosScreenState extends State<PosScreen> {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+    );
+  }
+
+  String? _getQrisPayload() {
+    final payload = _storeInfo['qris_payload'] as String?;
+    if (payload != null && payload.trim().isNotEmpty) {
+      return payload.trim();
+    }
+    return null;
+  }
+
+  String? _getQrisImageUrl() {
+    final raw = _storeInfo['qris_url'] as String?;
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.startsWith('http')) {
+      try {
+        final uri = Uri.parse(raw);
+        final baseUri = Uri.parse(_activeUrl);
+        if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
+          return uri.replace(scheme: baseUri.scheme, host: baseUri.host, port: baseUri.port).toString();
+        }
+      } catch (_) {}
+      return raw;
+    }
+    return '$_activeUrl/$raw';
+  }
+
+  void _showQrisFullscreenDialog(String? dynamicPayload, String? imageUrl, int amount, String merchantName) {
+    showDialog(
+      context: context,
+      builder: (dCtx) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.tealSurface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                          ),
+                          child: const Text(
+                            'QRIS',
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.teal),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          merchantName.isNotEmpty ? merchantName : (_storeInfo['store_name'] ?? 'Kios BERKAH'),
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => Navigator.pop(dCtx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: dynamicPayload != null && dynamicPayload.isNotEmpty
+                      ? QrImageView(
+                          data: dynamicPayload,
+                          version: QrVersions.auto,
+                          size: 240,
+                          backgroundColor: Colors.white,
+                          errorCorrectionLevel: QrErrorCorrectLevel.M,
+                        )
+                      : (imageUrl != null && imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              height: 240,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 64, color: AppColors.textMuted),
+                            )
+                          : const SizedBox(
+                              height: 200,
+                              child: Center(child: Text('QRIS belum diatur')),
+                            )),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.tealSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'TOTAL PEMBAYARAN',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textSecondary, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        CurrencyFormatter.format(amount),
+                        style: AppTheme.dataMono(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (dynamicPayload != null && dynamicPayload.isNotEmpty)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Nominal ${CurrencyFormatter.format(amount)} sudah terisi otomatis',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+                      ),
+                    ],
+                  )
+                else
+                  const Text(
+                    'QRIS Statis — Pembeli perlu mengetik nominal manual.',
+                    style: TextStyle(fontSize: 11, color: AppColors.amberText, fontWeight: FontWeight.w600),
+                  ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () => Navigator.pop(dCtx),
+                    child: const Text('Tutup Pratinjau', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -969,25 +1146,190 @@ class PosScreenState extends State<PosScreen> {
                             ),
                           ),
                         ] else if (selectedPaymentMethod == 'QRIS') ...[
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.tealSurface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.qr_code_scanner_rounded, color: AppColors.teal, size: 24),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Pelanggan scan QRIS Toko.\nTransaksi langsung lunas otomatis senilai total tagihan.',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.3),
-                                  ),
+                          Builder(
+                            builder: (context) {
+                              final rawPayload = _getQrisPayload();
+                              final qrisUrl = _getQrisImageUrl();
+                              final dynamicPayload = (rawPayload != null && rawPayload.isNotEmpty)
+                                  ? QrisHelper.toDynamic(rawPayload, finalTotal)
+                                  : null;
+                              final merchant = rawPayload != null ? QrisHelper.getMerchantName(rawPayload) : '';
+                              final hasQris = (dynamicPayload != null && dynamicPayload.isNotEmpty) || (qrisUrl != null && qrisUrl.isNotEmpty);
+
+                              return Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppColors.border),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.03),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.tealSurface,
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                                              ),
+                                              child: const Text(
+                                                'QRIS',
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.teal),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              merchant.isNotEmpty ? merchant : (_storeInfo['store_name'] ?? 'Kode QRIS Toko'),
+                                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                            ),
+                                          ],
+                                        ),
+                                        if (hasQris)
+                                          InkWell(
+                                            borderRadius: BorderRadius.circular(8),
+                                            onTap: () => _showQrisFullscreenDialog(dynamicPayload, qrisUrl, finalTotal, merchant),
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.fullscreen_rounded, size: 16, color: AppColors.primary),
+                                                  SizedBox(width: 2),
+                                                  Text(
+                                                    'Perbesar',
+                                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    if (dynamicPayload != null && dynamicPayload.isNotEmpty) ...[
+                                      GestureDetector(
+                                        onTap: () => _showQrisFullscreenDialog(dynamicPayload, qrisUrl, finalTotal, merchant),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(color: AppColors.border),
+                                          ),
+                                          child: QrImageView(
+                                            data: dynamicPayload,
+                                            version: QrVersions.auto,
+                                            size: 170,
+                                            backgroundColor: Colors.white,
+                                            errorCorrectionLevel: QrErrorCorrectLevel.M,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primarySurface,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.check_circle_rounded, size: 13, color: AppColors.primary),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              'Nominal terisi otomatis (${CurrencyFormatter.format(finalTotal)})',
+                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ] else if (qrisUrl != null && qrisUrl.isNotEmpty) ...[
+                                      GestureDetector(
+                                        onTap: () => _showQrisFullscreenDialog(null, qrisUrl, finalTotal, merchant),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(color: AppColors.border),
+                                          ),
+                                          child: Image.network(
+                                            qrisUrl,
+                                            height: 170,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.qr_code, size: 60, color: AppColors.textSecondary),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'QRIS Statis — Pembeli perlu mengetik nominal manual.',
+                                        style: TextStyle(fontSize: 11, color: AppColors.amberText, fontWeight: FontWeight.w600),
+                                      ),
+                                    ] else ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                                        child: const Column(
+                                          children: [
+                                            Icon(Icons.qr_code_2_rounded, size: 48, color: AppColors.textMuted),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'Belum Ada QRIS Toko',
+                                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              'Unggah gambar QRIS di menu Pengaturan pada web dashboard toko.',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surfaceMuted,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            'Total Tagihan QRIS:',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                          ),
+                                          Text(
+                                            CurrencyFormatter.format(finalTotal),
+                                            style: AppTheme.dataMono(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'Mendukung BCA, Mandiri Livin, BRImo, GoPay, OVO, ShopeePay, Dana, dll.\nPastikan pembeli telah selesai scan & bayar sebelum menekan tombol di bawah.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 10, color: AppColors.textSecondary, height: 1.3),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ] else if (selectedPaymentMethod == 'Kasbon') ...[
                           Container(
