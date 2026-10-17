@@ -55,6 +55,29 @@ class ProductUnitModel {
   }
 }
 
+class WholesalePriceModel {
+  final int id;
+  final int productId;
+  final int minQty;
+  final int price;
+
+  WholesalePriceModel({
+    required this.id,
+    required this.productId,
+    required this.minQty,
+    required this.price,
+  });
+
+  factory WholesalePriceModel.fromJson(Map<String, dynamic> json) {
+    return WholesalePriceModel(
+      id: json['id'] as int? ?? 0,
+      productId: (json['product_id'] as num?)?.toInt() ?? 0,
+      minQty: (json['min_qty'] as num?)?.toInt() ?? 0,
+      price: (json['price'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class ProductModel {
   final int id;
   final String? barcode;
@@ -67,6 +90,7 @@ class ProductModel {
   final int? categoryId;
   final String? categoryName;
   final List<ProductUnitModel> units;
+  final List<WholesalePriceModel> wholesalePrices;
 
   ProductModel({
     required this.id,
@@ -80,10 +104,19 @@ class ProductModel {
     this.categoryId,
     this.categoryName,
     this.units = const [],
+    this.wholesalePrices = const [],
   });
 
   bool get isLowStock => stock <= minStock;
   bool get isOutOfStock => stock <= 0;
+
+  int priceFor(int qty) {
+    if (wholesalePrices.isEmpty) return price;
+    final eligible = wholesalePrices.where((w) => qty >= w.minQty).toList();
+    if (eligible.isEmpty) return price;
+    eligible.sort((a, b) => b.minQty.compareTo(a.minQty));
+    return eligible.first.price < price ? eligible.first.price : price;
+  }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
@@ -99,6 +132,10 @@ class ProductModel {
       categoryName: json['category'] is Map ? json['category']['name'] : (json['category_name'] as String?),
       units: (json['units'] as List?)
               ?.map((u) => ProductUnitModel.fromJson(u as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      wholesalePrices: (json['wholesale_prices'] as List?)
+              ?.map((w) => WholesalePriceModel.fromJson(w as Map<String, dynamic>))
               .toList() ??
           const [],
     );

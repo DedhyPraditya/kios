@@ -19,12 +19,14 @@ class CustomerItem {
   final String name;
   final String? phone;
   final int? creditLimit;
+  final int outstanding;
 
   CustomerItem({
     required this.id,
     required this.name,
     this.phone,
     this.creditLimit,
+    this.outstanding = 0,
   });
 
   factory CustomerItem.fromJson(Map<String, dynamic> json) {
@@ -32,7 +34,8 @@ class CustomerItem {
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       phone: json['phone'] as String?,
-      creditLimit: json['credit_limit'] as int?,
+      creditLimit: (json['credit_limit'] as num?)?.toInt(),
+      outstanding: (json['outstanding'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -285,29 +288,29 @@ class PosScreenState extends State<PosScreen> {
     }
   }
 
-  void _addToCart(ProductModel product) {
-    if (product.stock <= 0) {
-      _showToast('Stok produk habis!', isError: true);
+  void _addToCart(ProductModel product, {ProductUnitModel? unit}) {
+    final isi = unit?.isi ?? 1;
+    final usedBase = _cart.where((c) => c.product.id == product.id).fold(0, (s, c) => s + c.totalBaseQty);
+    if (product.stock - usedBase < isi) {
+      _showToast('Stok ${product.name} tidak cukup${unit != null ? " untuk 1 ${unit.name}" : ""}!', isError: true);
       return;
     }
 
     setState(() {
-      final index = _cart.indexWhere((item) => item.product.id == product.id);
+      final key = '${product.id}-${unit?.id ?? 0}';
+      final index = _cart.indexWhere((item) => item.key == key);
       if (index >= 0) {
-        if (_cart[index].qty < product.stock) {
-          _cart[index].qty++;
-        } else {
-          _showToast('Stok tersisa hanya ${product.stock} pcs!');
-        }
+        _cart[index].qty++;
       } else {
-        _cart.add(CartItemModel(product: product, qty: 1));
+        _cart.add(CartItemModel(product: product, unit: unit, qty: 1));
       }
     });
   }
 
-  void _removeFromCart(ProductModel product) {
+  void _removeFromCart(ProductModel product, {ProductUnitModel? unit}) {
     setState(() {
-      final index = _cart.indexWhere((item) => item.product.id == product.id);
+      final key = '${product.id}-${unit?.id ?? 0}';
+      final index = _cart.indexWhere((item) => item.key == key);
       if (index >= 0) {
         if (_cart[index].qty > 1) {
           _cart[index].qty--;
@@ -316,6 +319,167 @@ class PosScreenState extends State<PosScreen> {
         }
       }
     });
+  }
+
+  void _showUnitPickerForProduct(ProductModel product) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  product.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Pilih satuan barang yang ingin dimasukkan ke keranjang:',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 14),
+                // Satuan dasar
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: ListTile(
+                    leading: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+                    title: const Text('Satuan Dasar (Pcs)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    subtitle: Text(
+                      CurrencyFormatter.format(product.price),
+                      style: AppTheme.dataMono(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w700),
+                    ),
+                    trailing: const Icon(Icons.add_shopping_cart_rounded, color: AppColors.primary, size: 20),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _addToCart(product);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...product.units.map((u) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: ListTile(
+                      leading: const Icon(Icons.layers_outlined, color: AppColors.teal),
+                      title: Text('${u.name} (Isi ${u.isi})', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                      subtitle: Text(
+                        '${CurrencyFormatter.format(u.price)} / ${u.name}',
+                        style: AppTheme.dataMono(fontSize: 13, color: AppColors.teal, fontWeight: FontWeight.w700),
+                      ),
+                      trailing: const Icon(Icons.add_shopping_cart_rounded, color: AppColors.teal, size: 20),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _addToCart(product, unit: u);
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSelectUnitModal(CartItemModel item, StateSetter setSheetState) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (uCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Ubah Satuan: ${item.product.name}',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  tileColor: item.unit == null ? AppColors.primarySurface : AppColors.surfaceMuted,
+                  leading: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+                  title: const Text('Satuan Dasar (Pcs)', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(CurrencyFormatter.format(item.product.price)),
+                  trailing: item.unit == null ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+                  onTap: () {
+                    setState(() => item.unit = null);
+                    setSheetState(() {});
+                    Navigator.pop(uCtx);
+                  },
+                ),
+                const SizedBox(height: 8),
+                ...item.product.units.map((u) {
+                  final isSelected = item.unit?.id == u.id;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      tileColor: isSelected ? AppColors.tealSurface : AppColors.surfaceMuted,
+                      leading: const Icon(Icons.layers_outlined, color: AppColors.teal),
+                      title: Text('${u.name} (Isi ${u.isi})', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text('${CurrencyFormatter.format(u.price)} / ${u.name}'),
+                      trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.teal) : null,
+                      onTap: () {
+                        setState(() => item.unit = u);
+                        setSheetState(() {});
+                        Navigator.pop(uCtx);
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showToast(String message, {bool isError = false}) {
@@ -334,6 +498,11 @@ class PosScreenState extends State<PosScreen> {
     String selectedPaymentMethod = 'Tunai'; // 'Tunai', 'QRIS', 'Kasbon'
     int? selectedCustomerId = _customers.isNotEmpty ? _customers.first.id : null;
     final paidController = TextEditingController();
+    final dpController = TextEditingController(text: '0');
+    final discountController = TextEditingController(text: '0');
+    final noteController = TextEditingController();
+    bool isDiscountPercent = false;
+    DateTime dueDate = DateTime.now().add(const Duration(days: 7));
 
     if (_cartTotal > 0) {
       paidController.text = _cartTotal.toString();
@@ -350,8 +519,29 @@ class PosScreenState extends State<PosScreen> {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+            final subtotal = _cartTotal;
+
+            // Kalkulasi Diskon Nota
+            final rawDisc = int.tryParse(discountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+            final discValue = isDiscountPercent
+                ? ((subtotal * rawDisc) / 100).round()
+                : rawDisc.clamp(0, subtotal);
+            final finalTotal = (subtotal - discValue).clamp(0, double.infinity).toInt();
+
+            // Tunai
             final currentPaid = int.tryParse(paidController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-            final change = currentPaid - _cartTotal;
+            final change = currentPaid - finalTotal;
+
+            // Kasbon & DP
+            final selectedCustomer = _customers.firstWhere(
+              (c) => c.id == selectedCustomerId,
+              orElse: () => _customers.isNotEmpty ? _customers.first : CustomerItem(id: 0, name: 'Umum'),
+            );
+            final rawDp = int.tryParse(dpController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+            final dpAmount = rawDp.clamp(0, finalTotal);
+            final sisaKasbon = finalTotal - dpAmount;
+            final projectedDebt = selectedCustomer.outstanding + sisaKasbon;
+            final isOverLimit = selectedCustomer.creditLimit != null && projectedDebt > selectedCustomer.creditLimit!;
 
             return SafeArea(
               child: Padding(
@@ -442,10 +632,10 @@ class PosScreenState extends State<PosScreen> {
                           ),
                         )
                       else ...[
-                        // Daftar Item Belanja
+                        // Daftar Item Belanja (Dengan Satuan & Badge Grosir)
                         ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxHeight: MediaQuery.of(context).size.height * 0.30,
+                            maxHeight: MediaQuery.of(context).size.height * 0.28,
                           ),
                           child: ListView.separated(
                             shrinkWrap: true,
@@ -461,16 +651,63 @@ class PosScreenState extends State<PosScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            item.product.name,
-                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.product.name,
+                                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (item.isGrosir)
+                                                Container(
+                                                  margin: const EdgeInsets.only(left: 6),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primarySurface,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: const Text(
+                                                    'GROSIR',
+                                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            CurrencyFormatter.format(item.product.price),
-                                            style: AppTheme.dataMono(fontSize: 12, color: AppColors.primary),
+                                          const SizedBox(height: 3),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                CurrencyFormatter.format(item.unitPrice),
+                                                style: AppTheme.dataMono(fontSize: 12, color: AppColors.primary),
+                                              ),
+                                              if (item.product.units.isNotEmpty) ...[
+                                                const SizedBox(width: 8),
+                                                GestureDetector(
+                                                  onTap: () => _showSelectUnitModal(item, setSheetState),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.surfaceMuted,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      border: Border.all(color: AppColors.border),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          item.unit?.name ?? 'Pcs',
+                                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                                                        ),
+                                                        const Icon(Icons.arrow_drop_down, size: 14),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -487,10 +724,10 @@ class PosScreenState extends State<PosScreen> {
                                             visualDensity: VisualDensity.compact,
                                             icon: const Icon(Icons.remove, size: 16),
                                             onPressed: () {
-                                              setState(() => _removeFromCart(item.product));
+                                              _removeFromCart(item.product, unit: item.unit);
                                               setSheetState(() {
                                                 if (selectedPaymentMethod == 'Tunai') {
-                                                  paidController.text = _cartTotal.toString();
+                                                  paidController.text = finalTotal.toString();
                                                 }
                                               });
                                             },
@@ -503,24 +740,24 @@ class PosScreenState extends State<PosScreen> {
                                             visualDensity: VisualDensity.compact,
                                             icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
                                             onPressed: () {
-                                              if (item.qty < item.product.stock) {
-                                                setState(() => _addToCart(item.product));
+                                              if ((item.totalBaseQty + item.isi) <= item.product.stock) {
+                                                _addToCart(item.product, unit: item.unit);
                                                 setSheetState(() {
                                                   if (selectedPaymentMethod == 'Tunai') {
-                                                    paidController.text = _cartTotal.toString();
+                                                    paidController.text = finalTotal.toString();
                                                   }
                                                 });
                                               } else {
-                                                _showToast('Stok tersisa hanya ${item.product.stock} pcs!');
+                                                _showToast('Stok tersisa hanya ${item.product.stock}!');
                                               }
                                             },
                                           ),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: 8),
                                     SizedBox(
-                                      width: 72,
+                                      width: 70,
                                       child: Text(
                                         CurrencyFormatter.format(item.subtotal),
                                         textAlign: TextAlign.right,
@@ -533,9 +770,62 @@ class PosScreenState extends State<PosScreen> {
                             },
                           ),
                         ),
-                        const Divider(height: 18),
+                        const Divider(height: 16),
 
-                        // Total Tagihan
+                        // Form Diskon Nota (Opsional)
+                        Row(
+                          children: [
+                            const Text('Diskon Nota: ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                            const Spacer(),
+                            SizedBox(
+                              width: 95,
+                              height: 32,
+                              child: TextField(
+                                controller: discountController,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.right,
+                                style: AppTheme.dataMono(fontSize: 12, fontWeight: FontWeight.w700),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  prefixText: isDiscountPercent ? '' : 'Rp ',
+                                  suffixText: isDiscountPercent ? '%' : '',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onChanged: (_) => setSheetState(() {
+                                  if (selectedPaymentMethod == 'Tunai') {
+                                    paidController.text = finalTotal.toString();
+                                  }
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: () => setSheetState(() {
+                                isDiscountPercent = !isDiscountPercent;
+                                if (selectedPaymentMethod == 'Tunai') {
+                                  paidController.text = finalTotal.toString();
+                                }
+                              }),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceMuted,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Text(
+                                  isDiscountPercent ? '%' : 'Rp',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Total Tagihan Card
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
@@ -546,12 +836,22 @@ class PosScreenState extends State<PosScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Total Tagihan',
-                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Total Tagihan',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                  if (discValue > 0)
+                                    Text(
+                                      'Diskon: -${CurrencyFormatter.format(discValue)}',
+                                      style: const TextStyle(fontSize: 10, color: AppColors.danger, fontWeight: FontWeight.w600),
+                                    ),
+                                ],
                               ),
                               Text(
-                                CurrencyFormatter.format(_cartTotal),
+                                CurrencyFormatter.format(finalTotal),
                                 style: AppTheme.dataMono(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
@@ -563,7 +863,7 @@ class PosScreenState extends State<PosScreen> {
                         ),
                         const SizedBox(height: 14),
 
-                        // Pilihan Metode Pembayaran Langsung di Keranjang
+                        // Pilihan Metode Pembayaran
                         const Text(
                           'Pilih Metode Pembayaran',
                           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
@@ -579,7 +879,7 @@ class PosScreenState extends State<PosScreen> {
                                 color: AppColors.primary,
                                 onTap: () => setSheetState(() {
                                   selectedPaymentMethod = 'Tunai';
-                                  paidController.text = _cartTotal.toString();
+                                  paidController.text = finalTotal.toString();
                                 }),
                               ),
                             ),
@@ -653,13 +953,13 @@ class PosScreenState extends State<PosScreen> {
                                   scrollDirection: Axis.horizontal,
                                   child: Row(
                                     children: [
-                                      _quickCashButton('Uang Pas', _cartTotal, paidController, setSheetState),
+                                      _quickCashButton('Uang Pas', finalTotal, paidController, setSheetState),
                                       const SizedBox(width: 6),
-                                      _quickCashButton('+10rb', (_cartTotal + 10000), paidController, setSheetState),
+                                      _quickCashButton('+10rb', (finalTotal + 10000), paidController, setSheetState),
                                       const SizedBox(width: 6),
-                                      _quickCashButton('+20rb', (_cartTotal + 20000), paidController, setSheetState),
+                                      _quickCashButton('+20rb', (finalTotal + 20000), paidController, setSheetState),
                                       const SizedBox(width: 6),
-                                      _quickCashButton('+50rb', (_cartTotal + 50000), paidController, setSheetState),
+                                      _quickCashButton('+50rb', (finalTotal + 50000), paidController, setSheetState),
                                       const SizedBox(width: 6),
                                       _quickCashButton('100.000', 100000, paidController, setSheetState),
                                     ],
@@ -682,7 +982,7 @@ class PosScreenState extends State<PosScreen> {
                                 SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Pelanggan scan QRIS Toko.\nTransaksi langsung lunas otomatis.',
+                                    'Pelanggan scan QRIS Toko.\nTransaksi langsung lunas otomatis senilai total tagihan.',
                                     style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.3),
                                   ),
                                 ),
@@ -694,13 +994,19 @@ class PosScreenState extends State<PosScreen> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: AppColors.amberSurface,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(color: AppColors.amberText.withValues(alpha: 0.3)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Pilih Pelanggan Kasbon:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person_pin_rounded, color: AppColors.amberText, size: 20),
+                                    const SizedBox(width: 6),
+                                    const Text('Pelanggan Kasbon (Hutang):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
                                 const SizedBox(height: 6),
                                 if (_customers.isNotEmpty)
                                   DropdownButtonFormField<int>(
@@ -718,7 +1024,7 @@ class PosScreenState extends State<PosScreen> {
                                         value: c.id,
                                         child: Text(
                                           '${c.name} ($phoneText)',
-                                          style: const TextStyle(fontSize: 13),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                                         ),
                                       );
                                     }).toList(),
@@ -726,41 +1032,249 @@ class PosScreenState extends State<PosScreen> {
                                   )
                                 else
                                   const Text('Belum ada data pelanggan di sistem.', style: TextStyle(fontSize: 12, color: AppColors.danger)),
+
+                                const SizedBox(height: 8),
+
+                                // Kartu Info Hutang Berjalan & Batas Kredit
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('Hutang Berjalan', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                          Text(
+                                            CurrencyFormatter.format(selectedCustomer.outstanding),
+                                            style: AppTheme.dataMono(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.amberText),
+                                          ),
+                                        ],
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          const Text('Batas Kredit', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                          Text(
+                                            selectedCustomer.creditLimit != null
+                                                ? CurrencyFormatter.format(selectedCustomer.creditLimit!)
+                                                : 'Tanpa Batas',
+                                            style: AppTheme.dataMono(fontSize: 12, fontWeight: FontWeight.w700),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 18),
+
+                                // Bagian Bayar DP (Uang Muka)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Bayar DP / Uang Muka:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                    Text(
+                                      dpAmount > 0 ? 'DP: ${CurrencyFormatter.format(dpAmount)}' : 'Tanpa DP',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: dpAmount > 0 ? AppColors.primary : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: dpController,
+                                  keyboardType: TextInputType.number,
+                                  style: AppTheme.dataMono(fontSize: 15, fontWeight: FontWeight.w700),
+                                  decoration: InputDecoration(
+                                    prefixText: 'Rp ',
+                                    isDense: true,
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  onChanged: (_) => setSheetState(() {}),
+                                ),
+                                const SizedBox(height: 6),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      _quickCashButton('Tanpa DP', 0, dpController, setSheetState),
+                                      const SizedBox(width: 6),
+                                      _quickCashButton('DP 25%', (finalTotal * 0.25).round(), dpController, setSheetState),
+                                      const SizedBox(width: 6),
+                                      _quickCashButton('DP 50%', (finalTotal * 0.5).round(), dpController, setSheetState),
+                                      const SizedBox(width: 6),
+                                      _quickCashButton('Lunas (100%)', finalTotal, dpController, setSheetState),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 18),
+
+                                // Bagian Tanggal Jatuh Tempo
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Jatuh Tempo Kasbon:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                    InkWell(
+                                      onTap: () async {
+                                        final picked = await showDatePicker(
+                                          context: context,
+                                          initialDate: dueDate,
+                                          firstDate: DateTime.now(),
+                                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                                        );
+                                        if (picked != null) {
+                                          setSheetState(() => dueDate = picked);
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.primary),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.calendar_month_rounded, size: 14, color: AppColors.primary),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${dueDate.day.toString().padLeft(2, '0')}/${dueDate.month.toString().padLeft(2, '0')}/${dueDate.year}',
+                                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    _quickDueButton('+7 Hari', 7, () => setSheetState(() => dueDate = DateTime.now().add(const Duration(days: 7)))),
+                                    const SizedBox(width: 6),
+                                    _quickDueButton('+14 Hari', 14, () => setSheetState(() => dueDate = DateTime.now().add(const Duration(days: 14)))),
+                                    const SizedBox(width: 6),
+                                    _quickDueButton('+30 Hari', 30, () => setSheetState(() => dueDate = DateTime.now().add(const Duration(days: 30)))),
+                                  ],
+                                ),
+                                const Divider(height: 18),
+
+                                // Ringkasan Kasbon & Peringatan Limit
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Sisa Hutang Transaksi:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      CurrencyFormatter.format(sisaKasbon),
+                                      style: AppTheme.dataMono(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.amberText),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Proyeksi Total Hutang:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                    Text(
+                                      CurrencyFormatter.format(projectedDebt),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: isOverLimit ? AppColors.danger : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (isOverLimit) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.dangerSurface,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 16),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            'Melebihi batas kredit pelanggan (Batas: ${CurrencyFormatter.format(selectedCustomer.creditLimit!)})',
+                                            style: const TextStyle(fontSize: 11, color: AppColors.danger, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
                         ],
+                        const SizedBox(height: 12),
+
+                        // Catatan Nota (Opsional)
+                        TextField(
+                          controller: noteController,
+                          decoration: InputDecoration(
+                            hintText: 'Catatan nota (opsional)...',
+                            prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
                         const SizedBox(height: 16),
 
                         // Tombol Aksi Selesaikan Transaksi
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: (selectedPaymentMethod == 'Tunai' && change < 0)
+                            backgroundColor: (selectedPaymentMethod == 'Tunai' && change < 0) ||
+                                    (selectedPaymentMethod == 'Kasbon' && (isOverLimit || selectedCustomerId == null))
                                 ? AppColors.textSecondary
                                 : AppColors.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
-                          onPressed: (selectedPaymentMethod == 'Tunai' && change < 0)
+                          onPressed: (selectedPaymentMethod == 'Tunai' && change < 0) ||
+                                  (selectedPaymentMethod == 'Kasbon' && (isOverLimit || selectedCustomerId == null))
                               ? null
                               : () {
                                   Navigator.pop(ctx);
                                   final paidAmount = selectedPaymentMethod == 'Tunai'
                                       ? currentPaid
-                                      : (selectedPaymentMethod == 'QRIS' ? _cartTotal : 0);
+                                      : (selectedPaymentMethod == 'QRIS' ? finalTotal : dpAmount);
+                                  final dueDateStr = selectedPaymentMethod == 'Kasbon'
+                                      ? '${dueDate.year}-${dueDate.month.toString().padLeft(2, '0')}-${dueDate.day.toString().padLeft(2, '0')}'
+                                      : null;
                                   _processTransaction(
                                     selectedPaymentMethod,
                                     paid: paidAmount,
                                     customerId: selectedPaymentMethod == 'Kasbon' ? selectedCustomerId : null,
+                                    dueDate: dueDateStr,
+                                    discount: discValue,
+                                    note: noteController.text.trim().isNotEmpty ? noteController.text.trim() : null,
                                   );
                                 },
                           child: Text(
                             selectedPaymentMethod == 'Tunai'
-                                ? 'Bayar Tunai (${CurrencyFormatter.format(_cartTotal)})'
+                                ? 'Bayar Tunai (${CurrencyFormatter.format(finalTotal)})'
                                 : selectedPaymentMethod == 'QRIS'
-                                    ? 'Selesaikan QRIS (${CurrencyFormatter.format(_cartTotal)})'
-                                    : 'Simpan Kasbon (${CurrencyFormatter.format(_cartTotal)})',
+                                    ? 'Selesaikan QRIS (${CurrencyFormatter.format(finalTotal)})'
+                                    : 'Simpan Kasbon (Sisa: ${CurrencyFormatter.format(sisaKasbon)})',
                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                           ),
                         ),
@@ -773,6 +1287,24 @@ class PosScreenState extends State<PosScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _quickDueButton(String label, int days, VoidCallback onTap) {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: Colors.white,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: onTap,
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+      ),
     );
   }
 
@@ -858,14 +1390,12 @@ class PosScreenState extends State<PosScreen> {
     String method, {
     int? paid,
     int? customerId,
+    String? dueDate,
+    int? discount,
     String? note,
   }) async {
-    final total = _cartTotal;
-    final itemsPayload = _cart.map((c) => {
-      'id': c.product.id,
-      'qty': c.qty,
-      'discount': 0,
-    }).toList();
+    final total = (_cartTotal - (discount ?? 0)).clamp(0, double.infinity).toInt();
+    final itemsPayload = _cart.map((c) => c.toApiItemJson()).toList();
 
     setState(() => _cart.clear());
     _showToast('Memproses transaksi $method...');
@@ -884,7 +1414,9 @@ class PosScreenState extends State<PosScreen> {
         'payment_type': method.toLowerCase(),
       };
       if (customerId != null) payload['customer_id'] = customerId;
-      if (note != null) payload['note'] = note;
+      if (dueDate != null && dueDate.isNotEmpty) payload['due_date'] = dueDate;
+      if (discount != null && discount > 0) payload['discount'] = discount;
+      if (note != null && note.isNotEmpty) payload['note'] = note;
 
       final dio = _createDio();
       final response = await dio.post('$cleanBaseUrl/pos', data: payload);
@@ -1226,127 +1758,192 @@ class PosScreenState extends State<PosScreen> {
                             ),
                           ],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (product.categoryName != null) ...[
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surfaceMuted,
-                                          borderRadius: BorderRadius.circular(6),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: product.stock > 0
+                              ? () {
+                                  if (product.units.isNotEmpty) {
+                                    _showUnitPickerForProduct(product);
+                                  } else {
+                                    _addToCart(product);
+                                  }
+                                }
+                              : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          if (product.categoryName != null) ...[
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.surfaceMuted,
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                product.categoryName!,
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                          ],
+                                          if (product.units.isNotEmpty)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.tealSurface,
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                '+${product.units.length} Satuan',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.teal,
+                                                ),
+                                              ),
+                                            ),
+                                          if (product.wholesalePrices.isNotEmpty) ...[
+                                            const SizedBox(width: 4),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.amberSurface,
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: const Text(
+                                                'Grosir',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.amberText,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        product.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
                                         ),
-                                        child: Text(
-                                          product.categoryName!,
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            CurrencyFormatter.format(product.price),
+                                            style: AppTheme.dataMono(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.primary,
+                                            ),
                                           ),
-                                        ),
+                                          const SizedBox(width: 10),
+                                          StockBadge(stock: product.stock, threshold: product.minStock),
+                                        ],
                                       ),
-                                      const SizedBox(height: 4),
                                     ],
-                                    Text(
-                                      product.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                      ),
+                                  ),
+                                ),
+
+                                // Tombol Tambah / Stepper Kuantitas
+                                if (inCart)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primarySurface,
+                                      borderRadius: BorderRadius.circular(22),
+                                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Row(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
+                                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                          padding: EdgeInsets.zero,
+                                          onPressed: () => _removeFromCart(product),
+                                        ),
                                         Text(
-                                          CurrencyFormatter.format(product.price),
+                                          '$cartQty',
                                           style: AppTheme.dataMono(
-                                            fontSize: 15,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w700,
                                             color: AppColors.primary,
                                           ),
                                         ),
-                                        const SizedBox(width: 10),
-                                        StockBadge(stock: product.stock, threshold: product.minStock),
+                                        IconButton(
+                                          icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
+                                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                          padding: EdgeInsets.zero,
+                                          onPressed: () {
+                                            if (product.units.isNotEmpty) {
+                                              _showUnitPickerForProduct(product);
+                                            } else {
+                                              _addToCart(product);
+                                            }
+                                          },
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-
-                              // Tombol Tambah / Stepper Kuantitas
-                              if (inCart)
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primarySurface,
-                                    borderRadius: BorderRadius.circular(22),
-                                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
-                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                        padding: EdgeInsets.zero,
-                                        onPressed: () => _removeFromCart(product),
-                                      ),
-                                      Text(
-                                        '$cartQty',
-                                        style: AppTheme.dataMono(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
-                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                        padding: EdgeInsets.zero,
-                                        onPressed: () => _addToCart(product),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Material(
-                                  color: product.stock > 0 ? AppColors.primarySurface : AppColors.surfaceMuted,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: InkWell(
+                                  )
+                                else
+                                  Material(
+                                    color: product.stock > 0 ? AppColors.primarySurface : AppColors.surfaceMuted,
                                     borderRadius: BorderRadius.circular(12),
-                                    onTap: product.stock > 0 ? () => _addToCart(product) : null,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.add,
-                                            size: 16,
-                                            color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Tambah',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(12),
+                                      onTap: product.stock > 0
+                                          ? () {
+                                              if (product.units.isNotEmpty) {
+                                                _showUnitPickerForProduct(product);
+                                              } else {
+                                                _addToCart(product);
+                                              }
+                                            }
+                                          : null,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.add,
+                                              size: 16,
                                               color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              product.units.isNotEmpty ? 'Pilih Satuan' : 'Tambah',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

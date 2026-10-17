@@ -39,7 +39,14 @@ class PosApiController extends Controller
 
         $customers = Customer::where('is_blocked', false)
             ->orderBy('name')
-            ->get(['id', 'name', 'phone', 'credit_limit']);
+            ->get(['id', 'name', 'phone', 'credit_limit'])
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'phone' => $c->phone,
+                'credit_limit' => $c->credit_limit,
+                'outstanding' => $c->outstanding(),
+            ]);
 
         $store = Setting::values();
 
@@ -135,13 +142,37 @@ class PosApiController extends Controller
 
             $discount = $data['discount'] ?? 0;
             $total = max(0, $subtotal - $discount);
-            $paid = $data['paid'];
-            $change = max(0, $paid - $total);
-            $isPaid = ($data['payment_type'] ?? 'tunai') !== 'kasbon' || $paid >= $total;
+            $paid = (int) $data['paid'];
+            $isKasbon = ($data['payment_type'] ?? 'tunai') === 'kasbon';
+            $isQris = ($data['payment_type'] ?? 'tunai') === 'qris';
+
+            if ($isQris) {
+                $paid = $total;
+                $change = 0;
+            } elseif ($isKasbon) {
+                $paid = min($paid, $total); // DP tidak melebihi total
+                $change = 0;
+
+                if (!empty($data['customer_id'])) {
+                    $customer = Customer::find($data['customer_id']);
+                    if ($customer && $customer->credit_limit !== null) {
+                        $sisaHutangBaru = $customer->outstanding() + ($total - $paid);
+                        if ($sisaHutangBaru > $customer->credit_limit) {
+                            throw ValidationException::withMessages([
+                                'customer_id' => ['Melebihi batas kredit pelanggan (sisa hutang jadi Rp' . number_format($sisaHutangBaru, 0, ',', '.') . ').'],
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                $change = max(0, $paid - $total);
+            }
+
+            $isPaid = !$isKasbon || ($total - $paid) <= 0;
 
             $sale = Sale::create([
                 'user_id' => $cashierId,
-                'customer_id' => $data['customer_id'] ?? null,
+                'customer_id' => $isKasbon ? ($data['customer_id'] ?? null) : null,
                 'invoice_no' => Sale::makeInvoiceNo(),
                 'subtotal' => $subtotal,
                 'discount' => $discount,
@@ -151,7 +182,7 @@ class PosApiController extends Controller
                 'change' => $change,
                 'payment_type' => $data['payment_type'] ?? 'tunai',
                 'status' => $isPaid ? 'lunas' : 'belum_lunas',
-                'due_date' => $data['due_date'] ?? null,
+                'due_date' => $isKasbon ? ($data['due_date'] ?? null) : null,
                 'note' => $data['note'] ?? null,
             ]);
 

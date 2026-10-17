@@ -183,15 +183,41 @@ class BluetoothPrinterService {
       PosColumn(text: 'Total:', width: 6, styles: const PosStyles(bold: true)),
       PosColumn(text: 'Rp ${sale.total}', width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
     ]);
-    bytes += generator.row([
-      PosColumn(text: 'Bayar (${sale.paymentMethod.toUpperCase()}):', width: 7),
-      PosColumn(text: 'Rp ${sale.paid}', width: 5, styles: const PosStyles(align: PosAlign.right)),
-    ]);
-    if (sale.change > 0) {
+    if (sale.isKasbon) {
+      final sisa = sale.total - sale.paid;
       bytes += generator.row([
-        PosColumn(text: 'Kembali:', width: 6),
-        PosColumn(text: 'Rp ${sale.change}', width: 6, styles: const PosStyles(align: PosAlign.right)),
+        PosColumn(text: 'Status Kasir:', width: 6),
+        PosColumn(text: sisa <= 0 ? 'LUNAS' : 'KASBON / PIUTANG', width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
       ]);
+      bytes += generator.row([
+        PosColumn(text: 'Uang Muka (DP):', width: 7),
+        PosColumn(text: 'Rp ${sale.paid}', width: 5, styles: const PosStyles(align: PosAlign.right)),
+      ]);
+      bytes += generator.row([
+        PosColumn(text: 'Sisa Hutang:', width: 7, styles: const PosStyles(bold: true)),
+        PosColumn(text: 'Rp $sisa', width: 5, styles: const PosStyles(align: PosAlign.right, bold: true)),
+      ]);
+      if (sale.dueDate != null) {
+        bytes += generator.row([
+          PosColumn(text: 'Jatuh Tempo:', width: 5),
+          PosColumn(
+            text: '${sale.dueDate!.day.toString().padLeft(2, '0')}/${sale.dueDate!.month.toString().padLeft(2, '0')}/${sale.dueDate!.year}',
+            width: 7,
+            styles: const PosStyles(align: PosAlign.right),
+          ),
+        ]);
+      }
+    } else {
+      bytes += generator.row([
+        PosColumn(text: 'Bayar (${sale.paymentMethod.toUpperCase()}):', width: 7),
+        PosColumn(text: 'Rp ${sale.paid}', width: 5, styles: const PosStyles(align: PosAlign.right)),
+      ]);
+      if (sale.change > 0) {
+        bytes += generator.row([
+          PosColumn(text: 'Kembali:', width: 6),
+          PosColumn(text: 'Rp ${sale.change}', width: 6, styles: const PosStyles(align: PosAlign.right)),
+        ]);
+      }
     }
 
     bytes += generator.hr();
