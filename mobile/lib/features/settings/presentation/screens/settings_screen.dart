@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kios_berkah_mobile/core/constants/api_endpoints.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 import 'package:kios_berkah_mobile/core/services/bluetooth_printer_service.dart';
 import 'package:kios_berkah_mobile/core/widgets/app_button.dart';
@@ -15,18 +20,107 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _serverUrlController = TextEditingController(text: 'https://kios.ndrsolution.my.id/api');
+  final _serverUrlController = TextEditingController(text: ApiEndpoints.defaultBaseUrl);
   final _printerService = BluetoothPrinterService.instance;
 
   bool _isBluetoothConnected = false;
   String? _printerName;
   String? _printerMac;
   bool _isLoadingPrinters = false;
+  bool _isTestingServer = false;
 
   @override
   void initState() {
     super.initState();
     _initBluetoothPrinter();
+    _loadSavedServerUrl();
+  }
+
+  Future<void> _loadSavedServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('kios_api_base_url')?.trim();
+    if (saved != null && saved.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _serverUrlController.text = saved;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleTestAndSaveServer() async {
+    final rawUrl = _serverUrlController.text.trim();
+    if (rawUrl.isEmpty) {
+      _showToast('Alamat URL tidak boleh kosong', isError: true);
+      return;
+    }
+    final cleanUrl = rawUrl.endsWith('/') ? rawUrl.substring(0, rawUrl.length - 1) : rawUrl;
+
+    setState(() => _isTestingServer = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 12),
+          receiveTimeout: const Duration(seconds: 12),
+          headers: {'Accept': 'application/json'},
+        ),
+      );
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+        return client;
+      };
+
+      final response = await dio.get('$cleanUrl/pos');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final count = (response.data['products'] as List?)?.length ?? 0;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('kios_api_base_url', cleanUrl);
+
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Koneksi Sukses! Ditemukan $count produk di server.')),
+              ],
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
+      } else {
+        throw 'Server merespon dengan status: ${response.statusCode}';
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Gagal tersambung ke $cleanUrl:\n$e', maxLines: 3)),
+            ],
+          ),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isTestingServer = false);
+      }
+    }
   }
 
   Future<void> _initBluetoothPrinter() async {
@@ -444,31 +538,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   hint: 'https://kios.ndrsolution.my.id/api',
                 ),
                 const SizedBox(height: 12),
-                AppButton(
-                  label: 'Tes & Simpan Koneksi Server',
-                  variant: AppButtonVariant.primary,
-                  height: 44,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Row(
-                          children: [
-                            Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
-                            SizedBox(width: 10),
-                            Text('Koneksi backend server berhasil diverifikasi!'),
-                          ],
-                        ),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: AppButton(
+                        label: 'Tes & Simpan Koneksi',
+                        icon: Icons.check_circle_outline_rounded,
+                        variant: AppButtonVariant.primary,
+                        height: 44,
+                        isLoading: _isTestingServer,
+                        onPressed: _handleTestAndSaveServer,
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: AppButton(
+                        label: 'URL Produksi',
+                        icon: Icons.restore_rounded,
+                        variant: AppButtonVariant.outline,
+                        height: 44,
+                        onPressed: () {
+                          _serverUrlController.text = ApiEndpoints.defaultBaseUrl;
+                          _handleTestAndSaveServer();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 16),
 
           // Info Toko & Akun

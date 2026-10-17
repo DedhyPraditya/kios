@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kios_berkah_mobile/core/constants/api_endpoints.dart';
@@ -29,6 +31,8 @@ class PosScreenState extends State<PosScreen> {
 
   List<ProductModel> _products = [];
   bool _isLoading = false;
+  String? _fetchError;
+  String _activeUrl = ApiEndpoints.defaultBaseUrl;
 
   @override
   void initState() {
@@ -36,23 +40,41 @@ class PosScreenState extends State<PosScreen> {
     fetchPosData();
   }
 
+  Dio _createDio() {
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        headers: {'Accept': 'application/json'},
+      ),
+    );
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      return client;
+    };
+    return dio;
+  }
+
   Future<void> fetchPosData({bool showIndicator = true}) async {
     if (showIndicator) {
-      setState(() => _isLoading = true);
+      setState(() {
+        _isLoading = true;
+        _fetchError = null;
+      });
     }
     try {
       final prefs = await SharedPreferences.getInstance();
-      final baseUrl = prefs.getString('kios_api_base_url') ?? ApiEndpoints.defaultBaseUrl;
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 12),
-          receiveTimeout: const Duration(seconds: 12),
-          headers: {'Accept': 'application/json'},
-        ),
-      );
+      var rawUrl = prefs.getString('kios_api_base_url')?.trim();
+      if (rawUrl == null || rawUrl.isEmpty) {
+        rawUrl = ApiEndpoints.defaultBaseUrl;
+      }
+      final cleanBaseUrl = rawUrl.endsWith('/') ? rawUrl.substring(0, rawUrl.length - 1) : rawUrl;
+      _activeUrl = cleanBaseUrl;
 
-      final response = await dio.get('/pos');
+      final dio = _createDio();
+      final response = await dio.get('$cleanBaseUrl/pos');
+
       if (response.statusCode == 200 && response.data['success'] == true) {
         final productsRaw = response.data['products'] as List? ?? [];
         final categoriesRaw = response.data['categories'] as List? ?? [];
@@ -68,18 +90,33 @@ class PosScreenState extends State<PosScreen> {
             _products = loadedProducts;
             _categories = loadedCategories;
             _isLoading = false;
+            _fetchError = null;
           });
         }
+      } else {
+        throw 'Respon server status ${response.statusCode}';
       }
     } catch (e) {
       debugPrint('Error fetch POS data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _fetchError = e.toString();
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal sinkron dari $_activeUrl:\n$e', maxLines: 3),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     }
   }
+
 
   int get _cartTotal => _cart.fold(0, (sum, item) => sum + item.subtotal);
   int get _cartItemCount => _cart.fold(0, (sum, item) => sum + item.qty);
@@ -431,17 +468,14 @@ class PosScreenState extends State<PosScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final baseUrl = prefs.getString('kios_api_base_url') ?? ApiEndpoints.defaultBaseUrl;
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
-          headers: {'Accept': 'application/json'},
-        ),
-      );
+      var rawUrl = prefs.getString('kios_api_base_url')?.trim();
+      if (rawUrl == null || rawUrl.isEmpty) {
+        rawUrl = ApiEndpoints.defaultBaseUrl;
+      }
+      final cleanBaseUrl = rawUrl.endsWith('/') ? rawUrl.substring(0, rawUrl.length - 1) : rawUrl;
 
-      final response = await dio.post('/pos', data: {
+      final dio = _createDio();
+      final response = await dio.post('$cleanBaseUrl/pos', data: {
         'items': itemsPayload,
         'paid': total,
         'payment_type': method.toLowerCase(),
@@ -660,37 +694,85 @@ class PosScreenState extends State<PosScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(
+                               Container(
                                 padding: const EdgeInsets.all(18),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.surfaceMuted,
+                                decoration: BoxDecoration(
+                                  color: _fetchError != null ? AppColors.dangerSurface : AppColors.surfaceMuted,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.inventory_2_outlined, size: 40, color: AppColors.textSecondary),
+                                child: Icon(
+                                  _fetchError != null ? Icons.cloud_off_rounded : Icons.inventory_2_outlined,
+                                  size: 40,
+                                  color: _fetchError != null ? AppColors.danger : AppColors.textSecondary,
+                                ),
                               ),
                               const SizedBox(height: 14),
                               Text(
-                                _searchController.text.isNotEmpty
-                                    ? 'Tidak ada produk cocok dengan "${_searchController.text}"'
-                                    : 'Belum ada produk untuk kategori ini',
+                                _fetchError != null
+                                    ? 'Gagal Menghubungkan ke Server'
+                                    : _searchController.text.isNotEmpty
+                                        ? 'Tidak ada produk cocok dengan "${_searchController.text}"'
+                                        : 'Belum ada produk untuk kategori ini',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                               ),
                               const SizedBox(height: 6),
-                              const Text(
-                                'Tarik layar ke bawah untuk memperbarui dari server',
-                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                              ),
-                              const SizedBox(height: 16),
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: AppColors.border),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              if (_fetchError != null) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: Text(
+                                    'URL: $_activeUrl\nError: $_fetchError',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: AppColors.danger),
+                                  ),
                                 ),
-                                icon: const Icon(Icons.sync_rounded, size: 16, color: AppColors.primary),
-                                label: const Text('Perbarui Data Sekarang'),
-                                onPressed: () => fetchPosData(),
-                              ),
+                                const SizedBox(height: 14),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      icon: const Icon(Icons.sync_rounded, size: 16),
+                                      label: const Text('Coba Lagi'),
+                                      onPressed: () => fetchPosData(),
+                                    ),
+                                    OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: AppColors.primary),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      icon: const Icon(Icons.restore_rounded, size: 16, color: AppColors.primary),
+                                      label: const Text('Reset ke URL Produksi'),
+                                      onPressed: () async {
+                                        final prefs = await SharedPreferences.getInstance();
+                                        await prefs.setString('kios_api_base_url', ApiEndpoints.defaultBaseUrl);
+                                        fetchPosData();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                const Text(
+                                  'Tarik layar ke bawah untuk memperbarui dari server',
+                                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                                const SizedBox(height: 16),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppColors.border),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: const Icon(Icons.sync_rounded, size: 16, color: AppColors.primary),
+                                  label: const Text('Perbarui Data Sekarang'),
+                                  onPressed: () => fetchPosData(),
+                                ),
+                              ],
                             ],
                           ),
                         ),

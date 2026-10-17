@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kios_berkah_mobile/core/constants/api_endpoints.dart';
@@ -35,23 +37,37 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
     fetchSalesData();
   }
 
+  Dio _createDio() {
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        headers: {'Accept': 'application/json'},
+      ),
+    );
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      return client;
+    };
+    return dio;
+  }
+
   Future<void> fetchSalesData({bool showIndicator = true}) async {
     if (showIndicator) {
       setState(() => _isLoading = true);
     }
     try {
       final prefs = await SharedPreferences.getInstance();
-      final baseUrl = prefs.getString('kios_api_base_url') ?? ApiEndpoints.defaultBaseUrl;
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 12),
-          receiveTimeout: const Duration(seconds: 12),
-          headers: {'Accept': 'application/json'},
-        ),
-      );
+      var rawUrl = prefs.getString('kios_api_base_url')?.trim();
+      if (rawUrl == null || rawUrl.isEmpty) {
+        rawUrl = ApiEndpoints.defaultBaseUrl;
+      }
+      final cleanBaseUrl = rawUrl.endsWith('/') ? rawUrl.substring(0, rawUrl.length - 1) : rawUrl;
 
-      final response = await dio.get('/sales');
+      final dio = _createDio();
+      final response = await dio.get('$cleanBaseUrl/sales');
+
       if (response.statusCode == 200 && response.data['success'] == true) {
         final salesRaw = response.data['sales'] as List? ?? [];
         final loadedSales = salesRaw.map((s) => SaleModel.fromJson(s)).toList();
