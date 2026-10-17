@@ -5,6 +5,8 @@ import 'package:kios_berkah_mobile/features/pos/presentation/screens/pos_screen.
 import 'package:kios_berkah_mobile/features/sales/presentation/screens/sales_history_screen.dart';
 import 'package:kios_berkah_mobile/features/settings/presentation/screens/settings_screen.dart';
 
+import 'package:kios_berkah_mobile/features/scanner/presentation/screens/barcode_scanner_screen.dart';
+
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -14,30 +16,27 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  final GlobalKey<PosScreenState> _posKey = GlobalKey<PosScreenState>();
 
-  final List<Widget> _screens = const [
-    PosScreen(),
-    SalesHistoryScreen(),
-    ArangScreen(),
-    SettingsScreen(),
+  late final List<Widget> _screens = [
+    PosScreen(key: _posKey),
+    const SalesHistoryScreen(),
+    const ArangScreen(),
+    const SettingsScreen(),
   ];
 
-  void _onScanBarcodePressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 10),
-            Text('Membuka kamera pemindai barcode kilat...'),
-          ],
-        ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
+  Future<void> _onScanBarcodePressed() async {
+    final scannedCode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
     );
+    if (scannedCode != null && scannedCode.trim().isNotEmpty) {
+      if (_currentIndex != 0) {
+        setState(() => _currentIndex = 0);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _posKey.currentState?.handleScannedBarcode(scannedCode.trim());
+      });
+    }
   }
 
   @override

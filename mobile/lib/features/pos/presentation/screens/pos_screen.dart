@@ -6,15 +6,16 @@ import 'package:kios_berkah_mobile/core/widgets/app_button.dart';
 import 'package:kios_berkah_mobile/core/widgets/stock_badge.dart';
 import 'package:kios_berkah_mobile/features/pos/data/models/cart_item_model.dart';
 import 'package:kios_berkah_mobile/features/products/data/models/product_model.dart';
+import 'package:kios_berkah_mobile/features/scanner/presentation/screens/barcode_scanner_screen.dart';
 
 class PosScreen extends StatefulWidget {
   const PosScreen({super.key});
 
   @override
-  State<PosScreen> createState() => _PosScreenState();
+  State<PosScreen> createState() => PosScreenState();
 }
 
-class _PosScreenState extends State<PosScreen> {
+class PosScreenState extends State<PosScreen> {
   final TextEditingController _searchController = TextEditingController();
   int? _selectedCategoryId;
   final List<CartItemModel> _cart = [];
@@ -45,6 +46,34 @@ class _PosScreenState extends State<PosScreen> {
   int _getCartQty(int productId) {
     final index = _cart.indexWhere((item) => item.product.id == productId);
     return index >= 0 ? _cart[index].qty : 0;
+  }
+
+  void handleScannedBarcode(String barcode) {
+    _searchController.text = barcode;
+    final clean = barcode.trim().toLowerCase();
+    final matched = _products.where((p) {
+      final code = p.barcode?.toLowerCase() ?? '';
+      final name = p.name.toLowerCase();
+      return code == clean || name.contains(clean);
+    }).toList();
+
+    if (matched.isNotEmpty) {
+      final product = matched.first;
+      _addToCart(product);
+      _showToast('1x ${product.name} dimasukkan ke keranjang!');
+    } else {
+      _showToast('Barcode $barcode belum terdaftar.', isError: true);
+    }
+    setState(() {});
+  }
+
+  Future<void> openBarcodeScanner() async {
+    final scannedCode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (scannedCode != null && scannedCode.trim().isNotEmpty) {
+      handleScannedBarcode(scannedCode.trim());
+    }
   }
 
   void _addToCart(ProductModel product) {
@@ -455,11 +484,8 @@ class _PosScreenState extends State<PosScreen> {
                   else
                     IconButton(
                       icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 22),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Membuka kamera scanner barcode...')),
-                        );
-                      },
+                      tooltip: 'Pindai Barcode Kamera',
+                      onPressed: openBarcodeScanner,
                     ),
                   const SizedBox(width: 4),
                 ],

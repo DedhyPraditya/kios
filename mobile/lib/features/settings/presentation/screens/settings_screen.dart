@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
+import 'package:kios_berkah_mobile/core/services/bluetooth_printer_service.dart';
 import 'package:kios_berkah_mobile/core/widgets/app_button.dart';
 import 'package:kios_berkah_mobile/core/widgets/app_text_field.dart';
 import 'package:kios_berkah_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:kios_berkah_mobile/features/shift/presentation/screens/shift_screen.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,7 +16,234 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _serverUrlController = TextEditingController(text: 'https://kios.ndrsolution.my.id/api');
-  final String _selectedPrinter = 'RPP02N Thermal (58mm)';
+  final _printerService = BluetoothPrinterService.instance;
+
+  bool _isBluetoothConnected = false;
+  String? _printerName;
+  String? _printerMac;
+  bool _isLoadingPrinters = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initBluetoothPrinter();
+  }
+
+  Future<void> _initBluetoothPrinter() async {
+    await _printerService.init();
+    final isConn = await _printerService.isConnected();
+    if (mounted) {
+      setState(() {
+        _isBluetoothConnected = isConn;
+        _printerName = _printerService.connectedName ?? 'Belum ada printer dipilih';
+        _printerMac = _printerService.connectedMac;
+      });
+    }
+  }
+
+  Future<void> _showPrinterPickerSheet() async {
+    final enabled = await _printerService.isBluetoothEnabled();
+    if (!enabled) {
+      if (mounted) {
+        _showToast('Silakan aktifkan Bluetooth di HP Anda terlebih dahulu.', isError: true);
+      }
+      return;
+    }
+
+    setState(() => _isLoadingPrinters = true);
+    List<BluetoothInfo> devices = [];
+    try {
+      devices = await _printerService.getPairedPrinters();
+    } catch (e) {
+      debugPrint('Error ambil paired bluetooth: $e');
+    }
+    setState(() => _isLoadingPrinters = false);
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Pilih Printer Bluetooth',
+                        style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Pilih printer thermal yang sudah dipasangkan (paired) di pengaturan HP Anda:',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  if (devices.isEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(Icons.bluetooth_disabled_rounded, size: 36, color: AppColors.textSecondary),
+                          SizedBox(height: 8),
+                          Text(
+                            'Tidak ada printer Bluetooth tersimpan',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Pastikan printer thermal sudah dihidupkan dan di-pairing di menu Bluetooth HP Android Anda (PIN biasanya 0000 atau 1234).',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 280),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: devices.length,
+                        separatorBuilder: (context, index) => const Divider(height: 12),
+                        itemBuilder: (context, index) {
+                          final device = devices[index];
+                          final isCurrent = _printerMac == device.macAdress;
+
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: isCurrent ? AppColors.primarySurface : AppColors.surfaceMuted,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.print_rounded,
+                                color: isCurrent ? AppColors.primary : AppColors.textSecondary,
+                                size: 22,
+                              ),
+                            ),
+                            title: Text(
+                              device.name.isNotEmpty ? device.name : 'Printer Thermal',
+                              style: TextStyle(
+                                fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                                fontSize: 14,
+                                color: isCurrent ? AppColors.primary : AppColors.textPrimary,
+                              ),
+                            ),
+                            subtitle: Text(
+                              device.macAdress,
+                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            ),
+                            trailing: isCurrent && _isBluetoothConnected
+                                ? const Chip(
+                                    label: Text('Tersambung', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                    backgroundColor: AppColors.primary,
+                                    padding: EdgeInsets.zero,
+                                  )
+                                : ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      textStyle: const TextStyle(fontSize: 12),
+                                    ),
+                                    onPressed: () async {
+                                      Navigator.of(ctx).pop();
+                                      _connectToPrinter(device.macAdress, device.name);
+                                    },
+                                    child: const Text('Hubungkan'),
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _connectToPrinter(String mac, String name) async {
+    _showToast('Menghubungkan ke $name...');
+    final success = await _printerService.connect(mac, name);
+    if (mounted) {
+      setState(() {
+        _isBluetoothConnected = success;
+        _printerName = name;
+        _printerMac = mac;
+      });
+      if (success) {
+        _showToast('Berhasil terhubung ke $name!');
+      } else {
+        _showToast('Gagal terhubung ke $name. Pastikan printer hidup.', isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleTestPrint() async {
+    if (!_isBluetoothConnected) {
+      _showToast('Printer belum tersambung. Silakan pilih printer terlebih dahulu.', isError: true);
+      return;
+    }
+
+    _showToast('Mengirim struk tes ke printer...');
+    final result = await _printerService.printTestReceipt();
+    if (mounted) {
+      if (result) {
+        _showToast('Struk tes berhasil dicetak!');
+      } else {
+        _showToast('Gagal mencetak struk tes. Cek kertas & bluetooth.', isError: true);
+      }
+    }
+  }
+
+  void _showToast(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? AppColors.danger : AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -98,53 +327,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 14),
+
+                // Kartu Status Printer Saat Ini
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(
+                      color: _isBluetoothConnected ? AppColors.primary.withValues(alpha: 0.5) : AppColors.border,
+                    ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_selectedPrinter, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      const Row(
-                        children: [
-                          Icon(Icons.bluetooth_connected, color: AppColors.primaryBright, size: 18),
-                          SizedBox(width: 4),
-                          Text(
-                            'Tersambung',
-                            style: TextStyle(color: AppColors.primaryBright, fontSize: 12, fontWeight: FontWeight.w700),
+                      Icon(
+                        _isBluetoothConnected ? Icons.bluetooth_connected_rounded : Icons.bluetooth_disabled_rounded,
+                        color: _isBluetoothConnected ? AppColors.primary : AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _printerName ?? 'Belum ada printer dipilih',
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
+                            if (_printerMac != null)
+                              Text(
+                                _printerMac!,
+                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _isBluetoothConnected ? AppColors.primarySurface : AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _isBluetoothConnected ? 'Tersambung' : 'Terputus',
+                          style: TextStyle(
+                            color: _isBluetoothConnected ? AppColors.primary : AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                AppButton(
-                  label: 'Pindai Ulang Bluetooth',
-                  icon: Icons.bluetooth_searching_rounded,
-                  variant: AppButtonVariant.outline,
-                  height: 44,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Row(
-                          children: [
-                            Icon(Icons.bluetooth_searching_rounded, color: Colors.white, size: 20),
-                            SizedBox(width: 10),
-                            Text('Memindai printer Bluetooth terdekat...'),
-                          ],
-                        ),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+
+                // Tombol Aksi: Pilih Printer & Tes Cetak
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: 'Pilih Printer',
+                        icon: Icons.bluetooth_searching_rounded,
+                        variant: AppButtonVariant.outline,
+                        height: 44,
+                        isLoading: _isLoadingPrinters,
+                        onPressed: _showPrinterPickerSheet,
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: AppButton(
+                        label: 'Tes Cetak',
+                        icon: Icons.receipt_long_rounded,
+                        variant: AppButtonVariant.primary,
+                        height: 44,
+                        onPressed: _handleTestPrint,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
