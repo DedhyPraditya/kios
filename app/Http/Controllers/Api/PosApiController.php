@@ -128,7 +128,7 @@ class PosApiController extends Controller
                 $itemsToInsert[] = [
                     'product_id' => $product->id,
                     'product_unit_id' => $item['unit_id'] ?? null,
-                    'product_name' => $product->name,
+                    'name' => $product->name,
                     'unit_name' => $unitName,
                     'unit_isi' => $factor,
                     'price' => $unitPrice,
@@ -192,20 +192,21 @@ class PosApiController extends Controller
                 $ins['sale_id'] = $sale->id;
                 SaleItem::create($ins);
 
-                // Potong stok produk
+                // Potong stok produk & catat riwayat mutasi
                 $product = $products->get($ins['product_id']);
-                $product->decrement('stock', $ins['qty'] * $factor);
-
-                StockMovement::create([
-                    'product_id' => $product->id,
+                StockMovement::apply($product, -($ins['qty'] * $factor), 'penjualan', [
                     'user_id' => $cashierId,
-                    'type' => 'sale',
-                    'qty' => -($ins['qty'] * $factor),
-                    'stock_before' => $product->stock + ($ins['qty'] * $factor),
-                    'stock_after' => $product->stock,
-                    'description' => "Penjualan Nota #{$sale->invoice_no}",
+                    'sale_id' => $sale->id,
+                    'note' => 'Nota ' . $sale->invoice_no,
                 ]);
             }
+
+            \App\Models\ActivityLog::record(
+                'sale.create',
+                "Penjualan mobile nota {$sale->invoice_no} " . strtoupper($sale->payment_type) . ' Rp' . number_format($sale->total, 0, ',', '.'),
+                $sale,
+                ['invoice_no' => $sale->invoice_no, 'total' => $sale->total, 'payment_type' => $sale->payment_type, 'items' => count($data['items'])]
+            );
 
             return $sale;
         });
