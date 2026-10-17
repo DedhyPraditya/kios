@@ -30,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Setelan & Shift', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
         children: [
           // Navigasi Cepat ke Tutup Kasir / Shift
           Container(
@@ -130,7 +130,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   height: 44,
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Memindai perangkat Bluetooth thermal terdekat...')),
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.bluetooth_searching_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 10),
+                            Text('Memindai printer Bluetooth terdekat...'),
+                          ],
+                        ),
+                        backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
                     );
                   },
                 ),
@@ -177,9 +189,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   height: 44,
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Koneksi ke backend server berhasil terverifikasi!'),
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 10),
+                            Text('Koneksi backend server berhasil diverifikasi!'),
+                          ],
+                        ),
                         backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     );
                   },

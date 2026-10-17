@@ -77,7 +77,7 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
         children: [
           // Tab Jual Arang
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 130),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -142,10 +142,18 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
                         icon: Icons.print_outlined,
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Penjualan arang tersimpan! Mencetak nota...'),
+                            SnackBar(
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.print_rounded, color: Colors.white, size: 20),
+                                  SizedBox(width: 10),
+                                  Text('Penjualan arang tersimpan! Mencetak nota...'),
+                                ],
+                              ),
                               backgroundColor: AppColors.primary,
                               behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             ),
                           );
                         },
@@ -159,7 +167,7 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
 
           // Tab Beli Arang
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 130),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -223,10 +231,18 @@ class _ArangScreenState extends State<ArangScreen> with SingleTickerProviderStat
                         label: 'Catat Pembelian Arang',
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Pembelian arang berhasil dicatat!'),
+                            SnackBar(
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                                  SizedBox(width: 10),
+                                  Text('Pembelian arang berhasil dicatat!'),
+                                ],
+                              ),
                               backgroundColor: AppColors.primary,
                               behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             ),
                           );
                         },

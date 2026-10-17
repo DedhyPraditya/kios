@@ -24,10 +24,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _onScanBarcodePressed() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Membuka kamera scanner barcode kilat...'),
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Text('Membuka kamera pemindai barcode kilat...'),
+          ],
+        ),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

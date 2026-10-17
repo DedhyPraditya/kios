@@ -163,6 +163,20 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+
+      // SnackBar Mengambang di Atas Bottom Bar
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+        elevation: 6,
+        contentTextStyle: GoogleFonts.outfit(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 

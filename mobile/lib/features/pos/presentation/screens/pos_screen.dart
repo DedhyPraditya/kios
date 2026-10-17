@@ -84,9 +84,10 @@ class _PosScreenState extends State<PosScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.danger : AppColors.amber,
+        backgroundColor: isError ? AppColors.danger : AppColors.primary,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -521,7 +522,7 @@ class _PosScreenState extends State<PosScreen> {
           // Daftar Produk (Card Putih Bersih, TANPA GAMBAR)
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
               itemCount: _products.length,
               itemBuilder: (ctx, idx) {
                 final product = _products[idx];

@@ -37,7 +37,7 @@ class _ShiftScreenState extends State<ShiftScreen> {
         title: const Text('Tutup Kasir & Shift Laci', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 130),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -199,9 +199,18 @@ class _ShiftScreenState extends State<ShiftScreen> {
                     icon: Icons.check_circle_outline,
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Shift kasir berhasil ditutup!'),
+                        SnackBar(
+                          content: const Row(
+                            children: [
+                              Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 10),
+                              Text('Shift kasir berhasil ditutup!'),
+                            ],
+                          ),
                           backgroundColor: AppColors.primary,
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                       );
                     },

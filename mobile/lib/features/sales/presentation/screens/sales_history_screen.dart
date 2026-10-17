@@ -127,7 +127,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
           // Daftar Nota Transaksi
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
               itemCount: _sales.length,
               itemBuilder: (ctx, idx) {
                 final sale = _sales[idx];
@@ -229,10 +229,18 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                               label: const Text('Cetak Struk', style: TextStyle(fontSize: 12)),
                               onPressed: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Mengirim ke printer Bluetooth thermal 58mm...'),
+                                  SnackBar(
+                                    content: const Row(
+                                      children: [
+                                        Icon(Icons.print_rounded, color: Colors.white, size: 20),
+                                        SizedBox(width: 10),
+                                        Text('Mengirim struk ke printer Bluetooth...'),
+                                      ],
+                                    ),
                                     backgroundColor: AppColors.primary,
                                     behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                   ),
                                 );
                               },
