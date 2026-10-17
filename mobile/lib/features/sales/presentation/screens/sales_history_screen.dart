@@ -92,7 +92,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (ctx, idx) {
                 final filter = _filters[idx];
                 final isSelected = _selectedFilter == filter;

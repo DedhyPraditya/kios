@@ -160,7 +160,7 @@ class _PosScreenState extends State<PosScreen> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           itemCount: _cart.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (context, index) => const Divider(height: 1),
                           itemBuilder: (ctx, idx) {
                             final item = _cart[idx];
                             return Padding(
@@ -469,7 +469,7 @@ class _PosScreenState extends State<PosScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (ctx, idx) {
                 final cat = _categories[idx];
                 final isSelected = (_selectedCategoryId ?? 0) == cat.id;
