@@ -11,6 +11,8 @@ class KiosBerkahApp extends StatelessWidget {
       title: 'Kios BERKAH',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
       home: const LoginScreen(),
     );
   }

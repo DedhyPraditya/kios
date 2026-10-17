@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 
-/// Tema visual Vendra POS x Kios BERKAH.
-/// Tipografi: Outfit (UI geometris modern) + JetBrains Mono (nominal angka & struk).
-/// Nuansa: Sleek Dark Emerald yang bersih, premium, dan ramah mata kasir.
+/// Tema visual Kios BERKAH (Clean White / Light Theme).
+/// Tipografi: Outfit (UI geometris modern & bersih) + JetBrains Mono (nominal angka).
+/// Nuansa: Putih bersih, segar, ramah, dan profesional.
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get darkTheme {
-    final baseTextTheme = GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme);
+  static ThemeData get lightTheme {
+    final baseTextTheme = GoogleFonts.outfitTextTheme();
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.background,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         onPrimary: AppColors.textOnPrimary,
         secondary: AppColors.amber,
-        onSecondary: AppColors.textPrimary,
+        onSecondary: Colors.white,
         surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
         error: AppColors.danger,
@@ -62,12 +62,12 @@ class AppTheme {
         ),
       ),
 
-      // AppBar Sleek
+      // AppBar Putih Bersih
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        scrolledUnderElevation: 0,
+        scrolledUnderElevation: 0.5,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
         titleTextStyle: GoogleFonts.outfit(
@@ -81,7 +81,7 @@ class AppTheme {
         ),
       ),
 
-      // Card Bergaya Vendra POS
+      // Kartu Putih Bersih dengan Border Lembut
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
@@ -92,10 +92,10 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // Input Decoration (Pill / Kapsul)
+      // Input Decoration (Pill Kapsul)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceElevated,
+        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         hintStyle: GoogleFonts.outfit(
           fontSize: 14,
@@ -123,11 +123,11 @@ class AppTheme {
         ),
       ),
 
-      // Elevated Button
+      // Elevated Button Hijau Kios BERKAH
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textOnPrimary,
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -144,6 +144,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
+          backgroundColor: Colors.white,
           side: const BorderSide(color: AppColors.border),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -165,10 +166,10 @@ class AppTheme {
     );
   }
 
-  // Alias lightTheme mengarah ke darkTheme (default modern dark)
-  static ThemeData get lightTheme => darkTheme;
+  // Fallback darkTheme tetap merender lightTheme sesuai permintaan user
+  static ThemeData get darkTheme => lightTheme;
 
-  /// Gaya font khusus angka (JetBrains Mono) untuk nominal Rupiah, barcode, dan stok
+  /// Font khusus angka JetBrains Mono
   static TextStyle dataMono({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.w600,

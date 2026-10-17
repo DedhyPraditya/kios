@@ -46,7 +46,7 @@ class AppTextField extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -69,6 +69,8 @@ class AppTextField extends StatelessWidget {
             hintText: hint,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: const BorderSide(color: AppColors.border),

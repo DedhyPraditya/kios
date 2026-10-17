@@ -1,58 +1,57 @@
 import 'package:flutter/material.dart';
 
-/// Palet warna Vendra POS x Kios BERKAH (Opsi B: Deep Emerald Modern).
-/// - Canvas gelap berkelas (Deep Dark #0D1410 / #111B15).
-/// - Aksen utama Emerald Green (#22C55E / #10B981) yang menyala tajam dan profesional.
-/// - Permukaan kartu elevated (#17231C) dengan border tegas (#25382D).
-/// - Aksen peringatan Amber (#F59E0B) & Danger (#EF4444).
-/// - Teks kontras tinggi: Putih (#F8FAFC) & Slate Muted (#94A3B8).
+/// Palet warna Resmi Kios BERKAH (Clean White / Light Theme).
+/// - Latar belakang putih bersih & segar (#F8FAFC).
+/// - Kartu & kontainer putih murni (#FFFFFF) dengan border halus (#E2E8F0).
+/// - Aksen utama Forest Green (#1E6B4F) yang profesional dan tegas.
+/// - Teks gelap tajam & kontras tinggi (#0F172A & #475569) untuk kemudahan membaca kasir.
 class AppColors {
   AppColors._();
 
-  // Background Canvas (Deep Emerald Tone)
-  static const Color background = Color(0xFF0D1410);
-  static const Color backgroundLight = Color(0xFFF4F6F5);
+  // Background Canvas (Putih Segar & Bersih)
+  static const Color background = Color(0xFFF8FAFC);
+  static const Color backgroundLight = Color(0xFFFFFFFF);
 
   // Cards & Surfaces
-  static const Color surface = Color(0xFF141F18);
-  static const Color surfaceElevated = Color(0xFF1B2A21);
-  static const Color surfaceMuted = Color(0xFF22352A);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceElevated = Color(0xFFFFFFFF);
+  static const Color surfaceMuted = Color(0xFFF1F5F9);
 
   // Borders & Dividers
-  static const Color border = Color(0xFF25392E);
-  static const Color borderSubtle = Color(0xFF1C2C23);
+  static const Color border = Color(0xFFE2E8F0);
+  static const Color borderSubtle = Color(0xFFEDF2F7);
 
-  // Primary Accent: Kios BERKAH Vibrant Emerald
-  static const Color primary = Color(0xFF10B981);
-  static const Color primaryBright = Color(0xFF34D399);
-  static const Color primaryDark = Color(0xFF059669);
-  static const Color primarySurface = Color(0xFF133224);
+  // Primary Accent: Forest Green Kios BERKAH
+  static const Color primary = Color(0xFF1E6B4F);
+  static const Color primaryBright = Color(0xFF22C55E);
+  static const Color primaryDark = Color(0xFF16503B);
+  static const Color primarySurface = Color(0xFFE8F5EE);
 
   // Secondary Accents
-  static const Color amber = Color(0xFFF59E0B);
-  static const Color amberSurface = Color(0xFF32240A);
-  static const Color amberText = Color(0xFFFBBF24);
+  static const Color amber = Color(0xFFD97706);
+  static const Color amberSurface = Color(0xFFFEF3C7);
+  static const Color amberText = Color(0xFFB45309);
 
-  static const Color teal = Color(0xFF14B8A6);
-  static const Color tealSurface = Color(0xFF0F3631);
+  static const Color teal = Color(0xFF0D9488);
+  static const Color tealSurface = Color(0xFFCCFBF1);
 
-  static const Color danger = Color(0xFFEF4444);
-  static const Color dangerSurface = Color(0xFF3B1515);
+  static const Color danger = Color(0xFFDC2626);
+  static const Color dangerSurface = Color(0xFFFEE2E2);
 
-  static const Color success = Color(0xFF10B981);
-  static const Color successSurface = Color(0xFF133224);
+  static const Color success = Color(0xFF16A34A);
+  static const Color successSurface = Color(0xFFDCFCE7);
 
   // Typography / Ink
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textMuted = Color(0xFF64748B);
-  static const Color textOnPrimary = Color(0xFF062315);
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color textOnPrimary = Colors.white;
 
-  // Navigation Bar Melayang
-  static const Color navBackground = Color(0xFF15221A);
-  static const Color navBorder = Color(0xFF293F33);
+  // Floating Pill Navigation Bar (Putih Bersih dengan Soft Shadow)
+  static const Color navBackground = Color(0xFFFFFFFF);
+  static const Color navBorder = Color(0xFFE2E8F0);
 
-  // Struk / Thermal Paper Simulation
+  // Struk Thermal Paper
   static const Color tapeBg = Color(0xFFFAFAF9);
   static const Color tapeBorder = Color(0xFFE7E5E4);
 }

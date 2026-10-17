@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 import 'package:kios_berkah_mobile/core/theme/app_theme.dart';
 
-/// Badge indikator stok produk bergaya minimalis Vendra POS.
+/// Badge indikator stok produk bergaya clean light Kios BERKAH.
 class StockBadge extends StatelessWidget {
   final int stock;
   final int threshold;

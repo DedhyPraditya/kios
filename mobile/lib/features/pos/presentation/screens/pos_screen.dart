@@ -19,7 +19,6 @@ class _PosScreenState extends State<PosScreen> {
   int? _selectedCategoryId;
   final List<CartItemModel> _cart = [];
 
-  // Data kategori awal
   final List<CategoryModel> _categories = [
     CategoryModel(id: 0, name: 'Semua'),
     CategoryModel(id: 1, name: 'Sembako'),
@@ -29,7 +28,6 @@ class _PosScreenState extends State<PosScreen> {
     CategoryModel(id: 5, name: 'Sabun & Cuci'),
   ];
 
-  // Data produk awal (Tanpa gambar, murni teks/spesifikasi seperti di web Kios BERKAH)
   final List<ProductModel> _products = [
     ProductModel(id: 1, barcode: '899123456789', name: 'Beras Ramos 5kg', price: 68000, stock: 14, minStock: 3, categoryName: 'Sembako'),
     ProductModel(id: 2, barcode: '899234567890', name: 'Minyak Goreng Sania 2L', price: 34000, stock: 8, minStock: 5, categoryName: 'Sembako'),
@@ -97,7 +95,7 @@ class _PosScreenState extends State<PosScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -111,7 +109,6 @@ class _PosScreenState extends State<PosScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Handle Bar
                     Center(
                       child: Container(
                         width: 44,
@@ -178,14 +175,14 @@ class _PosScreenState extends State<PosScreen> {
                                         const SizedBox(height: 3),
                                         Text(
                                           CurrencyFormatter.format(item.product.price),
-                                          style: AppTheme.dataMono(fontSize: 13, color: AppColors.primaryBright),
+                                          style: AppTheme.dataMono(fontSize: 13, color: AppColors.primary),
                                         ),
                                       ],
                                     ),
                                   ),
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: AppColors.surfaceElevated,
+                                      color: AppColors.surfaceMuted,
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(color: AppColors.border),
                                     ),
@@ -203,7 +200,7 @@ class _PosScreenState extends State<PosScreen> {
                                           style: AppTheme.dataMono(fontSize: 14, fontWeight: FontWeight.w700),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.add, size: 18, color: AppColors.primaryBright),
+                                          icon: const Icon(Icons.add, size: 18, color: AppColors.primary),
                                           onPressed: () {
                                             if (item.qty < item.product.stock) {
                                               setState(() => _addToCart(item.product));
@@ -242,7 +239,7 @@ class _PosScreenState extends State<PosScreen> {
                           style: AppTheme.dataMono(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primaryBright,
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -272,7 +269,7 @@ class _PosScreenState extends State<PosScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Metode Pembayaran',
@@ -285,7 +282,7 @@ class _PosScreenState extends State<PosScreen> {
                 icon: Icons.money_rounded,
                 title: 'Tunai',
                 subtitle: 'Hitung kembalian cepat',
-                color: AppColors.primaryBright,
+                color: AppColors.primary,
                 onTap: () {
                   Navigator.pop(ctx);
                   _processTransaction('Tunai');
@@ -329,7 +326,7 @@ class _PosScreenState extends State<PosScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
@@ -338,7 +335,7 @@ class _PosScreenState extends State<PosScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
+            color: color.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 22),
@@ -380,7 +377,7 @@ class _PosScreenState extends State<PosScreen> {
                   width: 6,
                   height: 6,
                   decoration: const BoxDecoration(
-                    color: AppColors.primaryBright,
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -399,8 +396,8 @@ class _PosScreenState extends State<PosScreen> {
             icon: Badge(
               isLabelVisible: _cartItemCount > 0,
               label: Text('$_cartItemCount'),
-              backgroundColor: AppColors.primaryBright,
-              textColor: AppColors.textOnPrimary,
+              backgroundColor: AppColors.primary,
+              textColor: Colors.white,
               child: const Icon(Icons.shopping_bag_outlined),
             ),
             onPressed: _showCartSheet,
@@ -410,15 +407,22 @@ class _PosScreenState extends State<PosScreen> {
       ),
       body: Column(
         children: [
-          // Bar Pencarian Kapsul (Pill Search)
+          // Bar Pencarian Kapsul (Pill Search Putih Bersih)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Container(
               height: 50,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -449,7 +453,7 @@ class _PosScreenState extends State<PosScreen> {
                     )
                   else
                     IconButton(
-                      icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primaryBright, size: 22),
+                      icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 22),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Membuka kamera scanner barcode...')),
@@ -483,11 +487,20 @@ class _PosScreenState extends State<PosScreen> {
                     duration: const Duration(milliseconds: 180),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surface,
+                      color: isSelected ? AppColors.primary : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected ? AppColors.primary : AppColors.border,
                       ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -495,7 +508,7 @@ class _PosScreenState extends State<PosScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? AppColors.textOnPrimary : AppColors.textPrimary,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -505,7 +518,7 @@ class _PosScreenState extends State<PosScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Daftar Produk (Card-based, TANPA GAMBAR sesuai permintaan)
+          // Daftar Produk (Card Putih Bersih, TANPA GAMBAR)
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -518,18 +531,24 @@ class _PosScreenState extends State<PosScreen> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: inCart ? AppColors.surfaceElevated : AppColors.surface,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: inCart ? AppColors.primary.withValues(alpha: 0.6) : AppColors.border,
+                      color: inCart ? AppColors.primary : AppColors.border,
                       width: inCart ? 1.5 : 1,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Row(
                       children: [
-                        // Rincian Produk (Nama, Kategori, Harga, Stok)
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,7 +589,7 @@ class _PosScreenState extends State<PosScreen> {
                                     style: AppTheme.dataMono(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.primaryBright,
+                                      color: AppColors.primary,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -581,11 +600,11 @@ class _PosScreenState extends State<PosScreen> {
                           ),
                         ),
 
-                        // Tombol Aksi Tambah / Stepper Kuantitas
+                        // Tombol Tambah / Stepper Kuantitas
                         if (inCart)
                           Container(
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceMuted,
+                              color: AppColors.primarySurface,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
                             ),
@@ -593,17 +612,21 @@ class _PosScreenState extends State<PosScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.remove, size: 16),
+                                  icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
                                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   padding: EdgeInsets.zero,
                                   onPressed: () => _removeFromCart(product),
                                 ),
                                 Text(
                                   '$cartQty',
-                                  style: AppTheme.dataMono(fontSize: 13, fontWeight: FontWeight.w700),
+                                  style: AppTheme.dataMono(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.add, size: 16, color: AppColors.primaryBright),
+                                  icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
                                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   padding: EdgeInsets.zero,
                                   onPressed: () => _addToCart(product),
@@ -626,7 +649,7 @@ class _PosScreenState extends State<PosScreen> {
                                     Icon(
                                       Icons.add,
                                       size: 16,
-                                      color: product.stock > 0 ? AppColors.primaryBright : AppColors.textMuted,
+                                      color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -634,7 +657,7 @@ class _PosScreenState extends State<PosScreen> {
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: product.stock > 0 ? AppColors.primaryBright : AppColors.textMuted,
+                                        color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
                                       ),
                                     ),
                                   ],
@@ -652,23 +675,23 @@ class _PosScreenState extends State<PosScreen> {
         ],
       ),
 
-      // Floating Cart Bar (Kapsul Melayang bergaya Vendra POS)
+      // Floating Cart Bar (Kapsul Melayang Putih Bersih)
       bottomSheet: _cart.isEmpty
           ? null
           : Container(
               color: Colors.transparent,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 92), // Di atas bottom nav
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 92),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+                  border: Border.all(color: AppColors.border, width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 18,
-                      offset: const Offset(0, 8),
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
@@ -691,7 +714,7 @@ class _PosScreenState extends State<PosScreen> {
                               style: AppTheme.dataMono(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.primaryBright,
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -701,7 +724,7 @@ class _PosScreenState extends State<PosScreen> {
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),

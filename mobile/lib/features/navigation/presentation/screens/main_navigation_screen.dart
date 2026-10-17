@@ -23,7 +23,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   void _onScanBarcodePressed() {
-    // Aksi cepat scan barcode kamera
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Membuka kamera scanner barcode kilat...'),
@@ -36,7 +35,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Membuat body meluas di balik navigation bar melayang
+      extendBody: true, // Agar body meluas di balik pill bar melayang
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -47,14 +46,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Container(
             height: 68,
             decoration: BoxDecoration(
-              color: AppColors.navBackground,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(34),
-              border: Border.all(color: AppColors.navBorder, width: 1.5),
+              border: Border.all(color: AppColors.border, width: 1.2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -72,22 +71,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     height: 52,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [AppColors.primaryBright, AppColors.primary],
+                        colors: [AppColors.primary, AppColors.primaryBright],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 14,
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                          blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: const Icon(
                       Icons.qr_code_scanner_rounded,
-                      color: AppColors.textOnPrimary,
+                      color: Colors.white,
                       size: 26,
                     ),
                   ),
@@ -121,7 +120,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             Icon(
               icon,
               size: 22,
-              color: isSelected ? AppColors.primaryBright : AppColors.textSecondary,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
             ),
             const SizedBox(height: 3),
             Text(
@@ -129,7 +128,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.primaryBright : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
               ),
             ),
           ],

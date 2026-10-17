@@ -34,12 +34,12 @@ class AppButton extends StatelessWidget {
     switch (variant) {
       case AppButtonVariant.primary:
         bg = AppColors.primary;
-        fg = AppColors.textOnPrimary;
+        fg = Colors.white;
         border = null;
         break;
       case AppButtonVariant.secondary:
         bg = AppColors.amber;
-        fg = Colors.black;
+        fg = Colors.white;
         border = null;
         break;
       case AppButtonVariant.danger:
@@ -48,7 +48,7 @@ class AppButton extends StatelessWidget {
         border = null;
         break;
       case AppButtonVariant.outline:
-        bg = AppColors.surfaceElevated;
+        bg = Colors.white;
         fg = AppColors.textPrimary;
         border = const BorderSide(color: AppColors.border, width: 1);
         break;
