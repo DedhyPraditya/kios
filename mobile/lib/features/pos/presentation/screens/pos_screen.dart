@@ -2071,227 +2071,43 @@ class PosScreenState extends State<PosScreen> {
                   );
                 }
 
+                final screenWidth = MediaQuery.of(context).size.width;
+                final isTablet = screenWidth >= 600;
+                final isWideLandscape = screenWidth >= 960;
+                final systemBottomInset = MediaQuery.of(context).padding.bottom;
+                final bottomNavClearance = systemBottomInset + 100.0;
+
                 return RefreshIndicator(
                   onRefresh: () => fetchPosData(showIndicator: false),
                   color: AppColors.primary,
                   backgroundColor: Colors.white,
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (ctx, idx) {
-                      final product = filteredProducts[idx];
-                      final cartQty = _getCartQty(product.id);
-                      final inCart = cartQty > 0;
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: inCart ? AppColors.primary : AppColors.border,
-                            width: inCart ? 1.5 : 1,
+                  child: isTablet
+                      ? GridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomNavClearance + 80),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: isWideLandscape ? 3 : 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            mainAxisExtent: 108,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (ctx, idx) {
+                            final product = filteredProducts[idx];
+                            final cartQty = _getCartQty(product.id);
+                            return _buildProductCard(product, cartQty, isGrid: true);
+                          },
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomNavClearance + 80),
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (ctx, idx) {
+                            final product = filteredProducts[idx];
+                            final cartQty = _getCartQty(product.id);
+                            return _buildProductCard(product, cartQty, isGrid: false);
+                          },
                         ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: product.stock > 0
-                              ? () {
-                                  if (product.units.isNotEmpty) {
-                                    _showUnitPickerForProduct(product);
-                                  } else {
-                                    _addToCart(product);
-                                  }
-                                }
-                              : null,
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          if (product.categoryName != null) ...[
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.surfaceMuted,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                product.categoryName!,
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.textSecondary,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                          ],
-                                          if (product.units.isNotEmpty)
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.tealSurface,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '+${product.units.length} Satuan',
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.teal,
-                                                ),
-                                              ),
-                                            ),
-                                          if (product.wholesalePrices.isNotEmpty) ...[
-                                            const SizedBox(width: 4),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.amberSurface,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: const Text(
-                                                'Grosir',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.amberText,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        product.name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            CurrencyFormatter.format(product.price),
-                                            style: AppTheme.dataMono(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          StockBadge(stock: product.stock, threshold: product.minStock),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Tombol Tambah / Stepper Kuantitas
-                                if (inCart)
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primarySurface,
-                                      borderRadius: BorderRadius.circular(22),
-                                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
-                                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                          padding: EdgeInsets.zero,
-                                          onPressed: () => _removeFromCart(product),
-                                        ),
-                                        Text(
-                                          '$cartQty',
-                                          style: AppTheme.dataMono(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
-                                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                          padding: EdgeInsets.zero,
-                                          onPressed: () {
-                                            if (product.units.isNotEmpty) {
-                                              _showUnitPickerForProduct(product);
-                                            } else {
-                                              _addToCart(product);
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                else
-                                  Material(
-                                    color: product.stock > 0 ? AppColors.primarySurface : AppColors.surfaceMuted,
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: product.stock > 0
-                                          ? () {
-                                              if (product.units.isNotEmpty) {
-                                                _showUnitPickerForProduct(product);
-                                              } else {
-                                                _addToCart(product);
-                                              }
-                                            }
-                                          : null,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.add,
-                                              size: 16,
-                                              color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              product.units.isNotEmpty ? 'Pilih Satuan' : 'Tambah',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w700,
-                                                color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 );
               },
             ),
@@ -2299,67 +2115,295 @@ class PosScreenState extends State<PosScreen> {
         ],
       ),
 
-      // Floating Cart Bar (Kapsul Melayang Putih Bersih)
+      // Floating Cart Bar (Kapsul Melayang Putih Bersih - Bebas Tabrakan di Tablet & Mobile)
       bottomSheet: _cart.isEmpty
           ? null
-          : Container(
-              color: Colors.transparent,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 92),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _showCartSheet,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '$_cartItemCount barang terpilih',
-                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                            ),
-                            Text(
-                              CurrencyFormatter.format(_cartTotal),
-                              style: AppTheme.dataMono(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
+          : Builder(
+              builder: (bCtx) {
+                final systemBottom = MediaQuery.of(bCtx).padding.bottom;
+                final bottomClearance = systemBottom + 96.0;
+
+                return SafeArea(
+                  bottom: false,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 580),
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomClearance),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppColors.border, width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: _showCartSheet,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '$_cartItemCount barang terpilih',
+                                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                      ),
+                                      Text(
+                                        CurrencyFormatter.format(_cartTotal),
+                                        style: AppTheme.dataMono(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                                label: const Text('Bayar', style: TextStyle(fontWeight: FontWeight.w800)),
+                                onPressed: _showCartSheet,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildProductCard(ProductModel product, int cartQty, {bool isGrid = false}) {
+    final inCart = cartQty > 0;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: isGrid ? 0 : 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: inCart ? AppColors.primary : AppColors.border,
+          width: inCart ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: product.stock > 0
+            ? () {
+                if (product.units.isNotEmpty) {
+                  _showUnitPickerForProduct(product);
+                } else {
+                  _addToCart(product);
+                }
+              }
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        if (product.categoryName != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceMuted,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              product.categoryName!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        if (product.units.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.tealSurface,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '+${product.units.length} Satuan',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.teal,
+                              ),
+                            ),
+                          ),
+                        if (product.wholesalePrices.isNotEmpty) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.amberSurface,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Grosir',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.amberText,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                      label: const Text('Bayar', style: TextStyle(fontWeight: FontWeight.w800)),
-                      onPressed: _showCartSheet,
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Text(
+                          CurrencyFormatter.format(product.price),
+                          style: AppTheme.dataMono(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        StockBadge(stock: product.stock, threshold: product.minStock),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+
+              // Tombol Tambah / Stepper Kuantitas
+              if (inCart)
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySurface,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
+                        constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => _removeFromCart(product),
+                      ),
+                      Text(
+                        '$cartQty',
+                        style: AppTheme.dataMono(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
+                        constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          if (product.units.isNotEmpty) {
+                            _showUnitPickerForProduct(product);
+                          } else {
+                            _addToCart(product);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Material(
+                  color: product.stock > 0 ? AppColors.primarySurface : AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: product.stock > 0
+                        ? () {
+                            if (product.units.isNotEmpty) {
+                              _showUnitPickerForProduct(product);
+                            } else {
+                              _addToCart(product);
+                            }
+                          }
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add,
+                            size: 16,
+                            color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            product.units.isNotEmpty ? 'Satuan' : 'Tambah',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

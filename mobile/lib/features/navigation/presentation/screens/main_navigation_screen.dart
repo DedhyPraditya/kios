@@ -48,60 +48,65 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         children: _screens,
       ),
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Container(
-            height: 68,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(34),
-              border: Border.all(color: AppColors.border, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Container(
+                height: 68,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(34),
+                  border: Border.all(color: AppColors.border, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _navItem(0, Icons.point_of_sale_rounded, 'Kasir'),
-                _navItem(1, Icons.receipt_long_rounded, 'Riwayat'),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _navItem(0, Icons.point_of_sale_rounded, 'Kasir'),
+                    _navItem(1, Icons.receipt_long_rounded, 'Riwayat'),
 
-                // Tombol Tengah Floating Scan Barcode
-                GestureDetector(
-                  onTap: _onScanBarcodePressed,
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryBright],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.35),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                    // Tombol Tengah Floating Scan Barcode
+                    GestureDetector(
+                      onTap: _onScanBarcodePressed,
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, AppColors.primaryBright],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
+                        child: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.qr_code_scanner_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                ),
 
-                _navItem(2, Icons.local_fire_department_rounded, 'Arang'),
-                _navItem(3, Icons.tune_rounded, 'Setelan'),
-              ],
+                    _navItem(2, Icons.local_fire_department_rounded, 'Arang'),
+                    _navItem(3, Icons.tune_rounded, 'Setelan'),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
