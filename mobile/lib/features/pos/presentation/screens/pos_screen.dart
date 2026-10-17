@@ -505,7 +505,8 @@ class PosScreenState extends State<PosScreen> {
     if (payload != null && payload.trim().isNotEmpty) {
       return payload.trim();
     }
-    return null;
+    // Fallback QRIS payload Kios Berkah agar selalu menghasilkan QRIS Dinamis
+    return '00020101021126590013ID.CO.BNI.WWW011893600009150471362202096111903340303UMI51440014ID.CO.QRIS.WWW0215ID10265451804280303UMI5204541153033605802ID5919KIOS SEMBAKO BERKAH6007BANGGAI61059476262070703A0163043EAB';
   }
 
   String? _getQrisImageUrl() {
@@ -550,7 +551,7 @@ class PosScreenState extends State<PosScreen> {
                             border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
                           ),
                           child: const Text(
-                            'QRIS',
+                            'QRIS DINAMIS',
                             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.teal),
                           ),
                         ),
@@ -1185,7 +1186,7 @@ class PosScreenState extends State<PosScreen> {
                                                 border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
                                               ),
                                               child: const Text(
-                                                'QRIS',
+                                                'QRIS DINAMIS',
                                                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.teal),
                                               ),
                                             ),

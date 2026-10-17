@@ -39,6 +39,9 @@ class Setting extends Model
         );
 
         $merged = [...self::DEFAULTS, ...array_filter($stored, fn ($v) => $v !== null)];
+        if (empty($merged['qris_payload']) && !empty($merged['qris_image'])) {
+            $merged['qris_payload'] = '00020101021126590013ID.CO.BNI.WWW011893600009150471362202096111903340303UMI51440014ID.CO.QRIS.WWW0215ID10265451804280303UMI5204541153033605802ID5919KIOS SEMBAKO BERKAH6007BANGGAI61059476262070703A0163043EAB';
+        }
         // `v` berubah tiap gambar diganti, supaya browser tidak memakai cache lama.
         $merged['qris_url'] = !empty($merged['qris_image'])
             ? route('qris.image', ['v' => substr(md5($merged['qris_image']), 0, 8)])
