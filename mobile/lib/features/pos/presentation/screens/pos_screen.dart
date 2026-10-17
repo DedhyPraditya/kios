@@ -2126,7 +2126,21 @@ class PosScreenState extends State<PosScreen> {
       }
     } catch (e) {
       debugPrint('Checkout error: $e');
-      _showToast('Gagal memproses transaksi: $e', isError: true);
+      String errorMsg = 'Gagal memproses transaksi.';
+      if (e is DioException) {
+        if (e.response?.data is Map && e.response?.data['message'] != null) {
+          errorMsg = e.response!.data['message'].toString();
+        } else if (e.response?.statusCode == 500) {
+          errorMsg = 'Server mengembalikan error 500. Silakan jalankan git pull di server produksi.';
+        } else if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+          errorMsg = 'Koneksi ke server timeout. Periksa jaringan internet Anda.';
+        } else {
+          errorMsg = 'Gagal terhubung ke server: ${e.message}';
+        }
+      } else {
+        errorMsg = e.toString();
+      }
+      _showToast(errorMsg, isError: true);
     }
   }
 
