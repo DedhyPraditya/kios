@@ -62,10 +62,10 @@ class ProductModel {
       price: json['price'] as int? ?? 0,
       cost: json['cost'] as int? ?? 0,
       stock: json['stock'] as int? ?? 0,
-      minStock: json['min_stock'] as int? ?? 5,
-      isActive: json['is_active'] == 1 || json['is_active'] == true,
+      minStock: (json['low_stock'] ?? json['min_stock']) as int? ?? 5,
+      isActive: json['is_active'] == null || json['is_active'] == 1 || json['is_active'] == true,
       categoryId: json['category_id'] as int?,
-      categoryName: json['category'] is Map ? json['category']['name'] : null,
+      categoryName: json['category'] is Map ? json['category']['name'] : (json['category_name'] as String?),
     );
   }
 

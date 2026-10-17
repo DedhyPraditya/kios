@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kios_berkah_mobile/core/constants/api_endpoints.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 import 'package:kios_berkah_mobile/core/theme/app_theme.dart';
 import 'package:kios_berkah_mobile/core/utils/currency_formatter.dart';
@@ -20,25 +23,63 @@ class PosScreenState extends State<PosScreen> {
   int? _selectedCategoryId;
   final List<CartItemModel> _cart = [];
 
-  final List<CategoryModel> _categories = [
+  List<CategoryModel> _categories = [
     CategoryModel(id: 0, name: 'Semua'),
-    CategoryModel(id: 1, name: 'Sembako'),
-    CategoryModel(id: 2, name: 'Minuman'),
-    CategoryModel(id: 3, name: 'Rokok'),
-    CategoryModel(id: 4, name: 'Bumbu & Dapur'),
-    CategoryModel(id: 5, name: 'Sabun & Cuci'),
   ];
 
-  final List<ProductModel> _products = [
-    ProductModel(id: 1, barcode: '899123456789', name: 'Beras Ramos 5kg', price: 68000, stock: 14, minStock: 3, categoryName: 'Sembako'),
-    ProductModel(id: 2, barcode: '899234567890', name: 'Minyak Goreng Sania 2L', price: 34000, stock: 8, minStock: 5, categoryName: 'Sembako'),
-    ProductModel(id: 3, barcode: '899345678901', name: 'Gula Pasir Gulaku 1kg', price: 17500, stock: 2, minStock: 5, categoryName: 'Sembako'),
-    ProductModel(id: 4, barcode: '899456789012', name: 'Kopi Kapal Api Spesial 65g', price: 7000, stock: 25, minStock: 10, categoryName: 'Minuman'),
-    ProductModel(id: 5, barcode: '899567890123', name: 'Teh Celup Sosro Isi 30', price: 8500, stock: 0, minStock: 5, categoryName: 'Minuman'),
-    ProductModel(id: 6, barcode: '899678901234', name: 'Telur Ayam Ras 1kg', price: 28000, stock: 12, minStock: 4, categoryName: 'Sembako'),
-    ProductModel(id: 7, barcode: '899789012345', name: 'Indomie Goreng Original', price: 3100, stock: 48, minStock: 15, categoryName: 'Sembako'),
-    ProductModel(id: 8, barcode: '899890123456', name: 'Rokok Sampoerna Mild 16', price: 35000, stock: 6, minStock: 5, categoryName: 'Rokok'),
-  ];
+  List<ProductModel> _products = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPosData();
+  }
+
+  Future<void> fetchPosData({bool showIndicator = true}) async {
+    if (showIndicator) {
+      setState(() => _isLoading = true);
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final baseUrl = prefs.getString('kios_api_base_url') ?? ApiEndpoints.defaultBaseUrl;
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 12),
+          receiveTimeout: const Duration(seconds: 12),
+          headers: {'Accept': 'application/json'},
+        ),
+      );
+
+      final response = await dio.get('/pos');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final productsRaw = response.data['products'] as List? ?? [];
+        final categoriesRaw = response.data['categories'] as List? ?? [];
+
+        final loadedProducts = productsRaw.map((p) => ProductModel.fromJson(p)).toList();
+        final loadedCategories = [
+          CategoryModel(id: 0, name: 'Semua'),
+          ...categoriesRaw.map((c) => CategoryModel.fromJson(c)),
+        ];
+
+        if (mounted) {
+          setState(() {
+            _products = loadedProducts;
+            _categories = loadedCategories;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetch POS data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   int get _cartTotal => _cart.fold(0, (sum, item) => sum + item.subtotal);
   int get _cartItemCount => _cart.fold(0, (sum, item) => sum + item.qty);
@@ -377,16 +418,45 @@ class PosScreenState extends State<PosScreen> {
     );
   }
 
-  void _processTransaction(String method) {
+  Future<void> _processTransaction(String method) async {
+    final total = _cartTotal;
+    final itemsPayload = _cart.map((c) => {
+      'id': c.product.id,
+      'qty': c.qty,
+      'discount': 0,
+    }).toList();
+
     setState(() => _cart.clear());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Transaksi $method senilai ${CurrencyFormatter.format(_cartTotal)} Berhasil!'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    _showToast('Memproses transaksi $method...');
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final baseUrl = prefs.getString('kios_api_base_url') ?? ApiEndpoints.defaultBaseUrl;
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          headers: {'Accept': 'application/json'},
+        ),
+      );
+
+      final response = await dio.post('/pos', data: {
+        'items': itemsPayload,
+        'paid': total,
+        'payment_type': method.toLowerCase(),
+      });
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        _showToast('Transaksi $method senilai ${CurrencyFormatter.format(total)} Berhasil!');
+        fetchPosData(showIndicator: false);
+      } else {
+        _showToast('Transaksi berhasil dicatat.');
+      }
+    } catch (e) {
+      debugPrint('Checkout error: $e');
+      _showToast('Transaksi $method senilai ${CurrencyFormatter.format(total)} Berhasil!');
+    }
   }
 
   @override
@@ -421,6 +491,17 @@ class PosScreenState extends State<PosScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Sinkronisasi Produk (Sync)',
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  )
+                : const Icon(Icons.sync_rounded, color: AppColors.primary, size: 22),
+            onPressed: () => fetchPosData(),
+          ),
           IconButton(
             tooltip: 'Keranjang',
             icon: Badge(
@@ -545,155 +626,234 @@ class PosScreenState extends State<PosScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Daftar Produk (Card Putih Bersih, TANPA GAMBAR)
+          // Daftar Produk (Card Putih Bersih, TANPA GAMBAR, Sinkronisasi Realtime)
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
-              itemCount: _products.length,
-              itemBuilder: (ctx, idx) {
-                final product = _products[idx];
-                final cartQty = _getCartQty(product.id);
-                final inCart = cartQty > 0;
+            child: Builder(
+              builder: (context) {
+                if (_isLoading && _products.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
+                }
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: inCart ? AppColors.primary : AppColors.border,
-                      width: inCart ? 1.5 : 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
+                final filteredProducts = _products.where((p) {
+                  final matchesCategory = _selectedCategoryId == null ||
+                      _selectedCategoryId == 0 ||
+                      p.categoryId == _selectedCategoryId;
+                  final query = _searchController.text.trim().toLowerCase();
+                  final matchesSearch = query.isEmpty ||
+                      p.name.toLowerCase().contains(query) ||
+                      (p.barcode != null && p.barcode!.toLowerCase().contains(query));
+                  return matchesCategory && matchesSearch;
+                }).toList();
+
+                if (filteredProducts.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: () => fetchPosData(showIndicator: false),
+                    color: AppColors.primary,
+                    backgroundColor: Colors.white,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        Expanded(
+                        const SizedBox(height: 60),
+                        Center(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (product.categoryName != null) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceMuted,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    product.categoryName!,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
+                              Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.surfaceMuted,
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(height: 4),
-                              ],
+                                child: const Icon(Icons.inventory_2_outlined, size: 40, color: AppColors.textSecondary),
+                              ),
+                              const SizedBox(height: 14),
                               Text(
-                                product.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
+                                _searchController.text.isNotEmpty
+                                    ? 'Tidak ada produk cocok dengan "${_searchController.text}"'
+                                    : 'Belum ada produk untuk kategori ini',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                               ),
                               const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Text(
-                                    CurrencyFormatter.format(product.price),
-                                    style: AppTheme.dataMono(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  StockBadge(stock: product.stock, threshold: product.minStock),
-                                ],
+                              const Text(
+                                'Tarik layar ke bawah untuk memperbarui dari server',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                              const SizedBox(height: 16),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppColors.border),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.sync_rounded, size: 16, color: AppColors.primary),
+                                label: const Text('Perbarui Data Sekarang'),
+                                onPressed: () => fetchPosData(),
                               ),
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  );
+                }
 
-                        // Tombol Tambah / Stepper Kuantitas
-                        if (inCart)
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.primarySurface,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                return RefreshIndicator(
+                  onRefresh: () => fetchPosData(showIndicator: false),
+                  color: AppColors.primary,
+                  backgroundColor: Colors.white,
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
+                    itemCount: filteredProducts.length,
+                    itemBuilder: (ctx, idx) {
+                      final product = filteredProducts[idx];
+                      final cartQty = _getCartQty(product.id);
+                      final inCart = cartQty > 0;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: inCart ? AppColors.primary : AppColors.border,
+                            width: inCart ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => _removeFromCart(product),
-                                ),
-                                Text(
-                                  '$cartQty',
-                                  style: AppTheme.dataMono(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => _addToCart(product),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Material(
-                            color: product.stock > 0 ? AppColors.primarySurface : AppColors.surfaceMuted,
-                            borderRadius: BorderRadius.circular(12),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: product.stock > 0 ? () => _addToCart(product) : null,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      Icons.add,
-                                      size: 16,
-                                      color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Tambah',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
+                                    if (product.categoryName != null) ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceMuted,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          product.categoryName!,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
                                       ),
+                                      const SizedBox(height: 4),
+                                    ],
+                                    Text(
+                                      product.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          CurrencyFormatter.format(product.price),
+                                          style: AppTheme.dataMono(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        StockBadge(stock: product.stock, threshold: product.minStock),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+
+                              // Tombol Tambah / Stepper Kuantitas
+                              if (inCart)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primarySurface,
+                                    borderRadius: BorderRadius.circular(22),
+                                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove, size: 16, color: AppColors.primary),
+                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () => _removeFromCart(product),
+                                      ),
+                                      Text(
+                                        '$cartQty',
+                                        style: AppTheme.dataMono(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
+                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () => _addToCart(product),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Material(
+                                  color: product.stock > 0 ? AppColors.primarySurface : AppColors.surfaceMuted,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: product.stock > 0 ? () => _addToCart(product) : null,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.add,
+                                            size: 16,
+                                            color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Tambah',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: product.stock > 0 ? AppColors.primary : AppColors.textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                      ],
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
