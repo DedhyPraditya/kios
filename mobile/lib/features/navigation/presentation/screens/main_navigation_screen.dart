@@ -6,6 +6,7 @@ import 'package:kios_berkah_mobile/features/sales/presentation/screens/sales_his
 import 'package:kios_berkah_mobile/features/settings/presentation/screens/settings_screen.dart';
 
 import 'package:kios_berkah_mobile/features/scanner/presentation/screens/barcode_scanner_screen.dart';
+import 'package:kios_berkah_mobile/features/scanner/data/models/scan_result.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -26,16 +27,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   Future<void> _onScanBarcodePressed() async {
-    final scannedCode = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    if (_currentIndex != 0) {
+      setState(() => _currentIndex = 0);
+    }
+    final posState = _posKey.currentState;
+    final shouldOpenCart = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          initialCartCount: posState?.cartItemCount ?? 0,
+          initialCartTotal: posState?.cartTotal ?? 0,
+          onScanBarcode: (code) async {
+            if (_posKey.currentState != null) {
+              return await _posKey.currentState!.scanAndAddToCart(code);
+            }
+            return ScanResult(success: false, message: 'Kasir belum siap');
+          },
+        ),
+      ),
     );
-    if (scannedCode != null && scannedCode.trim().isNotEmpty) {
-      if (_currentIndex != 0) {
-        setState(() => _currentIndex = 0);
-      }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _posKey.currentState?.handleScannedBarcode(scannedCode.trim());
-      });
+    if (shouldOpenCart == true && _posKey.currentState != null && _posKey.currentState!.cartItemCount > 0) {
+      _posKey.currentState?.showCartSheetExternal();
     }
   }
 

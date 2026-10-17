@@ -11,6 +11,7 @@ import 'package:kios_berkah_mobile/core/widgets/stock_badge.dart';
 import 'package:kios_berkah_mobile/features/pos/data/models/cart_item_model.dart';
 import 'package:kios_berkah_mobile/features/products/data/models/product_model.dart';
 import 'package:kios_berkah_mobile/features/scanner/presentation/screens/barcode_scanner_screen.dart';
+import 'package:kios_berkah_mobile/features/scanner/data/models/scan_result.dart';
 import 'package:kios_berkah_mobile/features/sales/data/models/sale_model.dart';
 import 'package:kios_berkah_mobile/core/services/bluetooth_printer_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -285,12 +286,83 @@ class PosScreenState extends State<PosScreen> {
     );
   }
 
-  Future<void> openBarcodeScanner() async {
-    final scannedCode = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+  int get cartItemCount => _cartItemCount;
+  int get cartTotal => _cartTotal;
+
+  void showCartSheetExternal() {
+    if (_cart.isNotEmpty) {
+      _showCartSheet();
+    }
+  }
+
+  Future<ScanResult> scanAndAddToCart(String barcode) async {
+    final clean = barcode.trim();
+    if (clean.isEmpty) {
+      return ScanResult(
+        success: false,
+        message: 'Barcode kosong',
+        cartItemCount: _cartItemCount,
+        cartTotal: _cartTotal,
+      );
+    }
+
+    ProductModel? matched = _findProductByBarcode(clean);
+    if (matched == null) {
+      await fetchPosData(showIndicator: false);
+      matched = _findProductByBarcode(clean);
+    }
+
+    if (matched == null) {
+      return ScanResult(
+        success: false,
+        barcode: clean,
+        message: 'Barcode $clean tidak terdaftar',
+        cartItemCount: _cartItemCount,
+        cartTotal: _cartTotal,
+      );
+    }
+
+    final usedBase = _cart.where((c) => c.product.id == matched!.id).fold(0, (s, c) => s + c.totalBaseQty);
+    if (matched.stock - usedBase < 1) {
+      return ScanResult(
+        success: false,
+        productName: matched.name,
+        productPrice: matched.price,
+        barcode: clean,
+        message: 'Stok ${matched.name} sudah habis!',
+        cartItemCount: _cartItemCount,
+        cartTotal: _cartTotal,
+      );
+    }
+
+    _addToCart(matched);
+    _searchController.clear();
+    setState(() {});
+
+    return ScanResult(
+      success: true,
+      productName: matched.name,
+      productPrice: matched.price,
+      barcode: clean,
+      cartItemCount: _cartItemCount,
+      cartTotal: _cartTotal,
+      message: '1x ${matched.name} dimasukkan',
     );
-    if (scannedCode != null && scannedCode.trim().isNotEmpty) {
-      handleScannedBarcode(scannedCode.trim());
+  }
+
+  Future<void> openBarcodeScanner() async {
+    final shouldOpenCart = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          initialCartCount: _cartItemCount,
+          initialCartTotal: _cartTotal,
+          onScanBarcode: scanAndAddToCart,
+        ),
+      ),
+    );
+    setState(() {});
+    if (shouldOpenCart == true && _cart.isNotEmpty) {
+      _showCartSheet();
     }
   }
 
