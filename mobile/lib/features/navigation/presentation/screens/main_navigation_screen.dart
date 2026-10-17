@@ -42,31 +42,31 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Agar body meluas di balik pill bar melayang
+      extendBody: false,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 580),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Container(
-                height: 68,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(34),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 64,
+            child: Align(
+              alignment: Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 580),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -77,8 +77,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     GestureDetector(
                       onTap: _onScanBarcodePressed,
                       child: Container(
-                        width: 52,
-                        height: 52,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [AppColors.primary, AppColors.primaryBright],
@@ -89,15 +89,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.primary.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
                         child: const Icon(
                           Icons.qr_code_scanner_rounded,
                           color: Colors.white,
-                          size: 26,
+                          size: 24,
                         ),
                       ),
                     ),

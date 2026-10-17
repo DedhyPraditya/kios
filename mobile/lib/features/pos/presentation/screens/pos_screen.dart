@@ -2074,8 +2074,7 @@ class PosScreenState extends State<PosScreen> {
                 final screenWidth = MediaQuery.of(context).size.width;
                 final isTablet = screenWidth >= 600;
                 final isWideLandscape = screenWidth >= 960;
-                final systemBottomInset = MediaQuery.of(context).padding.bottom;
-                final bottomNavClearance = systemBottomInset + 100.0;
+                final listBottomPadding = _cart.isNotEmpty ? 84.0 : 20.0;
 
                 return RefreshIndicator(
                   onRefresh: () => fetchPosData(showIndicator: false),
@@ -2084,12 +2083,12 @@ class PosScreenState extends State<PosScreen> {
                   child: isTablet
                       ? GridView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomNavClearance + 80),
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, listBottomPadding),
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: isWideLandscape ? 3 : 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            mainAxisExtent: 108,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            mainAxisExtent: 136,
                           ),
                           itemCount: filteredProducts.length,
                           itemBuilder: (ctx, idx) {
@@ -2100,7 +2099,7 @@ class PosScreenState extends State<PosScreen> {
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomNavClearance + 80),
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, listBottomPadding),
                           itemCount: filteredProducts.length,
                           itemBuilder: (ctx, idx) {
                             final product = filteredProducts[idx];
@@ -2115,81 +2114,78 @@ class PosScreenState extends State<PosScreen> {
         ],
       ),
 
-      // Floating Cart Bar (Kapsul Melayang Putih Bersih - Bebas Tabrakan di Tablet & Mobile)
+      // Cart Bar (Menempel rapi di atas bottom navigation bar tanpa tumpang tindih)
       bottomSheet: _cart.isEmpty
           ? null
-          : Builder(
-              builder: (bCtx) {
-                final systemBottom = MediaQuery.of(bCtx).padding.bottom;
-                final bottomClearance = systemBottom + 96.0;
-
-                return SafeArea(
-                  bottom: false,
-                  child: Center(
+          : Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Align(
+                    alignment: Alignment.center,
+                    heightFactor: 1.0,
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 580),
-                      child: Container(
-                        color: Colors.transparent,
-                        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomClearance),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: AppColors.border, width: 1.2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: _showCartSheet,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '$_cartItemCount barang terpilih',
-                                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                      ),
-                                      Text(
-                                        CurrencyFormatter.format(_cartTotal),
-                                        style: AppTheme.dataMono(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    ],
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _showCartSheet,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$_cartItemCount barang terpilih',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
+                                  Text(
+                                    CurrencyFormatter.format(_cartTotal),
+                                    style: AppTheme.dataMono(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                ),
-                                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                                label: const Text('Bayar', style: TextStyle(fontWeight: FontWeight.w800)),
-                                onPressed: _showCartSheet,
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                            label: const Text('Bayar', style: TextStyle(fontWeight: FontWeight.w800)),
+                            onPressed: _showCartSheet,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
     );
   }
@@ -2226,7 +2222,7 @@ class PosScreenState extends State<PosScreen> {
               }
             : null,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               Expanded(
@@ -2234,9 +2230,11 @@ class PosScreenState extends State<PosScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 2,
                       children: [
-                        if (product.categoryName != null) ...[
+                        if (product.categoryName != null)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
@@ -2245,6 +2243,8 @@ class PosScreenState extends State<PosScreen> {
                             ),
                             child: Text(
                               product.categoryName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -2252,8 +2252,6 @@ class PosScreenState extends State<PosScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 4),
-                        ],
                         if (product.units.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -2270,8 +2268,7 @@ class PosScreenState extends State<PosScreen> {
                               ),
                             ),
                           ),
-                        if (product.wholesalePrices.isNotEmpty) ...[
-                          const SizedBox(width: 4),
+                        if (product.wholesalePrices.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
@@ -2287,21 +2284,20 @@ class PosScreenState extends State<PosScreen> {
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       product.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Text(
