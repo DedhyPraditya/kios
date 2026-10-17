@@ -266,4 +266,46 @@ class PosApiController extends Controller
             'token' => 'mobile_session_' . md5($user->id . time() . 'kios_berkah'),
         ]);
     }
+
+    /**
+     * Ringkasan Dashboard untuk Beranda Mobile.
+     */
+    public function dashboard(): JsonResponse
+    {
+        $today = \Carbon\Carbon::today();
+
+        $tokoToday = Sale::valid()->whereDate('created_at', $today);
+        $tokoTodayOmzet = (int) (clone $tokoToday)->sum(DB::raw('total - refunded'));
+        $tokoTodayTrx = (clone $tokoToday)->count();
+
+        $lowProducts = Product::active()
+            ->whereColumn('stock', '<=', 'low_stock')
+            ->orderBy('stock')
+            ->limit(10)
+            ->get(['id', 'name', 'stock', 'low_stock', 'price']);
+
+        $totalProducts = Product::active()->count();
+        $totalLowStock = Product::active()->whereColumn('stock', '<=', 'low_stock')->count();
+
+        $recentSales = Sale::with(['user:id,name', 'customer:id,name'])
+            ->valid()
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $store = Setting::values();
+
+        return response()->json([
+            'success' => true,
+            'stats' => [
+                'today_omzet' => $tokoTodayOmzet,
+                'today_trx' => $tokoTodayTrx,
+                'total_products' => $totalProducts,
+                'low_stock_count' => $totalLowStock,
+            ],
+            'low_stock_items' => $lowProducts,
+            'recent_sales' => $recentSales,
+            'store_name' => $store['store_name'] ?? 'Kios BERKAH',
+        ]);
+    }
 }

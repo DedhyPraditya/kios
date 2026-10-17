@@ -13,5 +13,8 @@ Route::post('/pos', [PosApiController::class, 'store']);
 // Riwayat Penjualan
 Route::get('/sales', [PosApiController::class, 'sales']);
 
+// Dashboard Beranda Mobile
+Route::get('/dashboard', [PosApiController::class, 'dashboard']);
+
 // QRIS Toko
 Route::get('/qris-toko', [\App\Http\Controllers\SettingController::class, 'qris']);
