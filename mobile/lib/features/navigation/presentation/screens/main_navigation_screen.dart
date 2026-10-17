@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:kios_berkah_mobile/core/constants/app_colors.dart';
 import 'package:kios_berkah_mobile/features/arang/presentation/screens/arang_screen.dart';
+import 'package:kios_berkah_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:kios_berkah_mobile/features/pos/presentation/screens/pos_screen.dart';
 import 'package:kios_berkah_mobile/features/sales/presentation/screens/sales_history_screen.dart';
 import 'package:kios_berkah_mobile/features/settings/presentation/screens/settings_screen.dart';
-
-import 'package:kios_berkah_mobile/features/scanner/presentation/screens/barcode_scanner_screen.dart';
-import 'package:kios_berkah_mobile/features/scanner/data/models/scan_result.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -20,35 +18,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<PosScreenState> _posKey = GlobalKey<PosScreenState>();
 
   late final List<Widget> _screens = [
+    HomeScreen(
+      onNavigateToTab: (index) {
+        setState(() => _currentIndex = index);
+      },
+    ),
     PosScreen(key: _posKey),
     const SalesHistoryScreen(),
     const ArangScreen(),
     const SettingsScreen(),
   ];
-
-  Future<void> _onScanBarcodePressed() async {
-    if (_currentIndex != 0) {
-      setState(() => _currentIndex = 0);
-    }
-    final posState = _posKey.currentState;
-    final shouldOpenCart = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => BarcodeScannerScreen(
-          initialCartCount: posState?.cartItemCount ?? 0,
-          initialCartTotal: posState?.cartTotal ?? 0,
-          onScanBarcode: (code) async {
-            if (_posKey.currentState != null) {
-              return await _posKey.currentState!.scanAndAddToCart(code);
-            }
-            return ScanResult(success: false, message: 'Kasir belum siap');
-          },
-        ),
-      ),
-    );
-    if (shouldOpenCart == true && _posKey.currentState != null && _posKey.currentState!.cartItemCount > 0) {
-      _posKey.currentState?.showCartSheetExternal();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,44 +56,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             child: Align(
               alignment: Alignment.center,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 580),
+                constraints: const BoxConstraints(maxWidth: 600),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _navItem(0, Icons.point_of_sale_rounded, 'Kasir'),
-                    _navItem(1, Icons.receipt_long_rounded, 'Riwayat'),
-
-                    // Tombol Tengah Floating Scan Barcode
-                    GestureDetector(
-                      onTap: _onScanBarcodePressed,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryBright],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.35),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.qr_code_scanner_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-
-                    _navItem(2, Icons.local_fire_department_rounded, 'Arang'),
-                    _navItem(3, Icons.tune_rounded, 'Setelan'),
+                    _navItem(0, Icons.home_rounded, 'Home'),
+                    _navItem(1, Icons.point_of_sale_rounded, 'Kasir'),
+                    _navItem(2, Icons.receipt_long_rounded, 'Riwayat'),
+                    _navItem(3, Icons.local_fire_department_rounded, 'Arang'),
+                    _navItem(4, Icons.tune_rounded, 'Setelan'),
                   ],
                 ),
               ),
@@ -132,10 +82,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       onTap: () => setState(() => _currentIndex = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primarySurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

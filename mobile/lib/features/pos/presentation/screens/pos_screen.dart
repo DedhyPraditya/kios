@@ -2249,6 +2249,11 @@ class PosScreenState extends State<PosScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Pindai Barcode (Kamera)',
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 22),
+            onPressed: openBarcodeScanner,
+          ),
+          IconButton(
             tooltip: 'Sinkronisasi Produk (Sync)',
             icon: _isLoading
                 ? const SizedBox(
